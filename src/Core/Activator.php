@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Sets up options and runs schema upgrades.
  *
- * maybe_install() also runs on every boot. It is cheap (one autoloaded
+ * The maybe_install() method also runs on every boot. It is cheap (one autoloaded
  * option), and it covers plugin updates, which never fire the activation hook,
  * and network activation, where the hook runs on the main site only.
  */

@@ -5,6 +5,8 @@
 /spikes             export-ignore
 /scripts            export-ignore
 /docs               export-ignore
+/bin               export-ignore
+/CLAUDE.md         export-ignore
 /README.md          export-ignore
 /.distignore        export-ignore
 /.editorconfig      export-ignore
