@@ -9,10 +9,13 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Settings\Settings;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Removes plugin data, but only on sites where the admin opted in.
+ * Removes the plugin's capability on every site, and its data only on sites
+ * where the admin opted in (Privacy → Delete data on uninstall).
  */
 final class Uninstaller {
 
@@ -47,15 +50,19 @@ final class Uninstaller {
 	public static function options(): array {
 		return array(
 			Activator::SCHEMA_OPTION,
-			Activator::UNINSTALL_OPTION,
+			Settings::OPTION,
+			Settings::DISPLAY_OPTION,
+			'devrivo_chatbot_delete_data_on_uninstall', // Legacy 0.1.0 option.
 		);
 	}
 
 	/**
-	 * Removes data for the current site if the admin opted in.
+	 * Cleans up the current site.
 	 */
 	private static function uninstall_site(): void {
-		if ( ! (bool) get_option( Activator::UNINSTALL_OPTION, 0 ) ) {
+		Capabilities::remove_all();
+
+		if ( ! Settings::delete_data_on_uninstall() ) {
 			return;
 		}
 
