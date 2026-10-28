@@ -1,0 +1,20 @@
+parameters:
+	level: 6
+	phpVersion: 80100
+	paths:
+		- devrivo-chatbot.php
+		- uninstall.php
+		- src/
+	bootstrapFiles:
+		- tests/phpstan/bootstrap.php
+	# Defined in the bootstrap file; don't let PHPStan fold their values
+	# (otherwise the PHP version check is reported as "always false").
+	dynamicConstantNames:
+		- DEVRIVO_CHATBOT_VERSION
+		- DEVRIVO_CHATBOT_SCHEMA_VERSION
+		- DEVRIVO_CHATBOT_MIN_WP
+		- DEVRIVO_CHATBOT_MIN_PHP
+		- DEVRIVO_CHATBOT_FILE
+		- DEVRIVO_CHATBOT_PATH
+		- DEVRIVO_CHATBOT_URL
+		- DEVRIVO_CHATBOT_BASENAME

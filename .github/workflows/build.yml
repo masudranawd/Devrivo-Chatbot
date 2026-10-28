@@ -1,0 +1,77 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Check size budgets
+        run: npm run check:size
+
+      - name: Create plugin zip
+        run: npm run plugin-zip
+
+      - name: Verify zip contents
+        run: |
+          unzip -Z1 devrivo-chatbot.zip | sort
+          if unzip -Z1 devrivo-chatbot.zip | grep -qE '(^|/)(tests|vendor|node_modules|spikes|scripts|\.github)/'; then
+            echo "::error::Dev files found in the release zip."
+            exit 1
+          fi
+          for required in devrivo-chatbot.php readme.txt uninstall.php src/ assets-src/ build/; do
+            unzip -Z1 devrivo-chatbot.zip | grep -q "$required" || { echo "::error::Missing $required in zip."; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: devrivo-chatbot-zip
+          path: devrivo-chatbot.zip
+          retention-days: 14
+
+  plugin-check:
+    name: Plugin Check
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: devrivo-chatbot-zip
+
+      # Folder name must match the slug, since Plugin Check uses it for the text-domain check.
+      - name: Unzip release
+        run: |
+          mkdir -p dist
+          unzip -q devrivo-chatbot.zip -d dist
+          ls dist
+
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: dist/devrivo-chatbot
