@@ -97,17 +97,22 @@ final class PresetsTest extends WP_UnitTestCase {
 		$this->assertNull( $this->presets->get( 'nope' ) );
 	}
 
-	public function test_replace_overwrites_preset_sections_and_keeps_others(): void {
+	public function test_replace_overwrites_preset_keys_and_keeps_everything_else(): void {
 		$this->settings->update(
 			array(
 				'display'      => array( 'enabled' => true ),
+				'appearance'   => array( 'brand_name' => 'Acme' ),
 				'privacy'      => array( 'retention_days' => 30 ),
 				'integrations' => array( 'notification_emails' => array( 'owner@example.com' ) ),
 				'behaviour'    => array(
 					'greeting'  => 'Old greeting',
 					'auto_open' => false,
 				),
-				'ai'           => array( 'model' => 'old-model' ),
+				'ai'           => array(
+					'enabled'             => true,
+					'model'               => 'old-model',
+					'custom_instructions' => 'Old instructions',
+				),
 			)
 		);
 		$before = $this->settings->all();
@@ -121,9 +126,12 @@ final class PresetsTest extends WP_UnitTestCase {
 
 		$after = ( new Settings() )->all();
 		$this->assertSame( $preset['settings']['behaviour']['welcome'], $after['behaviour']['welcome'] );
-		$this->assertSame( '', $after['behaviour']['greeting'], 'Keys the preset leaves out reset to defaults.' );
-		$this->assertTrue( $after['behaviour']['auto_open'] );
-		$this->assertSame( '', $after['ai']['model'] );
+		$this->assertSame( $preset['settings']['ai']['custom_instructions'], $after['ai']['custom_instructions'] );
+		$this->assertSame( 'Old greeting', $after['behaviour']['greeting'], 'Keys the preset leaves out keep their values.' );
+		$this->assertFalse( $after['behaviour']['auto_open'] );
+		$this->assertTrue( $after['ai']['enabled'] );
+		$this->assertSame( 'old-model', $after['ai']['model'] );
+		$this->assertSame( 'Acme', $after['appearance']['brand_name'] );
 		$this->assertSame( array_column( $preset['settings']['actions'], 'id' ), array_column( $after['actions'], 'id' ) );
 
 		foreach ( array( 'display', 'privacy', 'integrations', 'appearance' ) as $section ) {
@@ -275,6 +283,42 @@ final class PresetsTest extends WP_UnitTestCase {
 		remove_filter( 'devrivo_chatbot_presets', $add );
 
 		$this->assertSame( array_merge( self::BUILT_IN, array( 'valid' ) ), $ids );
+	}
+
+	public function test_presets_with_site_specific_keys_are_skipped(): void {
+		$this->setExpectedIncorrectUsage( PresetRepository::class . '::all' );
+
+		$forbidden = array(
+			'ai'         => array(
+				'enabled'             => true,
+				'model'               => 'some-model',
+				'monthly_token_limit' => 1000,
+			),
+			'appearance' => array(
+				'brand_name' => 'Acme',
+				'avatar_id'  => 5,
+			),
+		);
+
+		$add = static function ( array $presets ) use ( $forbidden ): array {
+			foreach ( $forbidden as $section => $keys ) {
+				foreach ( $keys as $key => $value ) {
+					$presets[] = array(
+						'id'       => "bad-{$section}-" . str_replace( '_', '-', $key ),
+						'version'  => 1,
+						'title'    => 'Bad',
+						'settings' => array( $section => array( $key => $value ) ),
+					);
+				}
+			}
+			return $presets;
+		};
+		add_filter( 'devrivo_chatbot_presets', $add );
+
+		$ids = array_keys( ( new PresetRepository() )->all() );
+		remove_filter( 'devrivo_chatbot_presets', $add );
+
+		$this->assertSame( self::BUILT_IN, $ids );
 	}
 
 	public function test_preset_applied_action_fires_once_with_arguments(): void {

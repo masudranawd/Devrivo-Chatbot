@@ -42,6 +42,16 @@ final class PresetRepository {
 	private const RESERVED_IDS = array( 'undo' );
 
 	/**
+	 * Site-specific keys a preset may never set, by section. Presets describe an
+	 * industry, not a site: turning AI on, choosing a model or token budget, and
+	 * branding stay the admin's decision and survive applying any preset.
+	 */
+	private const FORBIDDEN_KEYS = array(
+		'ai'         => array( 'enabled', 'model', 'monthly_token_limit' ),
+		'appearance' => array( 'brand_name', 'avatar_id' ),
+	);
+
+	/**
 	 * Built-in preset IDs (file names in src/Presets/).
 	 */
 	private const BUILT_IN = array( 'business', 'healthcare', 'portfolio', 'agency' );
@@ -191,6 +201,16 @@ final class PresetRepository {
 			if ( null === $schema ) {
 				/* translators: %s: Settings section name. */
 				return sprintf( __( 'Section "%s" is not allowed in presets.', 'devrivo-chatbot' ), $section );
+			}
+
+			$forbidden = is_array( $value ) ? array_intersect( self::FORBIDDEN_KEYS[ $section ] ?? array(), array_keys( $value ) ) : array();
+			if ( array() !== $forbidden ) {
+				return sprintf(
+					/* translators: 1: Settings section name, 2: Comma-separated setting keys. */
+					__( 'Presets may not set site-specific settings: %1$s.%2$s.', 'devrivo-chatbot' ),
+					$section,
+					implode( ', ', $forbidden )
+				);
 			}
 
 			$valid = rest_validate_value_from_schema( self::candidate( $value, $schema ), $schema, (string) $section );

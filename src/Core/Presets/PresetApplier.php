@@ -19,8 +19,9 @@ defined( 'ABSPATH' ) || exit;
  * Applies a preset to the settings, with a one-step undo.
  *
  * Modes:
- * - replace: every section in the preset becomes the full section value
- *   (keys the preset leaves out reset to their defaults; lists are replaced).
+ * - replace: every section in the preset is applied. For objects only the
+ *   keys the preset provides are set, so other keys (e.g. AI enabled, model,
+ *   brand name) keep their current values; lists are replaced whole.
  * - merge: a section is only applied if the admin hasn't changed it yet
  *   (its current value equals the default); otherwise it is skipped.
  *
@@ -85,8 +86,8 @@ final class PresetApplier {
 				continue;
 			}
 
-			// Full objects, so Settings::update() doesn't merge over old keys.
-			$changes[ $section ] = 'object' === $schema['type'] ? Schema::with_defaults( $value, $schema ) : $value;
+			// Settings::update() merges objects over current values and replaces lists.
+			$changes[ $section ] = $value;
 			$applied[]           = $section;
 		}
 
