@@ -42,6 +42,7 @@ final class Schema {
 	public static function sections(): array {
 		return array(
 			self::DISPLAY  => self::display(),
+			'general'      => self::general(),
 			'appearance'   => self::appearance(),
 			'behaviour'    => self::behaviour(),
 			'actions'      => self::actions(),
@@ -214,6 +215,28 @@ final class Schema {
 							'default'     => array( 'desktop', 'mobile' ),
 						),
 					)
+				),
+			)
+		);
+	}
+
+	/**
+	 * General: which preset was applied last (set by PresetApplier).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function general(): array {
+		return self::object(
+			array(
+				'preset'         => array(
+					'type'    => 'string',
+					'pattern' => '^([a-z0-9_-]{1,40})?$',
+					'default' => '',
+				),
+				'preset_version' => array(
+					'type'    => 'integer',
+					'minimum' => 0,
+					'default' => 0,
 				),
 			)
 		);

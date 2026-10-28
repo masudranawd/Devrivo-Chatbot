@@ -9,6 +9,9 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Presets\PresetApplier;
+use DevRivo\Chatbot\Core\Presets\PresetRepository;
+use DevRivo\Chatbot\Core\Presets\PresetsController;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Core\Settings\SettingsController;
 
@@ -27,9 +30,10 @@ final class Rest {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings $settings Settings repository.
+	 * @param Settings         $settings Settings repository.
+	 * @param PresetRepository $presets  Preset repository.
 	 */
-	public function __construct( private Settings $settings ) {}
+	public function __construct( private Settings $settings, private PresetRepository $presets ) {}
 
 	/**
 	 * Hooks route registration.
@@ -43,5 +47,6 @@ final class Rest {
 	 */
 	public function register_routes(): void {
 		( new SettingsController( $this->settings ) )->register_routes();
+		( new PresetsController( $this->settings, $this->presets, new PresetApplier( $this->settings, $this->presets ) ) )->register_routes();
 	}
 }
