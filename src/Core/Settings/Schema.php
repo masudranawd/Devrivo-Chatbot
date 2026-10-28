@@ -46,6 +46,7 @@ final class Schema {
 			'appearance'   => self::appearance(),
 			'behaviour'    => self::behaviour(),
 			'actions'      => self::actions(),
+			'offers'       => self::offers(),
 			'flows'        => self::free_form_map(),
 			'forms'        => self::free_form_map(),
 			'ai'           => self::ai(),
@@ -271,6 +272,11 @@ final class Schema {
 					'minimum' => 0,
 					'default' => 0,
 				),
+				'font'         => array(
+					'type'    => 'string',
+					'enum'    => array( 'system', 'inherit' ),
+					'default' => 'system',
+				),
 			)
 		);
 	}
@@ -343,6 +349,55 @@ final class Schema {
 						'type'                 => 'object',
 						'additionalProperties' => true,
 						'default'              => array(),
+					),
+				)
+			),
+		);
+	}
+
+	/**
+	 * Offers shown in the widget's Offers tab.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function offers(): array {
+		return array(
+			'type'     => 'array',
+			'maxItems' => 6,
+			'default'  => array(),
+			'items'    => self::object(
+				array(
+					'id'        => array(
+						'type'     => 'string',
+						'pattern'  => self::ID_PATTERN,
+						'required' => true,
+					),
+					'title'     => array(
+						'type'      => 'string',
+						'minLength' => 1,
+						'maxLength' => 80,
+						'required'  => true,
+					),
+					'text'      => array(
+						'type'       => 'string',
+						'maxLength'  => 300,
+						'default'    => '',
+						'x-sanitize' => 'textarea',
+					),
+					'cta_label' => array(
+						'type'      => 'string',
+						'maxLength' => 40,
+						'default'   => '',
+					),
+					// ID of a quick action the call-to-action runs, or '' for none.
+					'action'    => array(
+						'type'    => 'string',
+						'pattern' => '^([a-z0-9_-]{1,40})?$',
+						'default' => '',
+					),
+					'featured'  => array(
+						'type'    => 'boolean',
+						'default' => false,
 					),
 				)
 			),

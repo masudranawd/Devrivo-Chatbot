@@ -39,6 +39,12 @@ final class Settings {
 	public const DISPLAY_OPTION = 'devrivo_chatbot_display';
 
 	/**
+	 * Config version option (autoloaded, tiny). Increments on every save so the
+	 * public widget config URL changes and caches refresh.
+	 */
+	public const CONFIG_VERSION_OPTION = 'devrivo_chatbot_config_version';
+
+	/**
 	 * Current settings structure version.
 	 */
 	public const VERSION = 1;
@@ -177,6 +183,13 @@ final class Settings {
 	}
 
 	/**
+	 * Current config version (1 until the first save).
+	 */
+	public static function config_version(): int {
+		return max( 1, (int) get_option( self::CONFIG_VERSION_OPTION, 1 ) );
+	}
+
+	/**
 	 * Clears the in-request cache (e.g. after another process changed options).
 	 */
 	public function flush(): void {
@@ -236,6 +249,8 @@ final class Settings {
 			}
 			update_option( self::OPTION, $stored, false );
 		}
+
+		update_option( self::CONFIG_VERSION_OPTION, self::config_version() + 1, true );
 
 		$this->cache = null;
 	}
