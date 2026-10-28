@@ -6,6 +6,8 @@
 /spikes
 /scripts
 /docs
+/bin
+CLAUDE.md
 README.md
 .distignore
 .editorconfig

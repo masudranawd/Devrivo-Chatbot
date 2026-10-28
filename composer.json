@@ -35,6 +35,14 @@
 		"lint": "phpcs",
 		"lint:fix": "phpcbf",
 		"analyse": "phpstan analyse --memory-limit=1G",
+		"test:install": [
+			"Composer\\Config::disableProcessTimeout",
+			"@php bin/install-wp-tests.php"
+		],
 		"test": "phpunit"
+	},
+	"scripts-descriptions": {
+		"test:install": "Install WordPress + the WP test library (no Docker). Pass options after --, e.g. composer test:install -- --wp=latest",
+		"test": "Run the PHPUnit integration tests"
 	}
 }

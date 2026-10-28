@@ -23,44 +23,43 @@ jobs:
       matrix:
         include:
           # Full PHP range on the minimum supported WordPress.
-          - { php: '8.1', wp: '7.0', core: 'WordPress/WordPress#7.0', experimental: false }
-          - { php: '8.2', wp: '7.0', core: 'WordPress/WordPress#7.0', experimental: false }
-          - { php: '8.3', wp: '7.0', core: 'WordPress/WordPress#7.0', experimental: false }
-          - { php: '8.4', wp: '7.0', core: 'WordPress/WordPress#7.0', experimental: false }
-          # Latest stable WordPress (empty core = wp-env default, latest release).
-          - { php: '8.4', wp: 'latest', core: '', experimental: false }
-          # Nightly: early warning only, allowed to fail.
-          - { php: '8.4', wp: 'trunk', core: 'https://wordpress.org/nightly-builds/wordpress-latest.zip', experimental: true }
+          - { php: '8.1', wp: '7.0', experimental: false }
+          - { php: '8.2', wp: '7.0', experimental: false }
+          - { php: '8.3', wp: '7.0', experimental: false }
+          - { php: '8.4', wp: '7.0', experimental: false }
+          # Latest stable release.
+          - { php: '8.4', wp: 'latest', experimental: false }
+          # Development version: early warning only, allowed to fail.
+          - { php: '8.4', wp: 'trunk', experimental: true }
+
+    # Same approach as local development (Laragon): MySQL + WP test library, no wp-env.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: devrivo_chatbot_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # Composer runs on the host; the lock is resolved for PHP 8.1 (config.platform).
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: ${{ matrix.php }}
+          extensions: mysqli
           coverage: none
 
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - run: npm ci
-
-      - name: Configure wp-env for this matrix entry
-        env:
-          CORE: ${{ matrix.core }}
-          PHP: ${{ matrix.php }}
-        run: |
-          if [ -n "$CORE" ]; then CORE_JSON="\"$CORE\""; else CORE_JSON=null; fi
-          printf '{ "core": %s, "phpVersion": "%s", "plugins": [ "." ] }\n' "$CORE_JSON" "$PHP" > .wp-env.override.json
-          cat .wp-env.override.json
-
-      - name: Start wp-env
-        run: npm run env:start
+      - name: Install WordPress test suite
+        run: php bin/install-wp-tests.php --wp=${{ matrix.wp }} --db-host=127.0.0.1:3306 --db-user=root --db-pass=root
 
       - name: Run PHPUnit
-        run: npm run test:php
+        run: composer test

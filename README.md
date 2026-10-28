@@ -17,11 +17,13 @@ The WordPress.org readme is [`readme.txt`](readme.txt).
 
 ## Quick start
 
+Clone into a local WordPress 7.0+ site's `wp-content/plugins/devrivo-chatbot` (Laragon works; no Docker needed):
+
 ```bash
 git clone https://github.com/masudranawd/Devrivo-Chatbot.git devrivo-chatbot
 cd devrivo-chatbot
-nvm use && composer install && npm ci
-npm run build && npm run env:start
+composer install && npm ci && npm run build
+composer test:install && composer test
 ```
 
-Open http://localhost:8888/wp-admin (user `admin`, password `password`).
+See [docs/development.md](docs/development.md) for details.

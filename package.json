@@ -28,8 +28,9 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"env:start": "wp-env start",
 		"env:stop": "wp-env stop",
-		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/devrivo-chatbot vendor/bin/phpunit",
-		"plugin-check": "wp-env run cli wp plugin check devrivo-chatbot"
+		"test:php": "composer test",
+		"env:test": "wp-env run tests-cli --env-cwd=wp-content/plugins/devrivo-chatbot vendor/bin/phpunit",
+		"env:plugin-check": "wp-env run cli wp plugin check devrivo-chatbot"
 	},
 	"devDependencies": {
 		"@wordpress/env": "^12.0.0",

@@ -1,9 +1,13 @@
 version: 2
 updates:
+  # One grouped PR per ecosystem per week, to keep the PR list readable.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
 
   - package-ecosystem: composer
     directory: /
