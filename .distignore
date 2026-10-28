@@ -26,3 +26,4 @@ package-lock.json
 phpstan.neon.dist
 phpunit.xml.dist
 webpack.config.js
+vitest.config.mjs
