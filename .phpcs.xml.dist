@@ -34,7 +34,9 @@
 		</properties>
 	</rule>
 
+	<!-- Tests use core globals and hooks (e.g. $wp_rest_server, rest_api_init). -->
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<exclude-pattern>/tests/*</exclude-pattern>
 		<properties>
 			<property name="prefixes" type="array">
 				<element value="devrivo_chatbot"/>

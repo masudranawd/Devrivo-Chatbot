@@ -12,6 +12,7 @@ namespace DevRivo\Chatbot\Tests\Integration;
 use DevRivo\Chatbot\Core\Activator;
 use DevRivo\Chatbot\Core\Plugin;
 use DevRivo\Chatbot\Core\Requirements;
+use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Core\Uninstaller;
 use WP_UnitTestCase;
 
@@ -32,7 +33,8 @@ final class PluginTest extends WP_UnitTestCase {
 
 	public function test_install_creates_options(): void {
 		$this->assertSame( DEVRIVO_CHATBOT_SCHEMA_VERSION, (int) get_option( Activator::SCHEMA_OPTION ) );
-		$this->assertSame( 0, (int) get_option( Activator::UNINSTALL_OPTION, -1 ) );
+		$this->assertIsArray( get_option( Settings::DISPLAY_OPTION ) );
+		$this->assertFalse( Settings::delete_data_on_uninstall() );
 	}
 
 	public function test_maybe_install_upgrades_older_schema(): void {
@@ -50,7 +52,7 @@ final class PluginTest extends WP_UnitTestCase {
 	}
 
 	public function test_uninstall_removes_data_with_opt_in(): void {
-		update_option( Activator::UNINSTALL_OPTION, 1 );
+		Plugin::instance()->settings()->update( array( 'privacy' => array( 'delete_data_on_uninstall' => true ) ) );
 
 		Uninstaller::uninstall();
 
@@ -60,5 +62,6 @@ final class PluginTest extends WP_UnitTestCase {
 
 		// Keep the object cache consistent with the DB after rollback.
 		Activator::maybe_install();
+		Plugin::instance()->settings()->flush();
 	}
 }

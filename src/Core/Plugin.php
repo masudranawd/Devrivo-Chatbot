@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Settings\Settings;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -25,6 +27,13 @@ final class Plugin {
 	 * @var Plugin|null
 	 */
 	private static ?Plugin $instance = null;
+
+	/**
+	 * Settings repository.
+	 *
+	 * @var Settings|null
+	 */
+	private ?Settings $settings = null;
 
 	/**
 	 * Whether boot() has already run.
@@ -75,6 +84,8 @@ final class Plugin {
 		// Covers updates without reactivation and network-activated sites.
 		Activator::maybe_install();
 
+		( new Rest( $this->settings() ) )->register();
+
 		/**
 		 * Fires after DevRivo Chatbot has loaded its core services.
 		 *
@@ -83,6 +94,17 @@ final class Plugin {
 		 * @param Plugin $plugin The plugin instance.
 		 */
 		do_action( 'devrivo_chatbot_loaded', $this );
+	}
+
+	/**
+	 * Settings repository (shared instance).
+	 */
+	public function settings(): Settings {
+		if ( null === $this->settings ) {
+			$this->settings = new Settings();
+		}
+
+		return $this->settings;
 	}
 
 	/**
