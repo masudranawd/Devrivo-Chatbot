@@ -36,10 +36,10 @@
 
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
-| `devrivo_chatbot_should_display` | Whether the widget loads on the current request | `bool $display`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_widget_config` | Config JSON sent to the widget (actions, appearance, behaviour) | `array $config`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_quick_actions` | Quick actions shown in popover and Home view | `array $actions`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_greeting` | Greeting text (time-based by default) | `string $greeting`, `array $context` | 1.0.0 | Planned |
+| `devrivo_chatbot_should_display` | Whether the widget loads on the current request. Runs only when the widget is enabled and the request is a normal page view; devices are checked later in the browser | `bool $display`, `array $context` (`post_id`, `post_type`) | 1.0.0 | In dev |
+| `devrivo_chatbot_widget_config` | Public config JSON sent to the widget (cached publicly: never add private data) | `array $config`, `array $context` (`locale`) | 1.0.0 | In dev |
+| `devrivo_chatbot_quick_actions` | Quick actions shown in popover and Home view | `array $actions`, `array $context` (`locale`) | 1.0.0 | In dev |
+| `devrivo_chatbot_greeting` | Greeting text (empty = time-based greeting in the browser) | `string $greeting`, `array $context` (`locale`) | 1.0.0 | In dev |
 
 ### Extensibility
 
