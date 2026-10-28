@@ -33,7 +33,7 @@ jobs:
           - { php: '8.4', wp: 'trunk', core: 'https://wordpress.org/nightly-builds/wordpress-latest.zip', experimental: true }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Composer runs on the host; the lock is resolved for PHP 8.1 (config.platform).
       - uses: shivammathur/setup-php@v2
