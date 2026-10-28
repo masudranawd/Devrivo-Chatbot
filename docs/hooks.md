@@ -1,7 +1,7 @@
 # DevRivo Chatbot — Hooks Reference
 
 > Public actions and filters for extending DevRivo Chatbot.
-> **Status:** all hooks below are **planned** (not implemented yet). Update the Status column as each hook ships, and never rename or remove a shipped hook without the deprecation process below.
+> **Status:** hooks marked **In dev** are implemented on the development branch; the rest are **planned**. Update the Status column as each hook ships, and never rename or remove a shipped hook without the deprecation process below.
 
 ## Conventions
 
@@ -28,6 +28,7 @@
 | `devrivo_chatbot_index_rebuilt` | A full index rebuild finished | `array $stats` | 1.0.0 | Planned |
 | `devrivo_chatbot_ai_fallback` | AI mode failed and Guided mode was used | `string $reason`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_data_purged` | Retention cron removed old conversations/leads | `array $counts` | 1.0.0 | Planned |
+| `devrivo_chatbot_preset_applied` | A preset was applied to the settings (replace or merge) | `string $preset_id`, `string $mode`, `array $settings` | 1.0.0 | In dev |
 
 ## Filters
 
@@ -46,7 +47,7 @@
 |---|---|---|---|---|
 | `devrivo_chatbot_modules` | Registered module class names | `string[] $modules` | 1.0.0 | Planned |
 | `devrivo_chatbot_action_types` | Available action types and their handlers | `array $types` | 1.0.0 | Planned |
-| `devrivo_chatbot_presets` | Available industry presets (JSON file paths or arrays) | `array $presets` | 1.0.0 | Planned |
+| `devrivo_chatbot_presets` | Available industry presets: definition arrays, or paths to `.php` (returns an array) or `.json` files. Invalid presets are skipped with `_doing_it_wrong()` | `array $presets` | 1.0.0 | In dev |
 | `devrivo_chatbot_form_fields` | Field definitions for a form before render | `array $fields`, `string $form_id` | 1.0.0 | Planned |
 | `devrivo_chatbot_cards` | Registered card types (link, product, property, post) | `array $cards` | 1.0.0 | Planned |
 

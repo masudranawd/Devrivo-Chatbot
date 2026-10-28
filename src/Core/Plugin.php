@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Presets\PresetRepository;
 use DevRivo\Chatbot\Core\Settings\Settings;
 
 defined( 'ABSPATH' ) || exit;
@@ -34,6 +35,13 @@ final class Plugin {
 	 * @var Settings|null
 	 */
 	private ?Settings $settings = null;
+
+	/**
+	 * Preset repository.
+	 *
+	 * @var PresetRepository|null
+	 */
+	private ?PresetRepository $presets = null;
 
 	/**
 	 * Whether boot() has already run.
@@ -84,7 +92,7 @@ final class Plugin {
 		// Covers updates without reactivation and network-activated sites.
 		Activator::maybe_install();
 
-		( new Rest( $this->settings() ) )->register();
+		( new Rest( $this->settings(), $this->presets() ) )->register();
 
 		/**
 		 * Fires after DevRivo Chatbot has loaded its core services.
@@ -105,6 +113,17 @@ final class Plugin {
 		}
 
 		return $this->settings;
+	}
+
+	/**
+	 * Preset repository (shared instance).
+	 */
+	public function presets(): PresetRepository {
+		if ( null === $this->presets ) {
+			$this->presets = new PresetRepository();
+		}
+
+		return $this->presets;
 	}
 
 	/**
