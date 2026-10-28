@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pearl Dental Care – AI Assistant Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  /* Pearl palette – swap these to match the final brand */
+  --evergreen:#1E3B36;   /* primary: launcher, header, user bubbles */
+  --evergreen-2:#2C554D;
+  --pearl:#F3F5F4;       /* cool pearl surface */
+  --card:#FFFFFF;
+  --ink:#17201E;
+  --ink-soft:#56635F;
+  --mist:#DCE3E0;
+  --sage:#7FA79A;
+  --live:#3FA374;
+  --closed:#A3ADA9;
+  --danger:#B4412F;
+  --page-bg:#E9EEEC;
+  --overlay:rgba(16,28,25,.55);
+  --font:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --pearl:#161D1B;--card:#1E2725;--ink:#EAF0EE;--ink-soft:#A6B3AF;--mist:#2E3A37;
+    --page-bg:#0F1513;--overlay:rgba(0,0,0,.6);--evergreen-2:#3B6B61;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --pearl:#161D1B;--card:#1E2725;--ink:#EAF0EE;--ink-soft:#A6B3AF;--mist:#2E3A37;
+  --page-bg:#0F1513;--overlay:rgba(0,0,0,.6);--evergreen-2:#3B6B61;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;font-family:var(--font);background:var(--page-bg);color:var(--ink);min-height:100vh;line-height:1.5}
+
+/* ---------- Demo host page (stand-in for the real site) ---------- */
+.demo{max-width:1080px;margin:0 auto;padding:28px 24px 140px}
+.demo-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.demo-logo{font-weight:800;font-size:1.15rem;letter-spacing:-.01em;color:var(--evergreen)}
+:root[data-theme="dark"] .demo-logo{color:var(--sage)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .demo-logo{color:var(--sage)}}
+.demo-links{display:flex;gap:20px;color:var(--ink-soft);font-size:.92rem;flex-wrap:wrap}
+.demo-hero{margin-top:72px;max-width:620px}
+.demo-hero h1{font-size:clamp(2.4rem,6vw,4rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 18px;font-weight:800}
+.demo-hero p{font-size:1.1rem;color:var(--ink-soft);max-width:52ch;margin:0}
+.demo-note{margin-top:48px;padding:18px 20px;border-left:3px solid var(--sage);background:var(--card);border-radius:0 12px 12px 0;max-width:560px;font-size:.95rem;color:var(--ink-soft)}
+.demo-note strong{color:var(--ink)}
+
+/* ---------- Widget ---------- */
+.pdc{position:fixed;inset:auto 0 0 auto;z-index:9999;font-family:var(--font)}
+.pdc button{font-family:inherit;cursor:pointer}
+.pdc :focus-visible{outline:3px solid var(--sage);outline-offset:2px}
+
+.pdc-overlay{position:fixed;inset:0;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:1}
+.pdc[data-state="pop"] .pdc-overlay{opacity:1;pointer-events:auto}
+
+/* Launcher */
+.pdc-launcher{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:3;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 22px;border:0;border-radius:999px;background:var(--evergreen);color:#fff;font-size:1rem;font-weight:600;box-shadow:0 10px 30px rgba(20,40,35,.28);transition:transform .2s ease}
+.pdc-launcher:hover{transform:translateY(-2px)}
+.pdc[data-state="panel"] .pdc-launcher{transform:scale(.9);opacity:0;pointer-events:none}
+
+/* Pearl avatar – the one memorable element */
+.pdc-avatar{position:relative;flex:none;width:46px;height:46px;border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 28%,#fff 0 12%,transparent 13%),
+    radial-gradient(circle at 35% 30%,#FFFFFF 0%,#F2EEF4 30%,#DDE8EC 55%,#C9D6DA 75%,#AFC0C4 100%);
+  box-shadow:inset -6px -8px 14px rgba(110,140,150,.35),inset 4px 4px 10px rgba(255,255,255,.7),0 0 0 3px rgba(255,255,255,.9)}
+.pdc-avatar::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 200deg,rgba(255,200,230,.25),rgba(190,230,255,.25),rgba(220,255,220,.2),rgba(255,200,230,.25));mix-blend-mode:soft-light}
+.pdc-avatar.sm{width:36px;height:36px;box-shadow:inset -4px -6px 10px rgba(110,140,150,.35),inset 3px 3px 8px rgba(255,255,255,.7),0 0 0 2px var(--card)}
+.pdc-avatar.xs{width:28px;height:28px;box-shadow:inset -3px -4px 8px rgba(110,140,150,.35),inset 2px 2px 6px rgba(255,255,255,.7)}
+.pdc-dot{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card);background:var(--live);z-index:2}
+.pdc-dot.off{background:var(--closed)}
+
+/* Quick-action popover */
+.pdc-pop{position:fixed;right:24px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+.pdc-pop-close{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);color:var(--ink);display:grid;place-items:center;margin-bottom:6px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.pdc-chip{border:0;background:var(--card);color:var(--ink);font-size:.95rem;font-weight:500;padding:12px 16px;border-radius:14px 14px 4px 14px;box-shadow:0 6px 18px rgba(0,0,0,.14);text-align:left}
+.pdc-chip:hover{background:var(--pearl)}
+.pdc-chip.urgent{color:var(--danger)}
+.pdc-pop > *{opacity:0;transform:translateY(10px) scale(.98);transition:opacity .22s ease,transform .22s ease}
+/* "peek" = auto-opened on page load (no dark overlay); "pop" = opened by the visitor */
+.pdc:is([data-state="pop"],[data-state="peek"]) .pdc-pop{pointer-events:auto}
+.pdc:is([data-state="pop"],[data-state="peek"]) .pdc-pop > *{opacity:1;transform:none}
+.pdc-pop > *:nth-child(2){transition-delay:.03s}
+.pdc-pop > *:nth-child(3){transition-delay:.06s}
+.pdc-pop > *:nth-child(4){transition-delay:.09s}
+.pdc-pop > *:nth-child(5){transition-delay:.12s}
+.pdc-pop > *:nth-child(6){transition-delay:.15s}
+
+/* Panel */
+.pdc-panel{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:4;width:400px;height:min(680px,calc(100vh - 48px));background:var(--pearl);border-radius:22px;box-shadow:0 24px 60px rgba(10,30,25,.32);display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(16px) scale(.98);transform-origin:bottom right;pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+.pdc[data-state="panel"] .pdc-panel{opacity:1;transform:none;pointer-events:auto}
+.pdc-view{display:none;flex:1;min-height:0;flex-direction:column}
+.pdc-view.active{display:flex}
+
+.pdc-icon-btn{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center}
+.pdc-icon-btn:hover{background:rgba(255,255,255,.24)}
+
+/* Home view */
+.pdc-home{overflow-y:auto}
+.pdc-hero{position:relative;padding:22px 22px 70px;color:#fff;background:linear-gradient(180deg,var(--evergreen) 0%,var(--evergreen-2) 70%,var(--pearl) 100%)}
+.pdc-hero-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.pdc-brand{font-weight:700;font-size:.95rem;opacity:.9}
+.pdc-greet{font-size:1.5rem;font-weight:700;line-height:1.2;margin:0;opacity:.75}
+.pdc-welcome{font-size:1.5rem;font-weight:800;line-height:1.2;margin:2px 0 0;letter-spacing:-.01em}
+.pdc-home-body{padding:0 18px 18px;margin-top:-50px;position:relative;display:flex;flex-direction:column;gap:14px}
+.pdc-ask{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border:0;border-radius:16px;background:var(--card);color:var(--ink);text-align:left;box-shadow:0 8px 24px rgba(20,40,35,.10)}
+.pdc-ask:hover{box-shadow:0 10px 28px rgba(20,40,35,.16)}
+.pdc-ask-text strong{display:block;font-size:1.02rem}
+.pdc-ask-text span{font-size:.85rem;color:var(--ink-soft)}
+.pdc-ask-go{margin-left:auto;color:var(--evergreen-2)}
+.pdc-list{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(20,40,35,.05)}
+.pdc-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:15px 16px;border:0;border-top:1px solid var(--mist);background:none;color:var(--ink);font-size:.95rem;text-align:left}
+.pdc-row:first-child{border-top:0}
+.pdc-row:hover{background:var(--pearl)}
+.pdc-row svg{color:var(--ink-soft);flex:none}
+.pdc-row.urgent{color:var(--danger)}
+.pdc-hours{font-size:.82rem;color:var(--ink-soft);text-align:center;padding:2px 8px}
+
+/* Tab bar */
+.pdc-tabs{display:flex;justify-content:center;gap:48px;padding:10px 0 12px;background:var(--card);border-top:1px solid var(--mist)}
+.pdc-tab{border:0;background:none;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.8rem;font-weight:600}
+.pdc-tab[aria-selected="true"]{color:var(--ink)}
+
+/* Chat view */
+.pdc-chat-head{display:flex;align-items:center;gap:12px;padding:14px 14px;background:var(--evergreen);color:#fff}
+.pdc-chat-head .pdc-avatar{box-shadow:inset -4px -6px 10px rgba(110,140,150,.35),inset 3px 3px 8px rgba(255,255,255,.7)}
+.pdc-chat-title{flex:1;min-width:0}
+.pdc-chat-title strong{display:block;font-size:.98rem}
+.pdc-chat-title span{font-size:.78rem;opacity:.8}
+.pdc-ai-tag{display:inline-block;font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.18);margin-left:6px;vertical-align:2px}
+.pdc-msgs{flex:1;overflow-y:auto;padding:18px 14px 8px;display:flex;flex-direction:column;gap:10px}
+.pdc-msg{max-width:84%;padding:11px 14px;border-radius:16px;font-size:.94rem;line-height:1.45;white-space:pre-line}
+.pdc-msg.bot{align-self:flex-start;background:var(--card);color:var(--ink);border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(20,40,35,.06)}
+.pdc-msg.user{align-self:flex-end;background:var(--evergreen);color:#fff;border-bottom-right-radius:4px}
+.pdc-botrow{display:flex;gap:8px;align-items:flex-end}
+.pdc-botrow .pdc-msg{max-width:calc(84% - 36px)}
+.pdc-typing{display:inline-flex;gap:4px;padding:14px 16px}
+.pdc-typing i{width:7px;height:7px;border-radius:50%;background:var(--sage);animation:pdcBlink 1s infinite ease-in-out}
+.pdc-typing i:nth-child(2){animation-delay:.15s}.pdc-typing i:nth-child(3){animation-delay:.3s}
+@keyframes pdcBlink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.pdc-replies{display:flex;flex-wrap:wrap;gap:8px;padding-left:36px}
+.pdc-reply{border:1px solid var(--evergreen-2);background:var(--card);color:var(--evergreen-2);font-size:.86rem;font-weight:600;padding:7px 13px;border-radius:999px}
+:root[data-theme="dark"] .pdc-reply{color:var(--sage);border-color:var(--sage)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pdc-reply{color:var(--sage);border-color:var(--sage)}}
+.pdc-reply:hover{background:var(--evergreen);color:#fff;border-color:var(--evergreen)}
+.pdc-reply.urgent{border-color:var(--danger);color:var(--danger)}
+.pdc-link{display:block;margin-left:36px;max-width:calc(84% - 36px);padding:11px 14px;background:var(--card);border:1px solid var(--mist);border-radius:12px;text-decoration:none;color:var(--ink)}
+.pdc-link small{display:block;color:var(--ink-soft);font-size:.76rem}
+.pdc-link strong{font-size:.9rem}
+.pdc-link:hover{border-color:var(--sage)}
+.pdc-cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-left:36px;max-width:calc(84% - 36px);padding:12px 16px;border-radius:12px;background:var(--evergreen);color:#fff;text-decoration:none;font-weight:700;font-size:.92rem;border:0}
+.pdc-cta.alt{background:var(--card);color:var(--ink);border:1px solid var(--mist)}
+.pdc-cta.danger{background:var(--danger)}
+.pdc-ctas{display:flex;flex-direction:column;gap:8px}
+
+/* Inline form */
+.pdc-form{margin-left:36px;max-width:calc(100% - 36px);background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 4px rgba(20,40,35,.06)}
+.pdc-form h4{margin:0;font-size:.95rem}
+.pdc-form label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:600;color:var(--ink-soft)}
+.pdc-form input,.pdc-form select,.pdc-form textarea{font:inherit;font-size:.92rem;color:var(--ink);background:var(--pearl);border:1px solid var(--mist);border-radius:10px;padding:9px 11px;width:100%}
+.pdc-form input:focus,.pdc-form select:focus,.pdc-form textarea:focus{outline:2px solid var(--sage);outline-offset:0;border-color:transparent}
+.pdc-form .pdc-consent{flex-direction:row;align-items:flex-start;gap:8px;font-weight:500;line-height:1.35}
+.pdc-consent input{width:auto;margin-top:2px}
+.pdc-consent a{color:inherit}
+.pdc-form-err{color:var(--danger);font-size:.8rem;min-height:1em;margin:0}
+.pdc-form button[type="submit"]{border:0;border-radius:10px;padding:11px;background:var(--evergreen);color:#fff;font-weight:700;font-size:.92rem}
+.pdc-form.done{opacity:.6;pointer-events:none}
+
+/* Composer */
+.pdc-composer{display:flex;gap:8px;align-items:center;padding:10px 12px 12px;background:var(--card);border-top:1px solid var(--mist)}
+.pdc-composer input{flex:1;font:inherit;font-size:.95rem;border:1px solid var(--mist);background:var(--pearl);color:var(--ink);border-radius:999px;padding:11px 16px;min-width:0}
+.pdc-composer input:focus{outline:2px solid var(--sage);border-color:transparent}
+.pdc-send{width:42px;height:42px;border-radius:50%;border:0;background:var(--evergreen);color:#fff;display:grid;place-items:center;flex:none}
+.pdc-disclaimer{font-size:.72rem;color:var(--ink-soft);text-align:center;padding:0 12px 10px;background:var(--card)}
+
+/* Offers view */
+.pdc-offers-head{padding:20px 20px 16px;background:var(--evergreen);color:#fff;display:flex;justify-content:space-between;align-items:center}
+.pdc-offers-head h3{margin:0;font-size:1.25rem}
+.pdc-offers{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.pdc-offer{background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--mist)}
+.pdc-offer h4{margin:0 0 6px;font-size:1.05rem}
+.pdc-offer p{margin:0 0 14px;color:var(--ink-soft);font-size:.9rem}
+.pdc-offer .pdc-cta{margin:0;max-width:none;display:inline-flex}
+.pdc-offer.feature{background:linear-gradient(135deg,var(--evergreen),var(--evergreen-2));color:#fff;border:0}
+.pdc-offer.feature p{color:rgba(255,255,255,.82)}
+.pdc-offer.feature .pdc-cta{background:#fff;color:var(--evergreen)}
+.pdc-offer-note{font-size:.78rem;color:var(--ink-soft);text-align:center}
+
+/* Mobile */
+@media (max-width:520px){
+  .pdc-panel{right:0;bottom:0;width:100%;height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .pdc-launcher{right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  .pdc-pop{right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Stand-in for the real Pearl Dental Care page -->
+<main class="demo">
+  <nav class="demo-nav">
+    <div class="demo-logo">Pearl Dental Care</div>
+    <div class="demo-links"><span>Treatments</span><span>Our team</span><span>Fees &amp; finance</span><span>Contact</span></div>
+  </nav>
+  <section class="demo-hero">
+    <h1>A little more at ease.</h1>
+    <p>Private dental care in Sevenoaks, with time to listen, room to feel comfortable, and care shaped around you.</p>
+  </section>
+  <div class="demo-note">
+    <strong>Concept demo.</strong> The quick actions open automatically in the bottom-right corner. Close them with the X, or click <strong>Make an enquiry</strong> to open the full assistant. Answers here are scripted to show the flows; the real plugin answers from the site’s own pages using AI, and sends enquiries to the practice.
+  </div>
+</main>
+
+<!-- ============ Pearl AI Assistant widget ============ -->
+<div class="pdc" id="pdc" data-state="closed">
+  <div class="pdc-overlay" data-act="close"></div>
+
+  <!-- Quick-action popover -->
+  <div class="pdc-pop" id="pdcPop" aria-hidden="true">
+    <button class="pdc-pop-close" data-act="close" aria-label="Close menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="pdc-chip" data-flow="enquire">Enquire about a treatment</button>
+    <button class="pdc-chip" data-flow="consult">Book a free consultation</button>
+    <button class="pdc-chip" data-flow="reschedule">Reschedule an appointment</button>
+    <button class="pdc-chip" data-flow="cancel">Cancel an appointment</button>
+    <button class="pdc-chip urgent" data-flow="emergency">I need urgent help</button>
+  </div>
+
+  <!-- Launcher -->
+  <button class="pdc-launcher" id="pdcLauncher" aria-haspopup="true" aria-expanded="false">
+    Make an enquiry
+    <span class="pdc-avatar" aria-hidden="true"><span class="pdc-dot" data-dot></span></span>
+  </button>
+
+  <!-- Panel -->
+  <section class="pdc-panel" id="pdcPanel" role="dialog" aria-label="Pearl Dental Care assistant" aria-modal="false">
+
+    <!-- Home -->
+    <div class="pdc-view pdc-home active" data-view="home">
+      <div class="pdc-hero">
+        <div class="pdc-hero-top">
+          <span class="pdc-brand">Pearl Dental Care</span>
+          <button class="pdc-icon-btn" data-act="close" aria-label="Close assistant">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <p class="pdc-greet" id="pdcGreet">Hello 👋</p>
+        <p class="pdc-welcome">How can we help you today?</p>
+      </div>
+      <div class="pdc-home-body">
+        <button class="pdc-ask" data-flow="ask">
+          <span class="pdc-avatar sm" aria-hidden="true"><span class="pdc-dot" data-dot></span></span>
+          <span class="pdc-ask-text"><strong>Ask a question</strong><span>Our AI assistant replies instantly</span></span>
+          <svg class="pdc-ask-go" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+        <div class="pdc-list">
+          <button class="pdc-row" data-flow="enquire">Enquire about a treatment <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button class="pdc-row" data-flow="consult">Book a free consultation <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button class="pdc-row" data-flow="reschedule">Reschedule an appointment <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button class="pdc-row" data-flow="cancel">Cancel an appointment <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button class="pdc-row urgent" data-flow="emergency">I need urgent help <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <p class="pdc-hours" id="pdcHours"></p>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="pdc-view" data-view="chat">
+      <div class="pdc-chat-head">
+        <button class="pdc-icon-btn" data-act="home" aria-label="Back to menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <span class="pdc-avatar sm" aria-hidden="true"></span>
+        <div class="pdc-chat-title">
+          <strong>Pearl assistant <span class="pdc-ai-tag">AI</span></strong>
+          <span id="pdcChatStatus">Replies instantly</span>
+        </div>
+        <button class="pdc-icon-btn" data-act="close" aria-label="Close assistant">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="pdc-msgs" id="pdcMsgs" aria-live="polite"></div>
+      <form class="pdc-composer" id="pdcComposer" autocomplete="off">
+        <input id="pdcInput" type="text" placeholder="Type your question…" aria-label="Your message" maxlength="400">
+        <button class="pdc-send" type="submit" aria-label="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </form>
+      <div class="pdc-disclaimer">AI assistant. General information only, not clinical advice.</div>
+    </div>
+
+    <!-- Offers -->
+    <div class="pdc-view" data-view="offers">
+      <div class="pdc-offers-head">
+        <h3>Offers</h3>
+        <button class="pdc-icon-btn" data-act="close" aria-label="Close assistant">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="pdc-offers">
+        <article class="pdc-offer feature">
+          <h4>Free implant consultation</h4>
+          <p>Talk through your options for replacing a missing tooth, with no obligation to go ahead.</p>
+          <a class="pdc-cta" href="#" data-book="implants">Book my free consultation</a>
+        </article>
+        <article class="pdc-offer">
+          <h4>New patient examination</h4>
+          <p>A full check-up and time to ask questions. Price to be confirmed by the practice.</p>
+          <button class="pdc-cta alt" data-flow="consult">Find out more</button>
+        </article>
+        <article class="pdc-offer">
+          <h4>Professional teeth whitening</h4>
+          <p>Seasonal offer placeholder. Offers are added and edited from the WordPress admin.</p>
+          <button class="pdc-cta alt" data-ask="Tell me about teeth whitening">Ask about whitening</button>
+        </article>
+        <p class="pdc-offer-note">Offers are subject to suitability and assessment.</p>
+      </div>
+    </div>
+
+    <!-- Tabs (Home + Offers) -->
+    <nav class="pdc-tabs" id="pdcTabs" role="tablist">
+      <button class="pdc-tab" role="tab" aria-selected="true" data-tab="home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Home
+      </button>
+      <button class="pdc-tab" role="tab" aria-selected="false" data-tab="offers">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 000-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/></svg>Offers
+      </button>
+    </nav>
+  </section>
+</div>
+
+<script>
+(function(){
+  /* ===== Settings (these become admin options in the plugin) ===== */
+  const CFG = {
+    siteBase: "https://arifwebs.com/pearldentalcare",
+    bookingUrl: "#booking-link",             // global booking page link (set in admin)
+    bookingUrls: { implants: "#booking-link-implants" }, // optional per-treatment links
+    phone: "01632 960 123",
+    whatsapp: "447700900123",
+    timezone: "Europe/London",
+    hours: { 1:[8.5,17.5], 2:[8.5,17.5], 3:[8.5,17.5], 4:[8.5,17.5], 5:[8.5,17], 6:[9,13] } // Mon–Sat, placeholder
+  };
+
+  /* ===== Knowledge (in the plugin this comes from the site index) ===== */
+  const KB = [
+    { keys:["implant","missing tooth","missing teeth","replace"], title:"Dental implants", url:"/dental-implants/", book:"implants",
+      text:"Dental implants are a way to replace one or more missing teeth. Treatment usually starts with a consultation and assessment, so the dentist can check whether implants are suitable and talk you through the options and timeline." },
+    { keys:["invisalign","aligner","straighten","crooked","brace"], title:"Invisalign", url:"/treatments/",
+      text:"Invisalign uses a series of clear, removable aligners to gradually straighten teeth. A consultation is the first step to see whether it suits you and roughly how long treatment may take." },
+    { keys:["bonding","composite","chip"], title:"Composite bonding", url:"/treatments/",
+      text:"Composite bonding uses tooth-coloured resin to make selected cosmetic changes, such as repairing small chips or closing minor gaps. The dentist will advise whether it’s right for you." },
+    { keys:["veneer"], title:"Veneers", url:"/treatments/",
+      text:"Veneers are thin coverings placed on the front of teeth to change their shape, colour or size. Options and suitability are discussed at a consultation." },
+    { keys:["whiten","white","stain","yellow"], title:"Teeth whitening", url:"/treatments/",
+      text:"Professional whitening is carried out under dental supervision. The team will check your teeth first to make sure whitening is suitable." },
+    { keys:["hygien","clean","scale","polish","gum"], title:"Dental hygiene", url:"/treatments/",
+      text:"Hygiene appointments focus on preventive care: cleaning, advice on brushing and flossing, and keeping your gums healthy." },
+    { keys:["check-up","checkup","general","filling","crown","exam"], title:"General dentistry", url:"/treatments/",
+      text:"General dentistry covers routine check-ups and restorative care such as fillings and crowns." },
+    { keys:["fee","price","cost","how much","finance","pay","afford"], title:"Fees & finance", url:"/fees-finance/",
+      text:"Treatment fees and finance options are listed on our Fees & finance page. Exact costs depend on your individual treatment plan, which is confirmed after a consultation." },
+    { keys:["team","dentist","doctor","who","surgeon"], title:"Our team", url:"/our-team/",
+      text:"The team includes Dr Shyam Pattni (founder and implant dentist), Dr Maria Devine (specialist oral surgeon), Dr Peyman Pakyari (dentist), Llubitza Banic (dental therapist and hygienist) and Rose Barnard (practice manager)." },
+    { keys:["hour","open","close","time","when"], title:"Contact us", url:"/contact-us/",
+      text:"__HOURS__" },
+    { keys:["where","location","address","park","find you","directions"], title:"Contact us", url:"/contact-us/",
+      text:"We’re a private practice in Sevenoaks, Kent. Address, directions and parking details are on our Contact page." },
+    { keys:["review","rating","testimonial"], title:"Patient reviews", url:"/patient-reviews/",
+      text:"You can read what our patients say on our Patient reviews page." }
+  ];
+  const TREATMENTS = ["Dental implants","Invisalign","Composite bonding","Veneers","Teeth whitening","Dental hygiene","General dentistry"];
+
+  /* ===== Elements & state ===== */
+  const root = document.getElementById("pdc");
+  const launcher = document.getElementById("pdcLauncher");
+  const pop = document.getElementById("pdcPop");
+  const msgs = document.getElementById("pdcMsgs");
+  const input = document.getElementById("pdcInput");
+  const tabs = document.getElementById("pdcTabs");
+  let chatStarted = false;
+
+  function setState(s){
+    root.dataset.state = s;
+    launcher.setAttribute("aria-expanded", s !== "closed");
+    pop.setAttribute("aria-hidden", !(s === "pop" || s === "peek"));
+  }
+  function showView(v){
+    root.querySelectorAll(".pdc-view").forEach(el => el.classList.toggle("active", el.dataset.view === v));
+    tabs.style.display = v === "chat" ? "none" : "flex";
+    tabs.querySelectorAll(".pdc-tab").forEach(t => t.setAttribute("aria-selected", t.dataset.tab === v));
+  }
+  function openPanel(view){ setState("panel"); showView(view || "home"); }
+
+  /* ===== Time-based greeting & opening hours ===== */
+  function greeting(){
+    const h = new Date().getHours();
+    return h < 12 ? "Good morning 👋" : h < 18 ? "Good afternoon 👋" : "Good evening 👋";
+  }
+  function londonNow(){
+    const parts = new Intl.DateTimeFormat("en-GB",{timeZone:CFG.timezone,weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date());
+    const get = t => parts.find(p => p.type === t).value;
+    const dayMap = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+    return { day: dayMap[get("weekday")], hour: parseInt(get("hour"),10) % 24 + parseInt(get("minute"),10)/60 };
+  }
+  function isOpen(){
+    const n = londonNow(), h = CFG.hours[n.day];
+    return !!h && n.hour >= h[0] && n.hour < h[1];
+  }
+  function hoursText(){
+    return isOpen()
+      ? "The practice is open now, so the team can pick up enquiries today."
+      : "The practice is closed right now. The assistant can still help, and the team will reply when we reopen.";
+  }
+  function refreshStatus(){
+    document.getElementById("pdcGreet").textContent = greeting();
+    document.getElementById("pdcHours").textContent = isOpen() ? "Practice open now" : "Practice closed now. We’ll reply when we reopen.";
+    root.querySelectorAll("[data-dot]").forEach(d => d.classList.toggle("off", !isOpen()));
+    document.getElementById("pdcChatStatus").textContent = isOpen() ? "Replies instantly. Team available today" : "Replies instantly. Team back when we reopen";
+  }
+  refreshStatus();
+
+  /* ===== Chat rendering ===== */
+  const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function scroll(){ msgs.scrollTop = msgs.scrollHeight; }
+  function clearReplies(){ msgs.querySelectorAll(".pdc-replies").forEach(r => r.remove()); }
+
+  function addUser(text){
+    clearReplies();
+    const d = document.createElement("div");
+    d.className = "pdc-msg user"; d.textContent = text;
+    msgs.appendChild(d); scroll();
+  }
+  function bookingLink(key){
+    const base = (key && CFG.bookingUrls[key]) || CFG.bookingUrl;
+    const sep = base.includes("?") ? "&" : "?";
+    return base + sep + "utm_source=chatbot&utm_medium=pearl-assistant" + (key ? "&utm_content=" + key : "");
+  }
+
+  // bot(text, {replies:[{label,go,urgent}], link:{title,url}, ctas:[{label,href,alt,danger}], form:"enquiry"})
+  function bot(text, opts){
+    opts = opts || {};
+    return new Promise(resolve => {
+      const row = document.createElement("div");
+      row.className = "pdc-botrow";
+      row.innerHTML = '<span class="pdc-avatar xs" aria-hidden="true"></span><div class="pdc-msg bot pdc-typing"><i></i><i></i><i></i></div>';
+      msgs.appendChild(row); scroll();
+      const delay = Math.min(1400, 450 + text.length * 6);
+      setTimeout(() => {
+        const bubble = row.querySelector(".pdc-msg");
+        bubble.className = "pdc-msg bot"; bubble.textContent = text;
+        if (opts.link){
+          const a = document.createElement("a");
+          a.className = "pdc-link"; a.href = CFG.siteBase + opts.link.url; a.target = "_blank"; a.rel = "noopener";
+          a.innerHTML = "<small>Read more on our site</small><strong>" + esc(opts.link.title) + "</strong>";
+          msgs.appendChild(a);
+        }
+        if (opts.ctas){
+          const wrap = document.createElement("div"); wrap.className = "pdc-ctas";
+          opts.ctas.forEach(c => {
+            const a = document.createElement("a");
+            a.className = "pdc-cta" + (c.alt ? " alt" : "") + (c.danger ? " danger" : "");
+            a.href = c.href; a.textContent = c.label;
+            if (/^https?:|^#/.test(c.href)) { a.target = "_blank"; a.rel = "noopener"; }
+            wrap.appendChild(a);
+          });
+          msgs.appendChild(wrap);
+        }
+        if (opts.form) renderForm(opts.form, opts.formData || {});
+        if (opts.replies){
+          const r = document.createElement("div"); r.className = "pdc-replies";
+          opts.replies.forEach(q => {
+            const b = document.createElement("button");
+            b.type = "button"; b.className = "pdc-reply" + (q.urgent ? " urgent" : ""); b.textContent = q.label;
+            b.addEventListener("click", () => { addUser(q.label); q.go(); });
+            r.appendChild(b);
+          });
+          msgs.appendChild(r);
+        }
+        scroll(); resolve();
+      }, delay);
+    });
+  }
+
+  /* ===== Inline forms ===== */
+  const FORMS = {
+    enquiry: { title:"Your details", submit:"Send my enquiry", fields:[
+      {n:"name",l:"Full name",t:"text",r:1},{n:"email",l:"Email",t:"email",r:1},{n:"phone",l:"Phone",t:"tel",r:1},
+      {n:"treatment",l:"Treatment",t:"select",o:TREATMENTS.concat(["Not sure yet"]),r:1},
+      {n:"time",l:"Best time to contact you",t:"select",o:["Morning","Afternoon","Evening"]},
+      {n:"message",l:"Anything you’d like us to know? (optional)",t:"textarea"} ],
+      done: d => "Thanks, " + d.name.split(" ")[0] + ". Your enquiry has been sent to the team, and they’ll contact you by phone or email. (Demo: nothing was actually sent.)" },
+    callback: { title:"Request a callback", submit:"Request my callback", fields:[
+      {n:"name",l:"Full name",t:"text",r:1},{n:"phone",l:"Phone",t:"tel",r:1},
+      {n:"time",l:"When should we call?",t:"select",o:["Morning (9–12)","Afternoon (12–5)","Evening (after 5)"],r:1} ],
+      done: d => "Thanks, " + d.name.split(" ")[0] + ". The team will call you back. (Demo: nothing was actually sent.)" },
+    reschedule: { title:"Reschedule request", submit:"Send reschedule request", fields:[
+      {n:"name",l:"Full name",t:"text",r:1},{n:"phone",l:"Phone",t:"tel",r:1},{n:"email",l:"Email",t:"email"},
+      {n:"current",l:"Current appointment date",t:"date",r:1},
+      {n:"preferred",l:"Preferred new day or time",t:"text",r:1,p:"e.g. any weekday afternoon"} ],
+      done: d => "Thanks, " + d.name.split(" ")[0] + ". We’ve passed your request to the team, who will contact you to confirm a new time. Your current appointment stays booked until then. (Demo: nothing was actually sent.)" },
+    cancel: { title:"Cancellation request", submit:"Send cancellation request", fields:[
+      {n:"name",l:"Full name",t:"text",r:1},{n:"phone",l:"Phone",t:"tel",r:1},
+      {n:"current",l:"Appointment date",t:"date",r:1},
+      {n:"reason",l:"Reason (optional)",t:"select",o:["Prefer not to say","Unwell","Schedule conflict","No longer needed","Other"]} ],
+      done: d => "Thanks, " + d.name.split(" ")[0] + ". Your cancellation request has been sent, and the team will confirm it with you. (Demo: nothing was actually sent.)" }
+  };
+
+  function renderForm(type, pre){
+    const f = FORMS[type];
+    const form = document.createElement("form");
+    form.className = "pdc-form"; form.noValidate = true;
+    let html = "<h4>" + esc(f.title) + "</h4>";
+    f.fields.forEach(x => {
+      const req = x.r ? " required" : "";
+      let ctl;
+      if (x.t === "select") ctl = '<select name="'+x.n+'"'+req+'>' + x.o.map(o => '<option'+(pre[x.n]===o?" selected":"")+'>'+esc(o)+'</option>').join("") + "</select>";
+      else if (x.t === "textarea") ctl = '<textarea name="'+x.n+'" rows="2"></textarea>';
+      else ctl = '<input type="'+x.t+'" name="'+x.n+'"'+req+(x.p?' placeholder="'+esc(x.p)+'"':"")+'>';
+      html += "<label>" + esc(x.l) + ctl + "</label>";
+    });
+    html += '<label class="pdc-consent"><input type="checkbox" name="consent" required> <span>I agree to Pearl Dental Care contacting me about this request and storing my details as described in the <a href="'+CFG.siteBase+'/privacy-policy/" target="_blank" rel="noopener">privacy policy</a>.</span></label>';
+    html += '<p class="pdc-form-err" role="alert"></p><button type="submit">' + esc(f.submit) + "</button>";
+    form.innerHTML = html;
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const err = form.querySelector(".pdc-form-err");
+      const bad = [...form.querySelectorAll("[required]")].find(el => el.type === "checkbox" ? !el.checked : !el.value.trim());
+      const email = form.querySelector('input[type="email"]');
+      if (bad){ err.textContent = bad.type === "checkbox" ? "Please tick the consent box to continue." : "Please fill in all required fields."; bad.focus(); return; }
+      if (email && email.value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)){ err.textContent = "Enter an email address like name@example.com."; email.focus(); return; }
+      err.textContent = "";
+      const data = Object.fromEntries(new FormData(form).entries());
+      form.classList.add("done");
+      form.querySelector('button[type="submit"]').textContent = "Sent";
+      bot(f.done(data), { replies:[ {label:"Ask another question", go: askAnything}, {label:"Back to menu", go: () => showView("home")} ] });
+    });
+    msgs.appendChild(form);
+  }
+
+  /* ===== Flows ===== */
+  function startChat(){
+    showView("chat");
+    if (!chatStarted){ chatStarted = true; }
+    else { const hr = document.createElement("div"); hr.style.cssText="height:1px;background:var(--mist);margin:8px 0"; msgs.appendChild(hr); }
+    setTimeout(() => input.focus({preventScroll:true}), 300);
+  }
+
+  function askAnything(){
+    bot("Hi, I’m Pearl’s AI assistant. Ask me anything about our treatments, fees, team or opening hours, and I’ll point you to the right page.", {
+      replies:[
+        {label:"Dental implants", go:() => answer("dental implants")},
+        {label:"Fees & finance", go:() => answer("fees")},
+        {label:"Opening hours", go:() => answer("opening hours")},
+        {label:"Meet the team", go:() => answer("team")}
+      ]});
+  }
+
+  const FLOWS = {
+    ask(){ startChat(); askAnything(); },
+
+    enquire(){
+      startChat();
+      bot("Happy to help. Which treatment are you interested in?", {
+        replies: TREATMENTS.map(t => ({ label:t, go:() => treatmentAnswer(t) }))
+      });
+    },
+
+    consult(){
+      startChat();
+      bot("Our first consultation is free. You’ll talk through your goals and options with the dentist, with no obligation to go ahead. Choose a time that suits you on our booking page:", {
+        ctas:[ {label:"Book my free consultation", href: bookingLink("consultation")} ],
+        replies:[ {label:"I’d prefer a callback", go:() => bot("No problem. Leave your number and the team will call you.", {form:"callback"})},
+                  {label:"I have a question first", go: askAnything} ]
+      });
+    },
+
+    reschedule(){
+      startChat();
+      bot("I can pass a reschedule request to the team. Your current appointment stays booked until they confirm a new time.", { form:"reschedule" });
+    },
+
+    cancel(){
+      startChat();
+      bot("Before you cancel, would moving your appointment to another day work better?", {
+        replies:[ {label:"Yes, reschedule instead", go:() => bot("Great. Share a few details and the team will find a new time.", {form:"reschedule"})},
+                  {label:"No, cancel it", go:() => bot("Understood. Please give us as much notice as you can, as this helps other patients get seen sooner.", {form:"cancel"})} ]
+      });
+    },
+
+    emergency(){
+      startChat();
+      bot("I’m sorry you’re dealing with this. Which best describes what’s happening?", {
+        replies:[
+          {label:"Swelling affecting breathing or swallowing, or heavy bleeding", urgent:true, go: emergencySevere},
+          {label:"Severe toothache or facial swelling", go: emergencyUrgent},
+          {label:"Broken or knocked-out tooth", go: emergencyUrgent},
+          {label:"Lost filling, crown or other problem", go: emergencyUrgent}
+        ]});
+    }
+  };
+
+  function emergencySevere(){
+    bot("Please call 999 or go to your nearest A&E now. Swelling that affects breathing or swallowing, or bleeding that won’t stop, needs immediate medical attention.", {
+      ctas:[ {label:"Call 999", href:"tel:999", danger:true} ]
+    });
+  }
+  function emergencyUrgent(){
+    const wa = "https://wa.me/" + CFG.whatsapp + "?text=" + encodeURIComponent("Hi, I need an urgent dental appointment.");
+    if (isOpen()){
+      bot("Please call the practice now so the team can find you the earliest possible appointment.", {
+        ctas:[ {label:"Call " + CFG.phone, href:"tel:" + CFG.phone.replace(/\s/g,"")},
+               {label:"Message us on WhatsApp", href: wa, alt:true} ],
+        replies:[ {label:"Request an urgent callback", go:() => bot("Leave your number and the team will call you as soon as possible.", {form:"callback"})} ]
+      });
+    } else {
+      bot("The practice is closed right now. For urgent dental advice out of hours, call NHS 111. You can also message us on WhatsApp and the team will reply as soon as we reopen.", {
+        ctas:[ {label:"Call NHS 111", href:"tel:111", danger:true},
+               {label:"Message us on WhatsApp", href: wa, alt:true} ]
+      });
+    }
+  }
+
+  function treatmentAnswer(t){
+    const k = KB.find(x => x.title === t);
+    bot(k.text, { link:{title:k.title, url:k.url},
+      replies:[ {label:"Book a free consultation", go:() => FLOWS.consult()},
+                {label:"Have the team contact me", go:() => bot("Share your details and the team will be in touch.", {form:"enquiry", formData:{treatment:t}})},
+                {label:"Ask something else", go: askAnything} ]});
+  }
+
+  // Scripted "AI" for the demo. In the plugin, this is a REST call to the server, which searches the site and asks the AI model.
+  function answer(q){
+    const s = q.toLowerCase();
+    if (/(pain|swell|bleed|knocked|broken|emergency|urgent|abscess)/.test(s)) return FLOWS.emergency();
+    if (/(cancel)/.test(s)) return FLOWS.cancel();
+    if (/(reschedul|move my|change my appointment)/.test(s)) return FLOWS.reschedule();
+    if (/(book|appointment|consult)/.test(s)) return FLOWS.consult();
+    const hit = KB.find(k => k.keys.some(key => s.includes(key)));
+    if (hit){
+      const text = hit.text === "__HOURS__"
+        ? "Opening hours are listed on our Contact page (placeholder: Monday to Friday, 8:30am to 5:30pm, and Saturday mornings). " + hoursText()
+        : hit.text;
+      return bot(text, { link:{title:hit.title, url:hit.url},
+        replies:[ hit.book ? {label:"Book a free consultation", go:() => FLOWS.consult()} : {label:"Book a consultation", go:() => FLOWS.consult()},
+                  {label:"Ask something else", go:() => bot("Sure, what would you like to know?")} ]});
+    }
+    bot("I couldn’t find that on our website. Would you like the team to get back to you about it?", {
+      replies:[ {label:"Yes, contact me", go:() => bot("Share your details and the team will be in touch.", {form:"enquiry"})},
+                {label:"Ask something else", go:() => bot("Sure, what would you like to know?")} ]});
+  }
+
+  /* ===== Events ===== */
+  launcher.addEventListener("click", () => {
+    if (root.dataset.state === "closed") setState("pop");
+    else if (root.dataset.state === "pop" || root.dataset.state === "peek") openPanel("home");
+  });
+  root.addEventListener("click", e => {
+    const act = e.target.closest("[data-act]");
+    if (act){
+      if (act.dataset.act === "close") { setState("closed"); rememberDismiss(); }
+      if (act.dataset.act === "home") showView("home");
+      return;
+    }
+    const flow = e.target.closest("[data-flow]");
+    if (flow){ openPanel("chat"); FLOWS[flow.dataset.flow](); return; }
+    const ask = e.target.closest("[data-ask]");
+    if (ask){ openPanel("chat"); startChat(); addUser(ask.dataset.ask); answer(ask.dataset.ask); return; }
+    const book = e.target.closest("[data-book]");
+    if (book){ e.preventDefault(); window.open(bookingLink(book.dataset.book), "_blank", "noopener"); return; }
+    const tab = e.target.closest("[data-tab]");
+    if (tab){ showView(tab.dataset.tab); }
+  });
+  document.getElementById("pdcComposer").addEventListener("submit", e => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) return;
+    input.value = "";
+    addUser(q); answer(q);
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && root.dataset.state !== "closed") { setState("closed"); rememberDismiss(); } });
+  setInterval(refreshStatus, 60000);
+
+  /* ===== Auto-open quick actions on page load ===== */
+  // Once a visitor closes it, it stays closed for the rest of their visit (sessionStorage).
+  const AUTO_OPEN_DELAY = 800; // ms, admin setting in the plugin
+  function rememberDismiss(){ try { sessionStorage.setItem("pdcPopDismissed", "1"); } catch (e) {} }
+  function wasDismissed(){ try { return sessionStorage.getItem("pdcPopDismissed") === "1"; } catch (e) { return false; } }
+  if (!wasDismissed()){
+    setTimeout(() => { if (root.dataset.state === "closed") setState("peek"); }, AUTO_OPEN_DELAY);
+  }
+})();
+</script>
+</body>
+</html>

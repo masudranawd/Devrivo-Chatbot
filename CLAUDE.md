@@ -13,7 +13,7 @@ The user mixes Bengali and English; reply in the same style. Be concise and dire
 - AI only through core `wp_ai_client_prompt()` + Connectors. The plugin never stores or reads AI keys
 - Two modes: Guided (no AI) and AI, with automatic fallback to Guided on any AI failure
 - Search: MySQL FULLTEXT. Integrations: email + one generic webhook only
-- Visual/UX reference: the approved Pearl demo (`pearl-ai-assistant-demo.html`, kept outside the repo)
+- Visual/UX reference: docs/reference/pearl-ai-assistant-demo.html
 
 ## Architecture
 
