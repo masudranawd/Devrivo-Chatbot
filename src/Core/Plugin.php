@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Frontend\Assets;
+use DevRivo\Chatbot\Core\Frontend\Display;
 use DevRivo\Chatbot\Core\Presets\PresetRepository;
 use DevRivo\Chatbot\Core\Settings\Settings;
 
@@ -93,6 +95,10 @@ final class Plugin {
 		Activator::maybe_install();
 
 		( new Rest( $this->settings(), $this->presets() ) )->register();
+
+		if ( ! is_admin() ) {
+			( new Assets( new Display() ) )->register();
+		}
 
 		/**
 		 * Fires after DevRivo Chatbot has loaded its core services.

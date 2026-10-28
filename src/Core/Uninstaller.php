@@ -53,6 +53,7 @@ final class Uninstaller {
 			Activator::SCHEMA_OPTION,
 			Settings::OPTION,
 			Settings::DISPLAY_OPTION,
+			Settings::CONFIG_VERSION_OPTION,
 			PresetApplier::BACKUP_OPTION,
 			'devrivo_chatbot_delete_data_on_uninstall', // Legacy 0.1.0 option.
 		);

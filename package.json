@@ -1,6 +1,6 @@
 {
 	"name": "devrivo-chatbot",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"private": true,
 	"description": "A free, customisable AI assistant for any WordPress site.",
 	"license": "GPL-2.0-or-later",
@@ -22,8 +22,9 @@
 	"scripts": {
 		"build": "wp-scripts build --webpack-src-dir=assets-src",
 		"start": "wp-scripts start --webpack-src-dir=assets-src",
-		"lint:js": "wp-scripts lint-js ./assets-src",
-		"format": "wp-scripts format ./assets-src",
+		"lint:js": "wp-scripts lint-js ./assets-src ./tests/js",
+		"test:js": "wp-scripts test-unit-js",
+		"format": "wp-scripts format ./assets-src ./tests/js",
 		"check:size": "node scripts/check-size.mjs",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"env:start": "wp-env start",
@@ -34,6 +35,9 @@
 	},
 	"devDependencies": {
 		"@wordpress/env": "^12.0.0",
-		"@wordpress/scripts": "^37.0.0"
+		"@wordpress/scripts": "^37.0.0",
+		"jsdom": "^30.1.3",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5"
 	}
 }

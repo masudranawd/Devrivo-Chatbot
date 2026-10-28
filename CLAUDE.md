@@ -13,7 +13,7 @@ The user mixes Bengali and English; reply in the same style. Be concise and dire
 - AI only through core `wp_ai_client_prompt()` + Connectors. The plugin never stores or reads AI keys
 - Two modes: Guided (no AI) and AI, with automatic fallback to Guided on any AI failure
 - Search: MySQL FULLTEXT. Integrations: email + one generic webhook only
-- Visual/UX reference: the approved Pearl demo (`pearl-ai-assistant-demo.html`, kept outside the repo)
+- Visual/UX reference: docs/reference/pearl-ai-assistant-demo.html
 
 ## Architecture
 
@@ -60,4 +60,4 @@ The test database `devrivo_chatbot_tests` is wiped on every run; never point tes
 
 Phase 0 Foundations → v1.0 Core MVP + WordPress.org submission → v1.1 WooCommerce → v1.2 Listings + Quotes → v1.3 Webhooks + Analytics → v1.4 Multilingual + Triggers → v2.0 Visual flows, Abilities/MCP, human handoff.
 
-**Current: v1.0, Step 2 (Presets) done; next Step 3 (Widget delivery).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.
+**Current: v1.0, Step 3 (Widget delivery) done; next Step 4 (Action and Flow engines).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.

@@ -63,7 +63,7 @@ final class SettingsControllerTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertSame( 'no-store', $response->get_headers()['Cache-Control'] );
-		foreach ( array( 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'ai', 'privacy', 'integrations' ) as $section ) {
+		foreach ( array( 'display', 'general', 'appearance', 'behaviour', 'actions', 'offers', 'flows', 'forms', 'ai', 'privacy', 'integrations' ) as $section ) {
 			$this->assertArrayHasKey( $section, $data );
 		}
 		$this->assertInstanceOf( \stdClass::class, $data['flows'], 'Empty objects are returned as {}.' );

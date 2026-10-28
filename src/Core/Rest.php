@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Core\Frontend\ConfigController;
+use DevRivo\Chatbot\Core\Frontend\WidgetConfig;
 use DevRivo\Chatbot\Core\Presets\PresetApplier;
 use DevRivo\Chatbot\Core\Presets\PresetRepository;
 use DevRivo\Chatbot\Core\Presets\PresetsController;
@@ -47,6 +49,7 @@ final class Rest {
 	 */
 	public function register_routes(): void {
 		( new SettingsController( $this->settings ) )->register_routes();
+		( new ConfigController( new WidgetConfig( $this->settings ) ) )->register_routes();
 		( new PresetsController( $this->settings, $this->presets, new PresetApplier( $this->settings, $this->presets ) ) )->register_routes();
 	}
 }
