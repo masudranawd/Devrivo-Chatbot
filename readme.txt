@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.7.0 =
+* Knowledge index and site search: answers from your pages, posts and FAQs (works with Elementor).
+
 = 0.6.0 =
 * Enquiry forms with consent, leads storage, email notifications, privacy export/erase and retention.
 
@@ -131,6 +134,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.7.0 =
+Development version: adds the knowledge index (a new table, built in the background) and "Ask a question" answers from your site.
 
 = 0.6.0 =
 Development version: adds enquiry forms, a leads table (created automatically) and privacy tools.
