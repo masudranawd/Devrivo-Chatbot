@@ -60,17 +60,20 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 					'model'               => 'secret-model',
 					'custom_instructions' => 'SECRET INSTRUCTIONS',
 				),
-				'privacy'      => array( 'consent_text' => 'SECRET CONSENT' ),
+				'privacy'      => array(
+					'consent_text'   => 'I agree to the <a href="https://example.com/privacy">policy</a>.',
+					'retention_days' => 77,
+				),
 				'integrations' => array( 'notification_emails' => array( 'owner@example.com' ) ),
 				'flows'        => array( 'help' => self::flow() ),
-				'forms'        => array( 'secret-form' => array( 'fields' => array() ) ),
+				'forms'        => array( 'contact' => self::form() ),
 			)
 		);
 
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'chat_enabled', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'offers', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'chat_enabled', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
@@ -78,8 +81,10 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$this->assertSame( 'Talk to us', $data['display']['launcher_label'] );
 		$this->assertSame( 'Acme', $data['appearance']['brand_name'] );
 		$this->assertArrayHasKey( 'help', $data['flows'], 'Flows are public content.' );
+		$this->assertArrayHasKey( 'contact', $data['forms'], 'Forms are public content.' );
+		$this->assertSame( 'I agree to the policy.', $data['consent']['text'], 'Consent text only, as plain text.' );
 
-		foreach ( array( 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'forms', 'SECRET', 'secret-model', 'owner@example.com', 'secret-form', '"enabled"', '"rules"' ) as $needle ) {
+		foreach ( array( 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'retention_days', 'delete_data_on_uninstall', 'SECRET', 'secret-model', 'owner@example.com', '"enabled"', '"rules"', 'href' ) as $needle ) {
 			$this->assertStringNotContainsString( $needle, $json, $needle );
 		}
 	}
@@ -149,7 +154,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 				'actions' => array(
 					$this->action( 'link', array( 'url' => 'https://example.com/' ), 'ready' ),
 					$this->action( 'link', array( 'url' => '' ), 'incomplete' ),
-					$this->action( 'form', array( 'form' => 'contact' ), 'form' ),
+					$this->action( 'form', array( 'form' => '' ), 'form' ),
 					$this->action( 'ai_prompt', array( 'prompt' => 'Hi' ), 'ai' ),
 					$this->action( 'page_search', array(), 'search' ),
 					$this->action( 'call', array( 'phone' => '+1 555 0100' ), 'helper' ) + array( 'show_in_menu' => false ),
@@ -210,6 +215,41 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$this->settings()->flush();
 
 		$this->assertSame( array(), $this->request()->get_data()['actions'] );
+	}
+
+	public function test_forms_consent_and_urls(): void {
+		$this->settings()->update(
+			array(
+				'actions' => array( $this->action( 'form', array( 'form' => 'contact' ), 'contact' ) ),
+				'forms'   => array( 'contact' => self::form() ),
+			)
+		);
+
+		$data = $this->request()->get_data();
+
+		$this->assertSame( array( 'contact' ), array_column( $data['actions'], 'id' ) );
+		$this->assertSame( array( 'title', 'submit_label', 'success_message', 'fields' ), array_keys( $data['forms']['contact'] ) );
+		$this->assertSame(
+			array( 'id', 'type', 'label', 'required', 'placeholder', 'max_length', 'options' ),
+			array_keys( $data['forms']['contact']['fields'][0] )
+		);
+		$this->assertSame( 200, $data['forms']['contact']['fields'][0]['max_length'] );
+		$this->assertSame( array( 'text', 'policy_url', 'policy_label' ), array_keys( $data['consent'] ) );
+		$this->assertNotSame( '', $data['consent']['text'], 'Translated default.' );
+		$this->assertStringContainsString( 'devrivo-chatbot/v1/session', urldecode( $data['session_url'] ) );
+		$this->assertStringContainsString( 'devrivo-chatbot/v1/forms/{form}/submit', urldecode( $data['submit_url'] ) );
+	}
+
+	public function test_form_actions_need_their_form(): void {
+		$stored            = get_option( Settings::OPTION, array() );
+		$stored['actions'] = array( $this->action( 'form', array( 'form' => 'missing' ) ) );
+		update_option( Settings::OPTION, $stored, false );
+		$this->settings()->flush();
+
+		$data = $this->request()->get_data();
+
+		$this->assertSame( array(), $data['actions'] );
+		$this->assertInstanceOf( \stdClass::class, $data['forms'], 'Empty forms are {}.' );
 	}
 
 	public function test_hours_use_the_site_timezone_when_empty(): void {
@@ -375,6 +415,25 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 			'label'  => ucfirst( $type ),
 			'type'   => $type,
 			'config' => $config,
+		);
+	}
+
+	/**
+	 * A minimal valid form.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function form(): array {
+		return array(
+			'title'  => 'Contact',
+			'fields' => array(
+				array(
+					'id'       => 'email',
+					'type'     => 'email',
+					'label'    => 'Email',
+					'required' => true,
+				),
+			),
 		);
 	}
 

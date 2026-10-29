@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Data\Privacy;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -26,12 +28,11 @@ final class Deactivator {
 	}
 
 	/**
-	 * Cron hooks owned by the plugin. Add each one here when it ships
-	 * (retention purge, index batches).
+	 * Cron hooks owned by the plugin. Add each one here when it ships.
 	 *
 	 * @return string[]
 	 */
 	public static function cron_hooks(): array {
-		return array();
+		return array( Privacy::PURGE_HOOK );
 	}
 }

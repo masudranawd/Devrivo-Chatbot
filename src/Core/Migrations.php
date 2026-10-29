@@ -11,6 +11,8 @@ namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
+use DevRivo\Chatbot\Data\Leads;
+use DevRivo\Chatbot\Data\Privacy;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -59,6 +61,7 @@ final class Migrations {
 		return array(
 			1 => array( self::class, 'v1_baseline' ),
 			2 => array( self::class, 'v2_settings_and_capabilities' ),
+			3 => array( self::class, 'v3_leads' ),
 		);
 	}
 
@@ -92,5 +95,13 @@ final class Migrations {
 
 		update_option( Settings::OPTION, $stored, false );
 		delete_option( self::LEGACY_UNINSTALL_OPTION );
+	}
+
+	/**
+	 * 0.6.0: leads table and the daily retention purge.
+	 */
+	public static function v3_leads(): void {
+		Leads::create_table();
+		Privacy::schedule();
 	}
 }

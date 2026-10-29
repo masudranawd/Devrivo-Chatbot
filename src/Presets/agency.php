@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'agency',
-	'version'     => 1,
+	'version'     => 2,
 	'title'       => __( 'Agency', 'devrivo-chatbot' ),
 	'description' => __( 'For creative and digital agencies: services, estimates, case studies and discovery calls.', 'devrivo-chatbot' ),
 	'settings'    => array(
@@ -56,6 +56,88 @@ return array(
 				'type'   => 'form',
 				'urgent' => false,
 				'config' => array( 'form' => 'brief' ),
+			),
+		),
+		'forms'     => array(
+			'estimate' => array(
+				'title'           => __( 'Get an estimate', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Request an estimate', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks. We will review your project and send you an estimate.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Your name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'email',
+						'type'     => 'email',
+						'label'    => __( 'Email', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'    => 'company',
+						'type'  => 'text',
+						'label' => __( 'Company (optional)', 'devrivo-chatbot' ),
+					),
+					array(
+						'id'       => 'service',
+						'type'     => 'select',
+						'label'    => __( 'What do you need?', 'devrivo-chatbot' ),
+						'required' => true,
+						'options'  => array(
+							__( 'A new website', 'devrivo-chatbot' ),
+							__( 'A website redesign', 'devrivo-chatbot' ),
+							__( 'Branding', 'devrivo-chatbot' ),
+							__( 'Digital marketing', 'devrivo-chatbot' ),
+							__( 'Something else', 'devrivo-chatbot' ),
+						),
+					),
+					array(
+						'id'         => 'details',
+						'type'       => 'textarea',
+						'label'      => __( 'Tell us about your project', 'devrivo-chatbot' ),
+						'required'   => true,
+						'max_length' => 1500,
+					),
+				),
+			),
+			'brief'    => array(
+				'title'           => __( 'Send a project brief', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Send brief', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks for your brief. We will be in touch to talk it through.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Your name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'email',
+						'type'     => 'email',
+						'label'    => __( 'Email', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'    => 'company',
+						'type'  => 'text',
+						'label' => __( 'Company (optional)', 'devrivo-chatbot' ),
+					),
+					array(
+						'id'         => 'brief',
+						'type'       => 'textarea',
+						'label'      => __( 'Your brief', 'devrivo-chatbot' ),
+						'required'   => true,
+						'max_length' => 2000,
+					),
+					array(
+						'id'    => 'deadline',
+						'type'  => 'date',
+						'label' => __( 'Ideal launch date (optional)', 'devrivo-chatbot' ),
+					),
+				),
 			),
 		),
 		'ai'        => array(

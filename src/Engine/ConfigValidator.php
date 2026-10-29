@@ -16,13 +16,18 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Checks rules that span settings sections, after each section passed its
- * own schema: action configs per type, unique action IDs, flow and action
- * references, and opening hours.
+ * own schema: action configs per type, unique action IDs, flow, form and
+ * action references, form fields, and opening hours.
  *
  * Settings::update() only rejects errors the update introduces, so problems
  * already stored (e.g. from an older version) never block unrelated saves.
  */
 final class ConfigValidator {
+
+	/**
+	 * Field IDs the form endpoint uses itself.
+	 */
+	public const RESERVED_FIELDS = array( 'consent', 'website', 'token' );
 
 	/**
 	 * Validates full settings.
@@ -59,23 +64,26 @@ final class ConfigValidator {
 	public static function errors( array $settings ): array {
 		$actions = is_array( $settings['actions'] ?? null ) ? $settings['actions'] : array();
 		$flows   = is_array( $settings['flows'] ?? null ) ? $settings['flows'] : array();
+		$forms   = is_array( $settings['forms'] ?? null ) ? $settings['forms'] : array();
 		$hours   = $settings['behaviour']['hours'] ?? array();
 
 		return array_merge(
-			self::action_errors( $actions, $flows ),
+			self::action_errors( $actions, $flows, $forms ),
 			self::flow_errors( $flows, array_column( $actions, 'id' ) ),
+			self::form_errors( $forms ),
 			self::hours_errors( is_array( $hours ) ? $hours : array() )
 		);
 	}
 
 	/**
-	 * Action config per type, unique IDs and flow references.
+	 * Action config per type, unique IDs, and flow and form references.
 	 *
 	 * @param array<int, mixed>    $actions Actions.
-	 * @param array<string, mixed> $flows  Flows.
+	 * @param array<string, mixed> $flows   Flows.
+	 * @param array<string, mixed> $forms   Forms.
 	 * @return array<string, string>
 	 */
-	private static function action_errors( array $actions, array $flows ): array {
+	private static function action_errors( array $actions, array $flows, array $forms ): array {
 		$types  = ActionTypes::all();
 		$errors = array();
 		$seen   = array();
@@ -110,6 +118,51 @@ final class ConfigValidator {
 			if ( 'flow' === $action['type'] && '' !== $flow && ! isset( $flows[ $flow ] ) ) {
 				/* translators: %s: Flow ID. */
 				$errors[ "{$path}[config][flow]" ] = sprintf( __( 'The flow "%s" does not exist.', 'devrivo-chatbot' ), $flow );
+			}
+
+			$form = (string) ( $config['form'] ?? '' );
+			if ( 'form' === $action['type'] && '' !== $form && ! isset( $forms[ $form ] ) ) {
+				/* translators: %s: Form ID. */
+				$errors[ "{$path}[config][form]" ] = sprintf( __( 'The form "%s" does not exist.', 'devrivo-chatbot' ), $form );
+			}
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * Form fields: unique, not reserved, and options only (and always) for selects.
+	 *
+	 * @param array<string, mixed> $forms Forms.
+	 * @return array<string, string>
+	 */
+	private static function form_errors( array $forms ): array {
+		$errors = array();
+
+		foreach ( $forms as $form_id => $form ) {
+			$seen = array();
+			foreach ( (array) ( is_array( $form ) ? ( $form['fields'] ?? array() ) : array() ) as $index => $field ) {
+				if ( ! is_array( $field ) ) {
+					continue;
+				}
+				$path = "forms[{$form_id}][fields][{$index}]";
+				$id   = (string) ( $field['id'] ?? '' );
+
+				if ( in_array( $id, self::RESERVED_FIELDS, true ) ) {
+					/* translators: %s: Field ID. */
+					$errors[ "{$path}[id]" ] = sprintf( __( 'The field ID "%s" is reserved. Please choose another.', 'devrivo-chatbot' ), $id );
+				} elseif ( isset( $seen[ $id ] ) ) {
+					/* translators: %s: Field ID. */
+					$errors[ "{$path}[id]" ] = sprintf( __( 'Two fields use the ID "%s". Each ID must be unique.', 'devrivo-chatbot' ), $id );
+				}
+				$seen[ $id ] = true;
+
+				$has_options = array() !== (array) ( $field['options'] ?? array() );
+				if ( 'select' === ( $field['type'] ?? '' ) && ! $has_options ) {
+					$errors[ "{$path}[options]" ] = __( 'A dropdown needs at least one option.', 'devrivo-chatbot' );
+				} elseif ( 'select' !== ( $field['type'] ?? '' ) && $has_options ) {
+					$errors[ "{$path}[options]" ] = __( 'Only dropdown fields can have options.', 'devrivo-chatbot' );
+				}
 			}
 		}
 

@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'portfolio',
-	'version'     => 1,
+	'version'     => 2,
 	'title'       => __( 'Portfolio / Blog', 'devrivo-chatbot' ),
 	'description' => __( 'For freelancers, creators and writers: work, articles, hiring and newsletter.', 'devrivo-chatbot' ),
 	'settings'    => array(
@@ -56,6 +56,39 @@ return array(
 				'type'   => 'link',
 				'urgent' => false,
 				'config' => array( 'url' => '' ),
+			),
+		),
+		'forms'     => array(
+			'hire' => array(
+				'title'           => __( 'Work with me', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Send', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks for reaching out. I will get back to you soon.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Your name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'email',
+						'type'     => 'email',
+						'label'    => __( 'Email', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'         => 'project',
+						'type'       => 'textarea',
+						'label'      => __( 'Tell me about your project', 'devrivo-chatbot' ),
+						'required'   => true,
+						'max_length' => 1500,
+					),
+					array(
+						'id'    => 'timeline',
+						'type'  => 'text',
+						'label' => __( 'When would you like to start? (optional)', 'devrivo-chatbot' ),
+					),
+				),
 			),
 		),
 		'ai'        => array(

@@ -155,8 +155,12 @@ final class ActionTypes {
 				array( 'flow' ),
 				true
 			),
-			// Not supported yet: forms (Step 5), search (Step 6), AI (Step 7) and custom hooks.
-			'form'        => self::type( array( 'form' => self::text( 40, Schema::OPTIONAL_ID_PATTERN ) ), array( 'form' ) ),
+			'form'        => self::type(
+				array( 'form' => self::text( 40, Schema::OPTIONAL_ID_PATTERN ) ),
+				array( 'form' ),
+				true
+			),
+			// Not supported yet: search (Step 6), AI (Step 7) and custom hooks.
 			'page_search' => self::type(
 				array(
 					'post_types' => array(

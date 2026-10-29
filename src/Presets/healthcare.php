@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'healthcare',
-	'version'     => 2,
+	'version'     => 3,
 	'title'       => __( 'Healthcare', 'devrivo-chatbot' ),
 	'description' => __( 'For clinics and practices: treatments, consultations and appointment changes.', 'devrivo-chatbot' ),
 	'settings'    => array(
@@ -81,6 +81,14 @@ return array(
 				),
 				'show_in_menu' => false,
 			),
+			array(
+				'id'           => 'callback',
+				'label'        => __( 'Request a callback', 'devrivo-chatbot' ),
+				'type'         => 'form',
+				'urgent'       => false,
+				'config'       => array( 'form' => 'callback' ),
+				'show_in_menu' => false,
+			),
 		),
 		'flows'     => array(
 			'enquire' => array(
@@ -111,17 +119,17 @@ return array(
 					'new'     => array(
 						'type'    => 'action',
 						'text'    => __( 'The best first step is a consultation, where you can talk through your options with no obligation. Book a time that suits you, or give us a call.', 'devrivo-chatbot' ),
-						'actions' => array( 'book', 'call_practice' ),
+						'actions' => array( 'book', 'call_practice', 'callback' ),
 					),
 					'checkup' => array(
 						'type'    => 'action',
 						'text'    => __( 'We would be glad to see you. Book a time online, or call us and the team will find a slot.', 'devrivo-chatbot' ),
-						'actions' => array( 'book', 'call_practice' ),
+						'actions' => array( 'book', 'call_practice', 'callback' ),
 					),
 					'other'   => array(
 						'type'    => 'action',
 						'text'    => __( 'No problem. The team can help with most questions over the phone, or you can book a consultation to talk it through.', 'devrivo-chatbot' ),
-						'actions' => array( 'book', 'call_practice' ),
+						'actions' => array( 'book', 'call_practice', 'callback' ),
 					),
 				),
 			),
@@ -174,7 +182,113 @@ return array(
 					'closed'    => array(
 						'type'    => 'action',
 						'text'    => __( 'The practice may be closed right now. For urgent advice, please contact your local out-of-hours dental service. You can also message us on WhatsApp and the team will reply as soon as they can.', 'devrivo-chatbot' ),
-						'actions' => array( 'whatsapp_practice' ),
+						'actions' => array( 'whatsapp_practice', 'callback' ),
+					),
+				),
+			),
+		),
+		'forms'     => array(
+			'callback'   => array(
+				'title'           => __( 'Request a callback', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Request my callback', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks. The team will call you back as soon as they can.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Full name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'phone',
+						'type'     => 'tel',
+						'label'    => __( 'Phone', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'time',
+						'type'     => 'select',
+						'label'    => __( 'When should we call?', 'devrivo-chatbot' ),
+						'required' => true,
+						'options'  => array(
+							__( 'Morning', 'devrivo-chatbot' ),
+							__( 'Afternoon', 'devrivo-chatbot' ),
+							__( 'Evening', 'devrivo-chatbot' ),
+						),
+					),
+				),
+			),
+			'reschedule' => array(
+				'title'           => __( 'Reschedule request', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Send reschedule request', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks. We have passed your request to the team, who will contact you to confirm a new time. Your current appointment stays booked until then.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Full name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'phone',
+						'type'     => 'tel',
+						'label'    => __( 'Phone', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'    => 'email',
+						'type'  => 'email',
+						'label' => __( 'Email (optional)', 'devrivo-chatbot' ),
+					),
+					array(
+						'id'       => 'current',
+						'type'     => 'date',
+						'label'    => __( 'Current appointment date', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'          => 'preferred',
+						'type'        => 'text',
+						'label'       => __( 'Preferred new day or time', 'devrivo-chatbot' ),
+						'required'    => true,
+						'placeholder' => __( 'For example, any weekday afternoon', 'devrivo-chatbot' ),
+					),
+				),
+			),
+			'cancel'     => array(
+				'title'           => __( 'Cancellation request', 'devrivo-chatbot' ),
+				'submit_label'    => __( 'Send cancellation request', 'devrivo-chatbot' ),
+				'success_message' => __( 'Thanks. Your cancellation request has been sent, and the team will confirm it with you.', 'devrivo-chatbot' ),
+				'fields'          => array(
+					array(
+						'id'       => 'name',
+						'type'     => 'text',
+						'label'    => __( 'Full name', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'phone',
+						'type'     => 'tel',
+						'label'    => __( 'Phone', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'       => 'current',
+						'type'     => 'date',
+						'label'    => __( 'Appointment date', 'devrivo-chatbot' ),
+						'required' => true,
+					),
+					array(
+						'id'      => 'reason',
+						'type'    => 'select',
+						'label'   => __( 'Reason (optional)', 'devrivo-chatbot' ),
+						'options' => array(
+							__( 'Prefer not to say', 'devrivo-chatbot' ),
+							__( 'Unwell', 'devrivo-chatbot' ),
+							__( 'Schedule conflict', 'devrivo-chatbot' ),
+							__( 'No longer needed', 'devrivo-chatbot' ),
+							__( 'Other', 'devrivo-chatbot' ),
+						),
 					),
 				),
 			),
