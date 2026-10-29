@@ -208,6 +208,7 @@ describe( 'normalizeConfig', () => {
 				label: 'A',
 				type: 'link',
 				urgent: true,
+				showInMenu: true,
 				config: { url: '/x' },
 			},
 		] );

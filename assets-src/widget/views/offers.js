@@ -2,16 +2,18 @@
  * Offers view.
  */
 import { h, icon, ICONS } from '../lib/dom';
+import { actionControl } from './control';
 
 /**
  * Builds the Offers view.
  *
  * @param {Object} config   Normalised config.
- * @param {Object} handlers { onClose(), onAction( id ) }.
+ * @param {Object} handlers { onClose(), onAction( id ), target( action ) }.
  * @return {HTMLElement} View.
  */
 export function offersView( config, handlers ) {
 	const { i18n } = config;
+	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
 
 	const items = config.offers.map( ( offer ) =>
 		h(
@@ -24,13 +26,16 @@ export function offersView( config, handlers ) {
 				h( 'h3', { text: offer.title } ),
 				offer.text ? h( 'p', { text: offer.text } ) : null,
 				offer.action
-					? h( 'button', {
-							type: 'button',
-							class: 'dc-cta',
-							'data-action': offer.action,
-							text: offer.ctaLabel || i18n.offer_cta,
-							onClick: () => handlers.onAction( offer.action ),
-						} )
+					? actionControl(
+							handlers.target( byId.get( offer.action ) ),
+							{
+								class: 'dc-cta',
+								'data-action': offer.action,
+								text: offer.ctaLabel || i18n.offer_cta,
+								onClick: () =>
+									handlers.onAction( offer.action ),
+							}
+						)
 					: null,
 			]
 		)

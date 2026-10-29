@@ -37,11 +37,11 @@ export const baseCss = `
 .dc-launcher:hover{transform:translateY(-2px)}
 .dc-launcher-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dc-avatar{
-	position:relative;flex:none;width:46px;height:46px;border-radius:50%;overflow:hidden;
+	position:relative;flex:none;width:46px;height:46px;border-radius:50%;
 	background:radial-gradient(circle at 32% 28%,#fff 0 12%,transparent 13%),radial-gradient(circle at 35% 30%,#fff 0%,#f2eef4 30%,#dde8ec 55%,#c9d6da 75%,#afc0c4 100%);
 	box-shadow:inset -6px -8px 14px rgba(110,140,150,.35),inset 4px 4px 10px rgba(255,255,255,.7),0 0 0 3px rgba(255,255,255,.9);
 }
-.dc-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.dc-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}
 @media (max-width:520px){.dc{--dc-gap:16px}}
 @media (prefers-reduced-motion:reduce){.dc *{transition:none!important;animation:none!important}}
 `;
