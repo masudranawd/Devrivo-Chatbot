@@ -11,30 +11,20 @@ namespace DevRivo\Chatbot\Core\Frontend;
 
 use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
+use DevRivo\Chatbot\Engine\ActionTypes;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the config the widget fetches from the public endpoint.
  *
- * Built from an allowlist only: AI, privacy, integration, flow and form
- * settings never leave the server here, and each action type exposes only the
- * config keys the widget needs.
+ * Built from an allowlist only: AI, privacy, integration and form settings
+ * never leave the server here. Actions are sent only when the widget can run
+ * them (supported type, required values filled in, target flow present), with
+ * only the config keys of their type. Flows are public content; choices and
+ * buttons that point to actions that were left out are dropped.
  */
 final class WidgetConfig {
-
-	/**
-	 * Action config keys the widget may see, per action type. Other types expose none.
-	 */
-	private const ACTION_CONFIG_KEYS = array(
-		'link'      => array( 'url' ),
-		'call'      => array( 'phone' ),
-		'whatsapp'  => array( 'phone', 'message' ),
-		'email'     => array( 'email', 'subject' ),
-		'form'      => array( 'form' ),
-		'flow'      => array( 'flow' ),
-		'ai_prompt' => array( 'prompt' ),
-	);
 
 	/**
 	 * Constructor.
@@ -57,13 +47,21 @@ final class WidgetConfig {
 		$appearance = $all['appearance'];
 		$behaviour  = $all['behaviour'];
 
-		$actions = array_map( array( self::class, 'action' ), $all['actions'] );
+		$types   = ActionTypes::all();
+		$actions = array();
+		foreach ( $all['actions'] as $action ) {
+			$public = self::action( $action, $types, $all['flows'] );
+			if ( null !== $public ) {
+				$actions[] = $public;
+			}
+		}
 
 		/**
-		 * Filters the quick actions shown in the widget's popover and Home view.
+		 * Filters the quick actions sent to the widget (menu, popover, flows).
 		 *
-		 * Each action has id, label, type, urgent and config (only the keys the
-		 * widget needs for its type).
+		 * Each action has id, label, type, urgent, show_in_menu and config
+		 * (only the keys of its type). Actions with show_in_menu false are only
+		 * used inside flows.
 		 *
 		 * @since 1.0.0
 		 *
@@ -123,8 +121,15 @@ final class WidgetConfig {
 				'welcome'         => $behaviour['welcome'],
 				'auto_open'       => $behaviour['auto_open'],
 				'auto_open_delay' => $behaviour['auto_open_delay'],
+				'hours'           => array(
+					'timezone'    => '' !== $behaviour['hours']['timezone'] ? $behaviour['hours']['timezone'] : wp_timezone_string(),
+					'schedule'    => $behaviour['hours']['schedule'],
+					'show_status' => $behaviour['hours']['show_status'],
+				),
+				'utm'             => $behaviour['utm'],
 			),
 			'actions'      => $actions,
+			'flows'        => self::flows( $all['flows'], $action_ids ),
 			'offers'       => $offers,
 			'i18n'         => self::strings(),
 		);
@@ -144,25 +149,81 @@ final class WidgetConfig {
 	}
 
 	/**
-	 * One action, reduced to the public keys.
+	 * One action reduced to its public keys, or null when the widget can't run it
+	 * (unsupported type, empty required value, or a flow that doesn't exist).
 	 *
-	 * @param array<string, mixed> $action Stored action.
-	 * @return array<string, mixed>
+	 * @param array<string, mixed>                $action Stored action.
+	 * @param array<string, array<string, mixed>> $types  Action types.
+	 * @param array<string, mixed>                $flows  Stored flows.
+	 * @return array<string, mixed>|null
 	 */
-	private static function action( array $action ): array {
-		$config = array();
-		foreach ( self::ACTION_CONFIG_KEYS[ $action['type'] ] ?? array() as $key ) {
-			$value          = $action['config'][ $key ] ?? '';
-			$config[ $key ] = is_scalar( $value ) ? (string) $value : '';
+	private static function action( array $action, array $types, array $flows ): ?array {
+		// Stored list items only hold the keys that were sent.
+		$action = (array) Schema::with_defaults( $action, (array) ( Schema::section( 'actions' )['items'] ?? array() ) );
+
+		if ( ! ActionTypes::is_ready( $action, $types ) ) {
+			return null;
+		}
+		if ( 'flow' === $action['type'] && ! isset( $flows[ (string) ( $action['config']['flow'] ?? '' ) ] ) ) {
+			return null;
 		}
 
 		return array(
-			'id'     => $action['id'],
-			'label'  => $action['label'],
-			'type'   => $action['type'],
-			'urgent' => (bool) ( $action['urgent'] ?? false ),
-			'config' => $config,
+			'id'           => $action['id'],
+			'label'        => $action['label'],
+			'type'         => $action['type'],
+			'urgent'       => (bool) $action['urgent'],
+			'show_in_menu' => (bool) $action['show_in_menu'],
+			// Only the keys in the type's schema.
+			'config'       => (array) Schema::with_defaults( $action['config'], $types[ $action['type'] ]['schema'] ),
 		);
+	}
+
+	/**
+	 * Public flows. Choices and buttons pointing to actions that were left out
+	 * are dropped (a choice that also has a next step keeps it).
+	 *
+	 * @param array<string, mixed> $flows      Stored flows.
+	 * @param array<int, mixed>    $action_ids IDs of the actions sent to the widget.
+	 * @return array<string, mixed>
+	 */
+	private static function flows( array $flows, array $action_ids ): array {
+		$public = array();
+
+		foreach ( $flows as $flow_id => $flow ) {
+			$nodes = array();
+
+			foreach ( (array) $flow['nodes'] as $node_id => $node ) {
+				$choices = array();
+				foreach ( (array) $node['choices'] as $choice ) {
+					$choice = array(
+						'label'  => (string) $choice['label'],
+						'next'   => (string) ( $choice['next'] ?? '' ),
+						'action' => (string) ( $choice['action'] ?? '' ),
+						'urgent' => (bool) ( $choice['urgent'] ?? false ),
+					);
+					if ( '' !== $choice['action'] && ! in_array( $choice['action'], $action_ids, true ) ) {
+						if ( '' === $choice['next'] ) {
+							continue;
+						}
+						$choice['action'] = '';
+					}
+					$choices[] = $choice;
+				}
+
+				$node['choices']   = $choices;
+				$node['actions']   = array_values( array_intersect( (array) $node['actions'], $action_ids ) );
+				$nodes[ $node_id ] = $node;
+			}
+
+			$public[ $flow_id ] = array(
+				'title' => $flow['title'],
+				'start' => $flow['start'],
+				'nodes' => $nodes,
+			);
+		}
+
+		return $public;
 	}
 
 	/**
@@ -189,6 +250,9 @@ final class WidgetConfig {
 			'good_morning'   => __( 'Good morning', 'devrivo-chatbot' ),
 			'good_afternoon' => __( 'Good afternoon', 'devrivo-chatbot' ),
 			'good_evening'   => __( 'Good evening', 'devrivo-chatbot' ),
+			'back_to_menu'   => __( 'Back to menu', 'devrivo-chatbot' ),
+			'open_now'       => __( 'We are open now', 'devrivo-chatbot' ),
+			'closed_now'     => __( 'We are closed right now', 'devrivo-chatbot' ),
 		);
 	}
 }

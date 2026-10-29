@@ -32,7 +32,22 @@ final class Schema {
 	/**
 	 * Pattern for machine IDs (actions, flows, forms).
 	 */
-	private const ID_PATTERN = '^[a-z0-9_-]{1,40}$';
+	public const ID_PATTERN = '^[a-z0-9_-]{1,40}$';
+
+	/**
+	 * Pattern for an optional machine ID ('' or an ID).
+	 */
+	public const OPTIONAL_ID_PATTERN = '^([a-z0-9_-]{1,40})?$';
+
+	/**
+	 * Pattern for a 24-hour time (HH:MM).
+	 */
+	private const TIME_PATTERN = '^([01][0-9]|2[0-3]):[0-5][0-9]$';
+
+	/**
+	 * Day keys of the opening-hours schedule.
+	 */
+	public const DAYS = array( 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun' );
 
 	/**
 	 * Section schemas, keyed by section name.
@@ -47,7 +62,7 @@ final class Schema {
 			'behaviour'    => self::behaviour(),
 			'actions'      => self::actions(),
 			'offers'       => self::offers(),
-			'flows'        => self::free_form_map(),
+			'flows'        => self::flows(),
 			'forms'        => self::free_form_map(),
 			'ai'           => self::ai(),
 			'privacy'      => self::privacy(),
@@ -121,7 +136,39 @@ final class Schema {
 			return $filled;
 		}
 
+		// ID => item maps (flows, nodes): fill each item.
+		if ( 'object' === ( $schema['type'] ?? null ) && isset( $schema['patternProperties'] ) && is_array( $value ) ) {
+			foreach ( $value as $key => $item ) {
+				$child = self::child( $schema, (string) $key );
+				if ( array() !== $child ) {
+					$value[ $key ] = self::with_defaults( $item, $child );
+				}
+			}
+		}
+
 		return $value;
+	}
+
+	/**
+	 * Schema of an object's property: from properties, then patternProperties,
+	 * then additionalProperties. Empty when none applies.
+	 *
+	 * @param array<string, mixed> $schema Object schema.
+	 * @param string               $key    Property name.
+	 * @return array<string, mixed>
+	 */
+	public static function child( array $schema, string $key ): array {
+		if ( isset( $schema['properties'][ $key ] ) ) {
+			return $schema['properties'][ $key ];
+		}
+
+		foreach ( (array) ( $schema['patternProperties'] ?? array() ) as $pattern => $child ) {
+			if ( rest_validate_json_schema_pattern( (string) $pattern, $key ) ) {
+				return $child;
+			}
+		}
+
+		return is_array( $schema['additionalProperties'] ?? null ) ? $schema['additionalProperties'] : array();
 	}
 
 	/**
@@ -140,8 +187,7 @@ final class Schema {
 				return new \stdClass();
 			}
 			foreach ( $value as $key => $item ) {
-				$child         = $schema['properties'][ $key ] ?? ( is_array( $schema['additionalProperties'] ?? null ) ? $schema['additionalProperties'] : array() );
-				$value[ $key ] = self::to_json_shape( $item, $child );
+				$value[ $key ] = self::to_json_shape( $item, self::child( $schema, (string) $key ) );
 			}
 			return $value;
 		}
@@ -309,12 +355,62 @@ final class Schema {
 					'maximum' => 60000,
 					'default' => 800,
 				),
+				'hours'           => self::hours(),
+				// Add UTM parameters to quick-action links.
+				'utm'             => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
 			)
 		);
 	}
 
 	/**
-	 * Quick actions. Per-type "config" schemas are added with the Action engine (step 4).
+	 * Opening hours. Timezone '' means the site timezone; ConfigValidator checks
+	 * the timezone ID and that each opening is before its closing.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function hours(): array {
+		$day = array(
+			'type'     => 'array',
+			'maxItems' => 3,
+			'default'  => array(),
+			'items'    => self::object(
+				array(
+					'open'  => array(
+						'type'     => 'string',
+						'pattern'  => self::TIME_PATTERN,
+						'required' => true,
+					),
+					'close' => array(
+						'type'     => 'string',
+						'pattern'  => self::TIME_PATTERN,
+						'required' => true,
+					),
+				)
+			),
+		);
+
+		return self::object(
+			array(
+				'timezone'    => array(
+					'type'      => 'string',
+					'maxLength' => 64,
+					'default'   => '',
+				),
+				'schedule'    => self::object( array_fill_keys( self::DAYS, $day ) ),
+				'show_status' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Quick actions. Each type's "config" is checked by ConfigValidator against
+	 * the ActionTypes schema; unknown types keep their config as stored.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -325,30 +421,35 @@ final class Schema {
 			'default'  => array(),
 			'items'    => self::object(
 				array(
-					'id'     => array(
+					'id'           => array(
 						'type'     => 'string',
 						'pattern'  => self::ID_PATTERN,
 						'required' => true,
 					),
-					'label'  => array(
+					'label'        => array(
 						'type'      => 'string',
 						'minLength' => 1,
 						'maxLength' => 80,
 						'required'  => true,
 					),
-					'type'   => array(
+					'type'         => array(
 						'type'     => 'string',
 						'pattern'  => '^[a-z_]{1,40}$',
 						'required' => true,
 					),
-					'urgent' => array(
+					'urgent'       => array(
 						'type'    => 'boolean',
 						'default' => false,
 					),
-					'config' => array(
+					'config'       => array(
 						'type'                 => 'object',
 						'additionalProperties' => true,
 						'default'              => array(),
+					),
+					// False for helper actions used only inside flows.
+					'show_in_menu' => array(
+						'type'    => 'boolean',
+						'default' => true,
 					),
 				)
 			),
@@ -405,18 +506,127 @@ final class Schema {
 	}
 
 	/**
-	 * Map of ID => definition (flows, forms). Strict schemas arrive in steps 4 and 5;
-	 * until then nested strings are cleaned as plain text.
+	 * Guided conversation flows: flow ID => { title, start, nodes }.
+	 *
+	 * Map keys are checked with patternProperties (WordPress does not support
+	 * propertyNames). ConfigValidator checks that node and action references exist.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function flows(): array {
+		$node = self::object(
+			array(
+				'type'      => array(
+					'type'     => 'string',
+					'enum'     => array( 'message', 'choices', 'condition', 'action', 'end' ),
+					'required' => true,
+				),
+				'text'      => array(
+					'type'       => 'string',
+					'maxLength'  => 500,
+					'default'    => '',
+					'x-sanitize' => 'textarea',
+				),
+				'next'      => self::optional_id(),
+				'choices'   => array(
+					'type'     => 'array',
+					'maxItems' => 8,
+					'default'  => array(),
+					'items'    => self::object(
+						array(
+							'label'  => array(
+								'type'      => 'string',
+								'minLength' => 1,
+								'maxLength' => 60,
+								'required'  => true,
+							),
+							'next'   => self::optional_id(),
+							'action' => self::optional_id(),
+							'urgent' => array(
+								'type'    => 'boolean',
+								'default' => false,
+							),
+						)
+					),
+				),
+				'condition' => array(
+					'type'    => 'string',
+					'enum'    => array( '', 'open_now' ),
+					'default' => '',
+				),
+				'then'      => self::optional_id(),
+				'else'      => self::optional_id(),
+				// Used when the answer is unknown (no opening hours); falls back to "else".
+				'unknown'   => self::optional_id(),
+				// Action IDs shown as call-to-action buttons.
+				'actions'   => array(
+					'type'     => 'array',
+					'maxItems' => 3,
+					'default'  => array(),
+					'items'    => array(
+						'type'    => 'string',
+						'pattern' => self::ID_PATTERN,
+					),
+				),
+			)
+		);
+
+		$flow = self::object(
+			array(
+				'title' => array(
+					'type'      => 'string',
+					'maxLength' => 80,
+					'default'   => '',
+				),
+				'start' => array(
+					'type'     => 'string',
+					'pattern'  => self::ID_PATTERN,
+					'required' => true,
+				),
+				'nodes' => self::id_map( $node, 50 ),
+			)
+		);
+
+		return self::id_map( $flow, 30 );
+	}
+
+	/**
+	 * Map of ID => definition for forms. The strict schema arrives in Step 5.
 	 *
 	 * @return array<string, mixed>
 	 */
 	private static function free_form_map(): array {
+		return self::id_map( array( 'type' => 'object' ), 50 );
+	}
+
+	/**
+	 * Object keyed by machine IDs. WordPress does not support propertyNames, so
+	 * keys are checked with patternProperties plus additionalProperties false.
+	 *
+	 * @param array<string, mixed> $item      Item schema.
+	 * @param int                  $max_items Maximum number of items.
+	 * @return array<string, mixed>
+	 */
+	private static function id_map( array $item, int $max_items ): array {
 		return array(
 			'type'                 => 'object',
-			'propertyNames'        => array( 'pattern' => self::ID_PATTERN ),
-			'additionalProperties' => array( 'type' => 'object' ),
-			'maxProperties'        => 50,
+			'patternProperties'    => array( self::ID_PATTERN => $item ),
+			'additionalProperties' => false,
+			'maxProperties'        => $max_items,
 			'default'              => array(),
+		);
+	}
+
+	/**
+	 * Optional reference to an ID ('' for none).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function optional_id(): array {
+		return array(
+			'type'    => 'string',
+			'pattern' => self::OPTIONAL_ID_PATTERN,
+			'default' => '',
 		);
 	}
 

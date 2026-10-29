@@ -109,7 +109,18 @@ final class SettingsTest extends WP_UnitTestCase {
 			array(
 				'appearance' => array( 'brand_name' => '<script>x</script><b>Pearl</b>' ),
 				'privacy'    => array( 'consent_text' => 'I agree to the <a href="https://example.com/privacy" onclick="x()">policy</a><script>y</script>' ),
-				'flows'      => array( 'book' => array( 'title' => '<img src=x onerror=alert(1)>Book' ) ),
+				'flows'      => array(
+					'book' => array(
+						'title' => '<img src=x onerror=alert(1)>Book',
+						'start' => 'end',
+						'nodes' => array(
+							'end' => array(
+								'type' => 'end',
+								'text' => "<b>Thanks</b>\nSee you soon",
+							),
+						),
+					),
+				),
 			)
 		);
 
@@ -119,6 +130,7 @@ final class SettingsTest extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '<script', $consent );
 		$this->assertStringNotContainsString( 'onclick', $consent );
 		$this->assertSame( 'Book', $result['flows']['book']['title'] );
+		$this->assertSame( "Thanks\nSee you soon", $result['flows']['book']['nodes']['end']['text'], 'Node text keeps line breaks.' );
 	}
 
 	public function test_reset_one_section_and_unknown_section(): void {

@@ -62,13 +62,14 @@ final class PresetsTest extends WP_UnitTestCase {
 	public function test_every_built_in_preset_is_valid(): void {
 		foreach ( $this->presets->all() as $id => $preset ) {
 			$this->assertSame( $id, $preset['id'] );
-			$this->assertSame( 1, $preset['version'] );
+			$this->assertSame( 'healthcare' === $id ? 2 : 1, $preset['version'], $id );
 			$this->assertNotSame( '', $preset['title'] );
 			$this->assertNotSame( '', $preset['description'] );
 			$this->assertNotSame( '', $preset['settings']['behaviour']['welcome'], $id );
 			$this->assertNotSame( '', $preset['settings']['ai']['custom_instructions'], $id );
-			$this->assertGreaterThanOrEqual( 4, count( $preset['settings']['actions'] ), $id );
-			$this->assertLessThanOrEqual( 5, count( $preset['settings']['actions'] ), $id );
+			$menu = array_filter( $preset['settings']['actions'], static fn( array $a ): bool => $a['show_in_menu'] ?? true );
+			$this->assertGreaterThanOrEqual( 4, count( $menu ), $id );
+			$this->assertLessThanOrEqual( 5, count( $menu ), $id );
 			$this->assertEmpty( array_diff( array_keys( $preset['settings'] ), PresetRepository::SECTIONS ), $id );
 		}
 	}
@@ -79,6 +80,73 @@ final class PresetsTest extends WP_UnitTestCase {
 
 		$this->assertTrue( $actions['urgent']['urgent'] );
 		$this->assertDoesNotMatchRegularExpression( '/\d{3}/', (string) wp_json_encode( $preset ), 'No phone numbers in the preset.' );
+	}
+
+	public function test_healthcare_v2_flows(): void {
+		$settings = $this->presets->get( 'healthcare' )['settings'];
+		$actions  = array_column( $settings['actions'], null, 'id' );
+		$urgent   = $settings['flows']['urgent']['nodes'];
+
+		$this->assertSame( 'enquire', $actions['treatment']['config']['flow'] );
+		$this->assertSame( 'urgent', $actions['urgent']['config']['flow'] );
+		$this->assertFalse( $actions['call_practice']['show_in_menu'] );
+		$this->assertFalse( $actions['whatsapp_practice']['show_in_menu'] );
+		$this->assertSame( '', $actions['call_practice']['config']['phone'] );
+
+		$this->assertTrue( $urgent['triage']['choices'][0]['urgent'] );
+		$this->assertSame( 'emergency', $urgent['triage']['choices'][0]['next'] );
+		$this->assertStringContainsString( 'local emergency services', $urgent['emergency']['text'] );
+		$this->assertSame( 'open_now', $urgent['when']['condition'] );
+		$this->assertSame( array( 'call_practice' ), $urgent[ $urgent['when']['then'] ]['actions'] );
+		$this->assertSame( array( 'whatsapp_practice' ), $urgent[ $urgent['when']['else'] ]['actions'] );
+		$this->assertArrayNotHasKey( 'unknown', $urgent['when'], 'Unknown falls back to else.' );
+
+		foreach ( $settings['flows'] as $flow ) {
+			foreach ( $flow['nodes'] as $node ) {
+				foreach ( $node['choices'] ?? array() as $choice ) {
+					$this->assertLessThanOrEqual( 60, mb_strlen( $choice['label'] ), $choice['label'] );
+				}
+			}
+		}
+	}
+
+	public function test_preset_with_broken_references_is_skipped(): void {
+		$this->setExpectedIncorrectUsage( PresetRepository::class . '::all' );
+
+		$add = static function ( array $presets ): array {
+			$presets[] = array(
+				'id'       => 'broken',
+				'version'  => 1,
+				'title'    => 'Broken',
+				'settings' => array(
+					'actions' => array(
+						array(
+							'id'     => 'go',
+							'label'  => 'Go',
+							'type'   => 'flow',
+							'config' => array( 'flow' => 'missing' ),
+						),
+					),
+				),
+			);
+			return $presets;
+		};
+		add_filter( 'devrivo_chatbot_presets', $add );
+
+		$ids = array_keys( ( new PresetRepository() )->all() );
+		remove_filter( 'devrivo_chatbot_presets', $add );
+
+		$this->assertNotContains( 'broken', $ids );
+	}
+
+	public function test_replacing_with_a_preset_without_flows_clears_old_flows(): void {
+		$this->applier->apply( 'healthcare' );
+
+		$result = $this->applier->apply( 'portfolio' );
+
+		$this->assertIsArray( $result );
+		$this->assertContains( 'flows', $result['applied'] );
+		$this->assertSame( array(), $result['settings']['flows'] );
 	}
 
 	public function test_built_in_strings_are_translatable(): void {
@@ -121,7 +189,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$result = $this->applier->apply( 'business' );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( array( 'behaviour', 'actions', 'ai' ), $result['applied'] );
+		$this->assertSame( array( 'behaviour', 'actions', 'ai', 'flows' ), $result['applied'] );
 		$this->assertSame( array(), $result['skipped'] );
 
 		$after = ( new Settings() )->all();
