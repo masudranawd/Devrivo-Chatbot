@@ -1,5 +1,5 @@
 /**
- * Home view: greeting, welcome, "Ask a question" (when chat is on) and the
+ * Home view: greeting, welcome, "Ask a question" (when search or chat is on) and the
  * quick actions list, plus an optional open/closed status line.
  */
 import { h, icon, ICONS } from '../lib/dom';
@@ -44,20 +44,25 @@ export function homeView( config, handlers, status = null, now = new Date() ) {
 		} ),
 	] );
 
-	const ask = config.chatEnabled
-		? h(
-				'button',
-				{ type: 'button', class: 'dc-ask', onClick: handlers.onAsk },
-				[
-					avatar( config.avatarUrl, 'sm' ),
-					h( 'span', {}, [
-						h( 'strong', { text: i18n.ask } ),
-						h( 'span', { text: i18n.ask_hint } ),
-					] ),
-					icon( ICONS.send, 20 ),
-				]
-			)
-		: null;
+	const ask =
+		config.chatEnabled || config.searchEnabled
+			? h(
+					'button',
+					{
+						type: 'button',
+						class: 'dc-ask',
+						onClick: handlers.onAsk,
+					},
+					[
+						avatar( config.avatarUrl, 'sm' ),
+						h( 'span', {}, [
+							h( 'strong', { text: i18n.ask } ),
+							h( 'span', { text: i18n.ask_hint } ),
+						] ),
+						icon( ICONS.send, 20 ),
+					]
+				)
+			: null;
 
 	const list = menu.length
 		? h(
@@ -70,9 +75,7 @@ export function homeView( config, handlers, status = null, now = new Date() ) {
 						actionControl(
 							handlers.target( action ),
 							{
-								class: `dc-row${
-									action.urgent ? ' dc-urgent' : ''
-								}`,
+								class: `dc-row${ action.urgent ? ' dc-urgent' : '' }`,
 								'data-action': action.id,
 								onClick: () => handlers.onAction( action.id ),
 							},

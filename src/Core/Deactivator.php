@@ -10,6 +10,8 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Data\Privacy;
+use DevRivo\Chatbot\Knowledge\Indexer;
+use DevRivo\Chatbot\Knowledge\Rebuild;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,8 +24,9 @@ final class Deactivator {
 	 * Deactivation hook callback.
 	 */
 	public static function deactivate(): void {
+		// wp_unschedule_hook() also removes events with arguments (one per post).
 		foreach ( self::cron_hooks() as $hook ) {
-			wp_clear_scheduled_hook( $hook );
+			wp_unschedule_hook( $hook );
 		}
 	}
 
@@ -33,6 +36,6 @@ final class Deactivator {
 	 * @return string[]
 	 */
 	public static function cron_hooks(): array {
-		return array( Privacy::PURGE_HOOK );
+		return array( Privacy::PURGE_HOOK, Indexer::HOOK, Rebuild::HOOK );
 	}
 }

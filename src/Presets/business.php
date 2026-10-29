@@ -14,12 +14,13 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'business',
-	'version'     => 2,
+	'version'     => 3,
 	'title'       => __( 'Business', 'devrivo-chatbot' ),
 	'description' => __( 'For company and service websites: services, contact, careers and support.', 'devrivo-chatbot' ),
 	'settings'    => array(
 		'behaviour' => array(
-			'welcome' => __( 'Hi there! I can tell you about our services, help you get in touch or point you to the right page.', 'devrivo-chatbot' ),
+			'welcome'         => __( 'Hi there! I can tell you about our services, help you get in touch or point you to the right page.', 'devrivo-chatbot' ),
+			'fallback_action' => 'contact',
 		),
 		'actions'   => array(
 			array(
@@ -126,6 +127,25 @@ return array(
 						'required'   => true,
 						'max_length' => 1000,
 					),
+				),
+			),
+		),
+		'knowledge' => array(
+			'faqs' => array(
+				array(
+					'id'       => 'get-in-touch',
+					'question' => __( 'How can I get in touch?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Contact us" in the menu and send us your details. Our team will get back to you.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'support',
+					'question' => __( 'I need help with something. What should I do?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Get support" in the menu and tell us what you need help with. Our team will get back to you.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'services',
+					'question' => __( 'What services do you offer?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Our services are described on this website. Ask me about a service and I will point you to the right page.', 'devrivo-chatbot' ),
 				),
 			),
 		),

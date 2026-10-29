@@ -11,6 +11,7 @@ namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Core\Frontend\ConfigController;
 use DevRivo\Chatbot\Core\Frontend\FormsController;
+use DevRivo\Chatbot\Core\Frontend\SearchController;
 use DevRivo\Chatbot\Core\Frontend\SessionController;
 use DevRivo\Chatbot\Core\Frontend\WidgetConfig;
 use DevRivo\Chatbot\Core\Presets\PresetApplier;
@@ -21,6 +22,8 @@ use DevRivo\Chatbot\Core\Settings\SettingsController;
 use DevRivo\Chatbot\Data\Leads;
 use DevRivo\Chatbot\Data\LeadsController;
 use DevRivo\Chatbot\Integrations\Email;
+use DevRivo\Chatbot\Knowledge\Knowledge;
+use DevRivo\Chatbot\Knowledge\KnowledgeController;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -37,11 +40,12 @@ final class Rest {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings         $settings Settings repository.
-	 * @param PresetRepository $presets  Preset repository.
-	 * @param Leads            $leads    Leads repository.
+	 * @param Settings         $settings  Settings repository.
+	 * @param PresetRepository $presets   Preset repository.
+	 * @param Leads            $leads     Leads repository.
+	 * @param Knowledge        $knowledge Knowledge index.
 	 */
-	public function __construct( private Settings $settings, private PresetRepository $presets, private Leads $leads ) {}
+	public function __construct( private Settings $settings, private PresetRepository $presets, private Leads $leads, private Knowledge $knowledge ) {}
 
 	/**
 	 * Hooks route registration.
@@ -60,5 +64,7 @@ final class Rest {
 		( new SessionController() )->register_routes();
 		( new FormsController( $this->settings, $this->leads, new Email( $this->settings ) ) )->register_routes();
 		( new LeadsController( $this->leads ) )->register_routes();
+		( new SearchController( $this->knowledge ) )->register_routes();
+		( new KnowledgeController( $this->knowledge ) )->register_routes();
 	}
 }

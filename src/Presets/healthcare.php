@@ -15,12 +15,13 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'healthcare',
-	'version'     => 3,
+	'version'     => 4,
 	'title'       => __( 'Healthcare', 'devrivo-chatbot' ),
 	'description' => __( 'For clinics and practices: treatments, consultations and appointment changes.', 'devrivo-chatbot' ),
 	'settings'    => array(
 		'behaviour' => array(
-			'welcome' => __( 'Hello! I can help you learn about our treatments or manage an appointment. In an emergency, please contact your local emergency services.', 'devrivo-chatbot' ),
+			'welcome'         => __( 'Hello! I can help you learn about our treatments or manage an appointment. In an emergency, please contact your local emergency services.', 'devrivo-chatbot' ),
+			'fallback_action' => 'callback',
 		),
 		'actions'   => array(
 			array(
@@ -290,6 +291,30 @@ return array(
 							__( 'Other', 'devrivo-chatbot' ),
 						),
 					),
+				),
+			),
+		),
+		'knowledge' => array(
+			'faqs' => array(
+				array(
+					'id'       => 'emergency',
+					'question' => __( 'What should I do in an emergency?', 'devrivo-chatbot' ),
+					'answer'   => __( 'If you need urgent medical help, contact your local emergency services straight away. This chat cannot help in an emergency.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'medical-advice',
+					'question' => __( 'Can I get medical advice in this chat?', 'devrivo-chatbot' ),
+					'answer'   => __( 'No. This chat can help you find information on our website and get in touch with the practice, but it cannot give medical advice.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'reschedule',
+					'question' => __( 'How do I change my appointment?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Reschedule an appointment" in the menu and send us your details. The practice will contact you to arrange a new time.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'cancel',
+					'question' => __( 'How do I cancel my appointment?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Cancel an appointment" in the menu and send us your details. Please let us know as early as you can.', 'devrivo-chatbot' ),
 				),
 			),
 		),

@@ -24,8 +24,8 @@
 | `devrivo_chatbot_lead_created` | A lead was saved (after consent); the notification email has already been attempted | `int $lead_id`, `array $lead_data` | 1.0.0 | In dev |
 | `devrivo_chatbot_form_submitted` | Any widget form was submitted and saved (not for honeypot hits) | `string $form_id`, `array $data` (clean values by field ID) | 1.0.0 | In dev |
 | `devrivo_chatbot_custom_action` | A quick action of type `custom_hook` was triggered | `string $action_id`, `array $config`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_post_indexed` | A post was added or updated in the knowledge index | `int $post_id`, `int $chunk_count` | 1.0.0 | Planned |
-| `devrivo_chatbot_index_rebuilt` | A full index rebuild finished | `array $stats` | 1.0.0 | Planned |
+| `devrivo_chatbot_post_indexed` | A post was added to or updated in the knowledge index (not when unchanged or removed) | `int $post_id`, `int $chunk_count` | 1.0.0 | In dev |
+| `devrivo_chatbot_index_rebuilt` | A full index rebuild finished | `array $stats` (`posts`, `chunks`, `faqs`, `processed`, `removed`, `seconds`) | 1.0.0 | In dev |
 | `devrivo_chatbot_ai_fallback` | AI mode failed and Guided mode was used | `string $reason`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_data_purged` | The daily retention purge ran | `array $counts` (`leads`) | 1.0.0 | In dev |
 | `devrivo_chatbot_preset_applied` | A preset was applied to the settings (replace or merge) | `string $preset_id`, `string $mode`, `array $settings` | 1.0.0 | In dev |
@@ -64,11 +64,11 @@
 
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
-| `devrivo_chatbot_index_post_types` | Post types included in the index | `string[] $post_types` | 1.0.0 | Planned |
-| `devrivo_chatbot_should_index_post` | Whether a single post is indexed | `bool $index`, `WP_Post $post` | 1.0.0 | Planned |
-| `devrivo_chatbot_post_content` | Plain-text content extracted from a post before chunking | `string $content`, `WP_Post $post` | 1.0.0 | Planned |
-| `devrivo_chatbot_knowledge_sources` | Registered content sources | `array $sources` | 1.0.0 | Planned |
-| `devrivo_chatbot_search_results` | Results returned by knowledge search | `array $results`, `string $query` | 1.0.0 | Planned |
+| `devrivo_chatbot_index_post_types` | Post types included in the index (default: Settings → Knowledge; types that don't exist or aren't publicly viewable are always left out) | `string[] $post_types` | 1.0.0 | In dev |
+| `devrivo_chatbot_should_index_post` | Whether a single post is indexed (default: published, no password, indexed type, not excluded, not noindex in Yoast SEO or Rank Math) | `bool $index`, `WP_Post $post` | 1.0.0 | In dev |
+| `devrivo_chatbot_post_content` | Plain text extracted from a post (post_content plus Elementor widget text; paragraphs separated by blank lines) before chunking | `string $content`, `WP_Post $post` | 1.0.0 | In dev |
+| `devrivo_chatbot_knowledge_sources` | Knowledge sources (objects implementing `DevRivo\Chatbot\Knowledge\Sources\SourceInterface`; built in: posts and FAQs) | `array $sources` | 1.0.0 | In dev |
+| `devrivo_chatbot_search_results` | Results of a knowledge search (`type` page/faq, `title`, `url`, `excerpt`, `score`; public, so never add private data) | `array $results`, `string $query` (never stored) | 1.0.0 | In dev |
 
 ### Leads, security and privacy
 
@@ -77,7 +77,7 @@
 | `devrivo_chatbot_lead_data` | Lead before saving (`form_id`, `email`, `name`, `data`, `page_url`, `consent_text`) | `array $data`, `string $form_id` | 1.0.0 | In dev |
 | `devrivo_chatbot_notification_recipients` | Email recipients for a lead (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` | 1.0.0 | In dev |
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
-| `devrivo_chatbot_rate_limit` | Rate limits for public endpoints; both must pass: `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s), each `max` per `window` seconds | `array $limits`, `array $context` (`endpoint`, `form_id`) | 1.0.0 | In dev |
+| `devrivo_chatbot_rate_limit` | Rate limits for public endpoints, each `max` per `window` seconds. Form submits must pass both `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s); search uses `search` (per client IP, default 60 per 60 s) | `array $limits`, `array $context` (`endpoint` form/search, `form_id`) | 1.0.0 | In dev |
 | `devrivo_chatbot_client_ip` | Client IP used for rate limiting (default `REMOTE_ADDR`; forwarded headers are never trusted by default). Sites behind a trusted proxy can return e.g. `CF-Connecting-IP`; values that are not an IP address are ignored | `string $ip`, `WP_REST_Request $request` | 1.0.0 | In dev |
 | `devrivo_chatbot_retention_days` | Days to keep leads (Settings → Privacy) | `int $days` | 1.0.0 | In dev |
 

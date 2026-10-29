@@ -30,7 +30,7 @@ final class PresetRepository {
 	/**
 	 * Settings sections a preset may contain.
 	 */
-	public const SECTIONS = array( 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'ai' );
+	public const SECTIONS = array( 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'knowledge', 'ai' );
 
 	/**
 	 * Pattern for preset IDs.
@@ -44,12 +44,14 @@ final class PresetRepository {
 
 	/**
 	 * Site-specific keys a preset may never set, by section. Presets describe an
-	 * industry, not a site: turning AI on, choosing a model or token budget, and
-	 * branding stay the admin's decision and survive applying any preset.
+	 * industry, not a site: turning AI on, choosing a model or token budget,
+	 * branding, and which content is indexed stay the admin's decision and
+	 * survive applying any preset.
 	 */
 	private const FORBIDDEN_KEYS = array(
 		'ai'         => array( 'enabled', 'model', 'monthly_token_limit' ),
 		'appearance' => array( 'brand_name', 'avatar_id' ),
+		'knowledge'  => array( 'post_types', 'exclude_ids' ),
 	);
 
 	/**

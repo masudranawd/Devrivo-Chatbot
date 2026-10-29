@@ -261,9 +261,17 @@ final class Settings {
 			update_option( self::OPTION, $stored, false );
 		}
 
-		update_option( self::CONFIG_VERSION_OPTION, self::config_version() + 1, true );
+		self::bump_config_version();
 
 		$this->cache = null;
+	}
+
+	/**
+	 * Increments the config version, so cached widget configs refresh (also
+	 * used when something outside the settings changes the public config).
+	 */
+	public static function bump_config_version(): void {
+		update_option( self::CONFIG_VERSION_OPTION, self::config_version() + 1, true );
 	}
 
 	/**

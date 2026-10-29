@@ -17,7 +17,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Checks rules that span settings sections, after each section passed its
  * own schema: action configs per type, unique action IDs, flow, form and
- * action references, form fields, and opening hours.
+ * action references, form fields, FAQ IDs, the search fallback action and
+ * opening hours.
  *
  * Settings::update() only rejects errors the update introduces, so problems
  * already stored (e.g. from an older version) never block unrelated saves.
@@ -66,13 +67,54 @@ final class ConfigValidator {
 		$flows   = is_array( $settings['flows'] ?? null ) ? $settings['flows'] : array();
 		$forms   = is_array( $settings['forms'] ?? null ) ? $settings['forms'] : array();
 		$hours   = $settings['behaviour']['hours'] ?? array();
+		$faqs    = $settings['knowledge']['faqs'] ?? array();
 
 		return array_merge(
 			self::action_errors( $actions, $flows, $forms ),
 			self::flow_errors( $flows, array_column( $actions, 'id' ) ),
 			self::form_errors( $forms ),
+			self::faq_errors( is_array( $faqs ) ? $faqs : array() ),
+			self::fallback_errors( (string) ( $settings['behaviour']['fallback_action'] ?? '' ), array_column( $actions, 'id' ) ),
 			self::hours_errors( is_array( $hours ) ? $hours : array() )
 		);
+	}
+
+	/**
+	 * FAQ IDs must be unique.
+	 *
+	 * @param array<int, mixed> $faqs FAQs.
+	 * @return array<string, string>
+	 */
+	private static function faq_errors( array $faqs ): array {
+		$errors = array();
+		$seen   = array();
+
+		foreach ( $faqs as $index => $faq ) {
+			$id = is_array( $faq ) ? (string) ( $faq['id'] ?? '' ) : '';
+			if ( isset( $seen[ $id ] ) ) {
+				/* translators: %s: FAQ ID. */
+				$errors[ "knowledge[faqs][{$index}][id]" ] = sprintf( __( 'Two FAQs use the ID "%s". Each ID must be unique.', 'devrivo-chatbot' ), $id );
+			}
+			$seen[ $id ] = true;
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * The search fallback action must exist.
+	 *
+	 * @param string            $fallback   Action ID or ''.
+	 * @param array<int, mixed> $action_ids Existing action IDs.
+	 * @return array<string, string>
+	 */
+	private static function fallback_errors( string $fallback, array $action_ids ): array {
+		if ( '' === $fallback || in_array( $fallback, $action_ids, true ) ) {
+			return array();
+		}
+
+		/* translators: %s: Action ID. */
+		return array( 'behaviour[fallback_action]' => sprintf( __( 'The quick action "%s" does not exist.', 'devrivo-chatbot' ), $fallback ) );
 	}
 
 	/**

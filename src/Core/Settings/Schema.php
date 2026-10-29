@@ -64,6 +64,7 @@ final class Schema {
 			'offers'       => self::offers(),
 			'flows'        => self::flows(),
 			'forms'        => self::forms(),
+			'knowledge'    => self::knowledge(),
 			'ai'           => self::ai(),
 			'privacy'      => self::privacy(),
 			'integrations' => self::integrations(),
@@ -356,6 +357,8 @@ final class Schema {
 					'default' => 800,
 				),
 				'hours'           => self::hours(),
+				// Quick action offered when a search finds nothing ('' for none).
+				'fallback_action' => self::optional_id(),
 				// Add UTM parameters to quick-action links.
 				'utm'             => array(
 					'type'    => 'boolean',
@@ -674,6 +677,63 @@ final class Schema {
 		);
 
 		return self::id_map( $form, 50 );
+	}
+
+	/**
+	 * Knowledge index: which content is searchable, plus FAQs. Never public.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function knowledge(): array {
+		return self::object(
+			array(
+				'post_types'  => array(
+					'type'     => 'array',
+					'maxItems' => 20,
+					'default'  => array( 'page', 'post' ),
+					'items'    => array(
+						'type'    => 'string',
+						'pattern' => '^[a-z0-9_-]{1,20}$',
+					),
+				),
+				'exclude_ids' => array(
+					'type'     => 'array',
+					'maxItems' => 500,
+					'default'  => array(),
+					'items'    => array(
+						'type'    => 'integer',
+						'minimum' => 1,
+					),
+				),
+				'faqs'        => array(
+					'type'     => 'array',
+					'maxItems' => 100,
+					'default'  => array(),
+					'items'    => self::object(
+						array(
+							'id'       => array(
+								'type'     => 'string',
+								'pattern'  => self::ID_PATTERN,
+								'required' => true,
+							),
+							'question' => array(
+								'type'      => 'string',
+								'minLength' => 1,
+								'maxLength' => 200,
+								'required'  => true,
+							),
+							'answer'   => array(
+								'type'       => 'string',
+								'minLength'  => 1,
+								'maxLength'  => 2000,
+								'required'   => true,
+								'x-sanitize' => 'textarea',
+							),
+						)
+					),
+				),
+			)
+		);
 	}
 
 	/**

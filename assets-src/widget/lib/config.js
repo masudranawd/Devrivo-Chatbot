@@ -44,6 +44,12 @@ const I18N_KEYS = [
 	'rate_limited',
 	'new_tab',
 	'choose',
+	'ask_prompt',
+	'search_found',
+	'no_results',
+	'read_more',
+	'search_limited',
+	'search_error',
 ];
 
 const FIELD_TYPES = [ 'text', 'email', 'tel', 'textarea', 'select', 'date' ];
@@ -80,6 +86,8 @@ export function normalizeConfig( raw, boot ) {
 	const rawFlows = isObject( raw.flows ) ? raw.flows : {};
 	const forms = normalizeForms( raw.forms );
 	const consent = isObject( raw.consent ) ? raw.consent : {};
+	const searchUrl = safeUrl( raw.search_url, HTTP_PROTOCOLS );
+	const searchEnabled = raw.search_enabled === true && !! searchUrl;
 
 	const i18n = {};
 	for ( const key of I18N_KEYS ) {
@@ -98,7 +106,9 @@ export function normalizeConfig( raw, boot ) {
 					( isObject( a.config ) &&
 						isObject( rawFlows[ a.config.flow ] ) ) ) &&
 				( a.type !== 'form' ||
-					( isObject( a.config ) && !! forms[ a.config.form ] ) )
+					( isObject( a.config ) && !! forms[ a.config.form ] ) ) &&
+				// Search actions need something to search.
+				( a.type !== 'page_search' || searchEnabled )
 		)
 		.map( ( a ) => ( {
 			id: a.id,
@@ -123,6 +133,11 @@ export function normalizeConfig( raw, boot ) {
 
 	return {
 		chatEnabled: raw.chat_enabled === true,
+		searchEnabled,
+		searchUrl,
+		fallbackAction: actionIds.has( raw.fallback_action )
+			? raw.fallback_action
+			: '',
 		position: [ 'left', 'right' ].includes( display.position )
 			? display.position
 			: boot.position,

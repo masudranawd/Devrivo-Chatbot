@@ -13,6 +13,7 @@ import { actionTarget, openTarget } from './lib/actions';
 import { normalizeConfig } from './lib/config';
 import { h, icon, ICONS } from './lib/dom';
 import { createRunner } from './lib/flow';
+import { createSearcher } from './lib/search';
 import { createSubmitter } from './lib/submit';
 import { isOpenNow } from './lib/hours';
 import { rememberDismissed, wasDismissed } from './lib/storage';
@@ -70,7 +71,7 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open, typingTime( text ) }.
+ * @param {Object}      options { open, typingTime( text ), submitter, searcher }.
  * @return {Object} Controller: { state(), view(), destroy() }.
  */
 export function render( host, config, options = {} ) {
@@ -80,6 +81,8 @@ export function render( host, config, options = {} ) {
 
 	let state = 'closed';
 	let current = 'home';
+	// Post types the composer searches (set by page_search actions).
+	let searchTypes = [];
 
 	const target = ( action ) =>
 		action ? actionTarget( action, config.utm ) : null;
@@ -90,9 +93,9 @@ export function render( host, config, options = {} ) {
 		onClose: () => setState( 'closed' ),
 		onAction: ( id ) => runAction( id ),
 		target,
-		onAsk: () => showView( 'chat', true ),
+		onAsk: () => ask(),
 		onBack: () => showView( 'home', true ),
-		onSend: () => {},
+		onSend: ( text ) => conversation.search( text, searchTypes ),
 	};
 
 	const root = h( 'div', {
@@ -144,6 +147,8 @@ export function render( host, config, options = {} ) {
 					sessionUrl: config.sessionUrl,
 					submitUrl: config.submitUrl,
 				} ),
+			searcher:
+				options.searcher || createSearcher( { url: config.searchUrl } ),
 		}
 	);
 	const runner = createRunner( {
@@ -345,6 +350,11 @@ export function render( host, config, options = {} ) {
 			} )
 		);
 
+		if ( action.type === 'page_search' ) {
+			ask( action.config.post_types );
+			return;
+		}
+
 		if ( action.type === 'flow' || action.type === 'form' ) {
 			openConversation( ! fromFlow );
 			if ( action.type === 'flow' ) {
@@ -376,6 +386,23 @@ export function render( host, config, options = {} ) {
 		showView( 'chat' );
 		if ( state !== 'panel' ) {
 			setState( 'panel' );
+		}
+	}
+
+	/**
+	 * Opens the chat view for a question and focuses the composer.
+	 *
+	 * @param {unknown} types Only these post types (page_search), or all.
+	 */
+	function ask( types = [] ) {
+		searchTypes = Array.isArray( types )
+			? types.filter( ( t ) => typeof t === 'string' )
+			: [];
+		openConversation( true );
+		conversation.prompt( i18n.ask_prompt );
+		const input = views.chat.querySelector( '.dc-composer input' );
+		if ( input ) {
+			input.focus();
 		}
 	}
 

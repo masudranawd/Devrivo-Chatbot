@@ -59,29 +59,7 @@ final class Gate {
 			return $token;
 		}
 
-		$defaults = array(
-			'session' => array(
-				'max'    => 5,
-				'window' => 10 * MINUTE_IN_SECONDS,
-			),
-			'ip'      => array(
-				'max'    => 30,
-				'window' => 10 * MINUTE_IN_SECONDS,
-			),
-		);
-		/**
-		 * Filters the rate limits for a public endpoint. Both must pass: one
-		 * per session (token), so visitors sharing an IP address (offices,
-		 * mobile networks, sites behind a proxy) don't block each other, and a
-		 * looser one per client IP, which also catches clients that fetch a
-		 * new session token for every request.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array<string, array<string, int>> $limits  'session' and 'ip', each with 'max' requests per 'window' seconds.
-		 * @param array<string, mixed>              $context Context: endpoint ("form") and details such as form_id.
-		 */
-		$limits = (array) apply_filters( 'devrivo_chatbot_rate_limit', $defaults, $context );
+		$limits = self::limits( $context );
 
 		$endpoint = (string) ( $context['endpoint'] ?? 'default' );
 		$clients  = array(
@@ -90,12 +68,11 @@ final class Gate {
 		);
 		$checks   = array();
 		foreach ( $clients as $name => $id ) {
-			$limit    = (array) ( $limits[ $name ] ?? array() ) + $defaults[ $name ];
 			$checks[] = array(
 				$endpoint . ':' . $name,
 				RateLimiter::key( $id ),
-				max( 1, (int) $limit['max'] ),
-				max( 1, (int) $limit['window'] ),
+				$limits[ $name ]['max'],
+				$limits[ $name ]['window'],
 			);
 		}
 
@@ -121,6 +98,56 @@ final class Gate {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Rate limits for a public endpoint, filtered and cleaned.
+	 *
+	 * @param array<string, mixed> $context Context: endpoint ("form", "search") and endpoint details.
+	 * @return array<string, array{max: int, window: int}> session, ip and search limits.
+	 */
+	public static function limits( array $context ): array {
+		$defaults = array(
+			'session' => array(
+				'max'    => 5,
+				'window' => 10 * MINUTE_IN_SECONDS,
+			),
+			'ip'      => array(
+				'max'    => 30,
+				'window' => 10 * MINUTE_IN_SECONDS,
+			),
+			'search'  => array(
+				'max'    => 60,
+				'window' => MINUTE_IN_SECONDS,
+			),
+		);
+
+		/**
+		 * Filters the rate limits for public endpoints.
+		 *
+		 * Form submits must pass both 'session' (per session token, so visitors
+		 * sharing an IP address — offices, mobile networks, sites behind a
+		 * proxy — don't block each other) and the looser 'ip' (per client IP,
+		 * which also catches clients that fetch a new token for every request).
+		 * Search uses 'search', per client IP.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<string, array<string, int>> $limits  'session', 'ip' and 'search', each with 'max' requests per 'window' seconds.
+		 * @param array<string, mixed>              $context Context: endpoint ("form", "search") and details such as form_id.
+		 */
+		$filtered = (array) apply_filters( 'devrivo_chatbot_rate_limit', $defaults, $context );
+
+		$limits = array();
+		foreach ( $defaults as $name => $default ) {
+			$limit           = (array) ( $filtered[ $name ] ?? array() ) + $default;
+			$limits[ $name ] = array(
+				'max'    => max( 1, (int) $limit['max'] ),
+				'window' => max( 1, (int) $limit['window'] ),
+			);
+		}
+
+		return $limits;
 	}
 
 	/**

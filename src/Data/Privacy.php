@@ -68,10 +68,18 @@ final class Privacy {
 	 * Suggested text for Settings → Privacy. Runs on admin_init.
 	 */
 	public function add_policy_content(): void {
+		wp_add_privacy_policy_content( 'DevRivo Chatbot', $this->policy_text() );
+	}
+
+	/**
+	 * Suggested privacy policy text (HTML paragraphs).
+	 */
+	public function policy_text(): string {
 		$days = (int) ( $this->settings->get( 'privacy' )['retention_days'] ?? 180 );
 
 		$paragraphs = array(
 			__( 'This website uses DevRivo Chatbot, an assistant that helps visitors find information and get in touch.', 'devrivo-chatbot' ),
+			__( 'When you ask the assistant a question, it searches this website\'s own pages and FAQs for an answer. Your questions are not stored or logged by the assistant.', 'devrivo-chatbot' ),
 			__( 'When you send an enquiry through the assistant, we collect the details you enter in the form (for example your name, email address, phone number and message), the page you were on, and a record of the consent you gave. We use these details only to reply to your enquiry.', 'devrivo-chatbot' ),
 			__( 'Your enquiry is stored in this website\'s database and sent by email to our team. Your IP address is not stored with your enquiry.', 'devrivo-chatbot' ),
 			sprintf(
@@ -82,10 +90,7 @@ final class Privacy {
 			__( 'You can ask us for a copy of the personal data we hold about you, or ask us to delete it, using the contact details on this website.', 'devrivo-chatbot' ),
 		);
 
-		wp_add_privacy_policy_content(
-			'DevRivo Chatbot',
-			wp_kses_post( '<p>' . implode( '</p><p>', array_map( 'esc_html', $paragraphs ) ) . '</p>' )
-		);
+		return wp_kses_post( '<p>' . implode( '</p><p>', array_map( 'esc_html', $paragraphs ) ) . '</p>' );
 	}
 
 	/**
