@@ -1,7 +1,8 @@
 /**
  * Conversation view: bot and visitor bubbles, typing indicator, quick replies,
- * call-to-action buttons, inline forms and "Back to menu". Implements the
- * view the flow runner talks to. All text is set with textContent.
+ * call-to-action buttons, inline forms, search answers with link cards and
+ * "Back to menu". Implements the view the flow runner talks to. All text is
+ * set with textContent.
  */
 import { h } from '../lib/dom';
 import { actionControl } from './control';
@@ -19,11 +20,21 @@ import { formView } from './form';
  * @param {() => void}                  options.onBack     Back to the menu.
  * @param {(text: string) => number}    options.typingTime Typing indicator time in ms (0 = none).
  * @param {Object}                      options.submitter  Form submitter (lib/submit).
- * @return {Object} View for the flow runner, plus form() and separator().
+ * @param {Object}                      options.searcher   Searcher (lib/search).
+ * @return {Object} View for the flow runner, plus form(), search() and separator().
  */
 export function conversationView( log, options ) {
-	const { config, target, onAction, onCta, onBack, typingTime, submitter } =
-		options;
+	const {
+		config,
+		target,
+		onAction,
+		onCta,
+		onBack,
+		typingTime,
+		submitter,
+		searcher,
+	} = options;
+	const { i18n } = config;
 	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
 
 	const scroll = () => {
@@ -32,13 +43,15 @@ export function conversationView( log, options ) {
 
 	// Keyboard users keep their place: while focus is in the chat view (or the
 	// control they used just disappeared), it moves to the next control shown.
+	// Someone typing in the composer keeps typing.
 	const show = ( element, focus = true ) => {
 		const active = log.getRootNode().activeElement;
 		const focusIt =
 			focus &&
 			( ! active ||
 				! active.isConnected ||
-				( log.parentElement || log ).contains( active ) );
+				( ( log.parentElement || log ).contains( active ) &&
+					! active.closest( '.dc-composer' ) ) );
 		log.append( element );
 		scroll();
 		const first = element.querySelector(
@@ -63,24 +76,62 @@ export function conversationView( log, options ) {
 			onClick,
 		} );
 
+	const typing = () => {
+		const dots = h(
+			'div',
+			{ class: 'dc-msg dc-bot dc-typing', 'aria-hidden': 'true' },
+			[ h( 'i' ), h( 'i' ), h( 'i' ) ]
+		);
+		log.append( dots );
+		scroll();
+		return dots;
+	};
+
+	const say = ( text ) => {
+		log.append( h( 'div', { class: 'dc-msg dc-bot', text } ) );
+		scroll();
+	};
+
+	// "Read more on our site" cards; only http(s) links (checked by lib/search).
+	const cards = ( pages ) =>
+		h(
+			'div',
+			{ class: 'dc-links' },
+			pages.map( ( page ) =>
+				h(
+					'a',
+					{
+						class: 'dc-link',
+						href: page.url,
+						target: '_blank',
+						rel: 'noopener noreferrer',
+					},
+					[
+						h( 'small', { text: i18n.read_more } ),
+						h( 'strong', { text: page.title } ),
+						page.excerpt
+							? h( 'span', { text: page.excerpt } )
+							: null,
+						h( 'span', {
+							class: 'dc-sr',
+							text: ` ${ i18n.new_tab }`,
+						} ),
+					]
+				)
+			)
+		);
+
 	const view = {
 		async bot( text ) {
 			const wait = typingTime( text );
 			if ( wait > 0 ) {
-				const typing = h(
-					'div',
-					{ class: 'dc-msg dc-bot dc-typing', 'aria-hidden': 'true' },
-					[ h( 'i' ), h( 'i' ), h( 'i' ) ]
-				);
-				log.append( typing );
-				scroll();
+				const dots = typing();
 				await new Promise( ( resolve ) =>
 					window.setTimeout( resolve, wait )
 				);
-				typing.remove();
+				dots.remove();
 			}
-			log.append( h( 'div', { class: 'dc-msg dc-bot', text } ) );
-			scroll();
+			say( text );
 		},
 
 		user( text ) {
@@ -170,6 +221,72 @@ export function conversationView( log, options ) {
 					},
 				} )
 			);
+		},
+
+		/**
+		 * A bot line shown straight away (no typing indicator).
+		 *
+		 * @param {string} text Text.
+		 */
+		prompt( text ) {
+			clearReplies();
+			say( text );
+		},
+
+		/**
+		 * Answers a question from the site: the visitor's bubble, a typing
+		 * indicator while searching, then an FAQ answer and/or link cards, or
+		 * "not found" with the fallback action.
+		 *
+		 * @param {string}   query Question.
+		 * @param {string[]} types Only these post types.
+		 */
+		async search( query, types = [] ) {
+			view.user( query );
+			const dots = typing();
+			let result = null;
+			try {
+				result = await searcher.search( query, types );
+			} catch {
+				result = null;
+			}
+			dots.remove();
+
+			if ( ! result || ! result.ok ) {
+				say(
+					result && result.status === 429
+						? i18n.search_limited
+						: i18n.search_error
+				);
+				view.end();
+				return;
+			}
+
+			const [ first ] = result.results;
+			if ( ! first ) {
+				say( i18n.no_results );
+				const fallback = byId.get( config.fallbackAction );
+				show(
+					h( 'div', { class: 'dc-replies', role: 'group' }, [
+						fallback
+							? reply( fallback.label, fallback.urgent, () =>
+									onAction( fallback.id )
+								)
+							: null,
+						reply( i18n.back_to_menu, false, onBack ),
+					] )
+				);
+				return;
+			}
+
+			say( first.type === 'faq' ? first.excerpt : i18n.search_found );
+			const pages = result.results
+				.filter( ( r ) => r.type === 'page' )
+				.slice( 0, 3 );
+			if ( pages.length ) {
+				show( cards( pages ), false );
+			}
+			view.end();
 		},
 
 		separator() {

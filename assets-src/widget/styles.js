@@ -117,6 +117,12 @@ export const widgetCss = `
 .dc-ctas{display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:84%}
 .dc-ctas .dc-cta{background:var(--dc-primary);color:var(--dc-on-primary);border:0}
 .dc-ctas .dc-cta.is-urgent{background:var(--dc-danger);color:var(--dc-on-danger)}
+.dc-links{display:flex;flex-direction:column;gap:8px;max-width:84%}
+.dc-link{display:block;padding:11px 14px;background:var(--dc-card);border:1px solid var(--dc-line);border-radius:12px;color:var(--dc-ink);text-decoration:none;line-height:1.35}
+.dc-link:hover{border-color:var(--dc-primary)}
+.dc-link small{display:block;color:var(--dc-ink-soft);font-size:.76em}
+.dc-link strong{display:block;font-size:.9em}
+.dc-link span:not(.dc-sr){display:block;margin-block-start:4px;font-size:.82em;color:var(--dc-ink-soft);overflow-wrap:anywhere}
 .dc-sep{width:100%;height:1px;margin:8px 0;border:0;background:var(--dc-line)}
 .dc-dot{position:absolute;inset-inline-end:-1px;inset-block-end:-1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--dc-card);background:#2f8a5f}
 .dc-dot.is-closed{background:#8a9591}

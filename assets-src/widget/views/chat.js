@@ -1,6 +1,6 @@
 /**
- * Chat view: header, message list (used by flows) and, when chat is enabled,
- * the composer. Sending messages arrives in Steps 6-7.
+ * Chat view: header, message list (flows, forms, answers) and, when search or
+ * chat is enabled, the composer.
  */
 import { h, icon, ICONS } from '../lib/dom';
 import { avatar } from '../launcher';
@@ -9,7 +9,7 @@ import { avatar } from '../launcher';
  * Builds the chat view.
  *
  * @param {Object} config   Normalised config.
- * @param {Object} handlers { onBack(), onClose(), onSend( text ) }.
+ * @param {Object} handlers { onBack(), onClose(), onSend( text ): Promise }.
  * @return {HTMLElement} View.
  */
 export function chatView( config, handlers ) {
@@ -18,39 +18,47 @@ export function chatView( config, handlers ) {
 	const input = h( 'input', {
 		type: 'text',
 		name: 'message',
-		maxlength: '400',
+		// Search questions are short; AI chat (Step 7) allows longer messages.
+		maxlength: config.chatEnabled ? '400' : '100',
 		autocomplete: 'off',
 		placeholder: i18n.placeholder,
 		'aria-label': i18n.message_label,
 	} );
 
-	const composer = config.chatEnabled
-		? h(
-				'form',
-				{
-					class: 'dc-composer',
-					onSubmit: ( event ) => {
-						event.preventDefault();
-						const value = input.value.trim();
-						if ( value ) {
-							handlers.onSend( value );
-						}
-					},
-				},
-				[
-					input,
-					h(
-						'button',
-						{
-							type: 'submit',
-							class: 'dc-send',
-							'aria-label': i18n.send,
+	const send = h(
+		'button',
+		{
+			type: 'submit',
+			class: 'dc-send',
+			'aria-label': i18n.send,
+		},
+		icon( ICONS.send, 18, 'dc-flip' )
+	);
+
+	const composer =
+		config.chatEnabled || config.searchEnabled
+			? h(
+					'form',
+					{
+						class: 'dc-composer',
+						onSubmit: async ( event ) => {
+							event.preventDefault();
+							const value = input.value.trim();
+							if ( value.length < 2 || send.disabled ) {
+								return;
+							}
+							input.value = '';
+							send.disabled = true;
+							try {
+								await handlers.onSend( value );
+							} finally {
+								send.disabled = false;
+							}
 						},
-						icon( ICONS.send, 18, 'dc-flip' )
-					),
-				]
-			)
-		: null;
+					},
+					[ input, send ]
+				)
+			: null;
 
 	return h(
 		'div',
