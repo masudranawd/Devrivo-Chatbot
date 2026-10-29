@@ -291,7 +291,7 @@ describe( 'page_search actions', () => {
 } );
 
 describe( 'lib/search', () => {
-	it( 'builds the URL with q and types, without cookies', async () => {
+	it( 'POSTs q and types as JSON, never in the URL, without cookies', async () => {
 		const fetch = vi.fn( async () => ( {
 			ok: true,
 			status: 200,
@@ -305,13 +305,22 @@ describe( 'lib/search', () => {
 		await client.search( 'a & b', [ 'post', 'bad type!' ] );
 
 		const [ url, init ] = fetch.mock.calls[ 0 ];
-		const parsed = new URL( url );
-		expect( parsed.searchParams.get( 'rest_route' ) ).toBe(
-			'/devrivo-chatbot/v1/search'
+		expect( url ).toBe(
+			'https://example.com/?rest_route=/devrivo-chatbot/v1/search'
 		);
-		expect( parsed.searchParams.get( 'q' ) ).toBe( 'a & b' );
-		expect( parsed.searchParams.get( 'types' ) ).toBe( 'post' );
+		expect( init.method ).toBe( 'POST' );
+		expect( init.headers[ 'Content-Type' ] ).toBe( 'application/json' );
+		expect( JSON.parse( init.body ) ).toEqual( {
+			q: 'a & b',
+			types: 'post',
+		} );
 		expect( init.credentials ).toBe( 'omit' );
+		expect( init.cache ).toBe( 'no-store' );
+
+		await client.search( 'hours' );
+		expect( JSON.parse( fetch.mock.calls[ 1 ][ 1 ].body ) ).toEqual( {
+			q: 'hours',
+		} );
 	} );
 
 	it( 'keeps only safe, well-formed results', () => {

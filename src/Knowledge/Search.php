@@ -97,8 +97,8 @@ final class Search {
 		/**
 		 * Filters the results of a knowledge search.
 		 *
-		 * The response is public and may be cached for five minutes: never add
-		 * personal or private data.
+		 * The response is public (sent to any visitor): never add personal or
+		 * private data.
 		 *
 		 * @since 1.0.0
 		 *

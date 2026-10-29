@@ -141,8 +141,9 @@ final class FulltextSearchTest extends WP_UnitTestCase {
 	}
 
 	public function test_endpoint_uses_fulltext(): void {
-		$request = new WP_REST_Request( 'GET', '/devrivo-chatbot/v1/search' );
-		$request->set_query_params( array( 'q' => 'Implants?' ) );
+		$request = new WP_REST_Request( 'POST', '/devrivo-chatbot/v1/search' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( (string) wp_json_encode( array( 'q' => 'Implants?' ) ) );
 
 		$response = rest_get_server()->dispatch( $request );
 

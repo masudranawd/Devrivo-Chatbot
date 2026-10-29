@@ -14,10 +14,66 @@ use DevRivo\Chatbot\Knowledge\Index;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Every term must appear in the title or content. Rows are ranked by matches,
- * with title matches counting three times.
+ * Any term may match. Terms under three characters and common English words
+ * ("what", "are", "your", …) are ignored, so natural questions still find
+ * pages. Rows are ranked by the number of distinct terms they contain; a term
+ * in the title counts 3, a term only in the content counts 2.
  */
 final class LikeDriver implements SearchDriverInterface {
+
+	/**
+	 * Common English words that never help a search.
+	 */
+	public const STOPWORDS = array(
+		'about',
+		'and',
+		'any',
+		'are',
+		'can',
+		'could',
+		'did',
+		'does',
+		'for',
+		'from',
+		'get',
+		'had',
+		'has',
+		'have',
+		'her',
+		'his',
+		'how',
+		'its',
+		'not',
+		'our',
+		'ours',
+		'she',
+		'should',
+		'that',
+		'the',
+		'their',
+		'them',
+		'then',
+		'there',
+		'these',
+		'they',
+		'this',
+		'those',
+		'was',
+		'were',
+		'what',
+		'when',
+		'where',
+		'which',
+		'who',
+		'whom',
+		'why',
+		'will',
+		'with',
+		'would',
+		'you',
+		'your',
+		'yours',
+	);
 
 	/**
 	 * Matching rows, best first.
@@ -30,6 +86,7 @@ final class LikeDriver implements SearchDriverInterface {
 	public function search( array $terms, array $post_types, int $limit ): array {
 		global $wpdb;
 
+		$terms = self::useful( $terms );
 		if ( array() === $terms ) {
 			return array();
 		}
@@ -40,7 +97,7 @@ final class LikeDriver implements SearchDriverInterface {
 		$match_args = array();
 		foreach ( $terms as $term ) {
 			$like         = '%' . $wpdb->esc_like( $term ) . '%';
-			$score[]      = '(title LIKE %s) * 3 + (content LIKE %s)';
+			$score[]      = '(CASE WHEN title LIKE %s THEN 3 WHEN content LIKE %s THEN 2 ELSE 0 END)';
 			$score_args[] = $like;
 			$score_args[] = $like;
 			$match[]      = '(title LIKE %s OR content LIKE %s)';
@@ -48,7 +105,7 @@ final class LikeDriver implements SearchDriverInterface {
 			$match_args[] = $like;
 		}
 
-		$where = implode( ' AND ', $match );
+		$where = '(' . implode( ' OR ', $match ) . ')';
 		$args  = array_merge( $score_args, array( Index::table() ), $match_args );
 		if ( array() !== $post_types ) {
 			$where .= ' AND source = %s AND post_type IN (' . implode( ', ', array_fill( 0, count( $post_types ), '%s' ) ) . ')';
@@ -71,5 +128,20 @@ final class LikeDriver implements SearchDriverInterface {
 		// phpcs:enable
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Terms of three or more characters that aren't stopwords.
+	 *
+	 * @param string[] $terms Terms.
+	 * @return string[]
+	 */
+	public static function useful( array $terms ): array {
+		return array_values(
+			array_filter(
+				$terms,
+				static fn( string $term ): bool => mb_strlen( $term ) >= 3 && ! in_array( $term, self::STOPWORDS, true )
+			)
+		);
 	}
 }

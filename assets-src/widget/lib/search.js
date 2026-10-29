@@ -1,7 +1,7 @@
 /**
  * Knowledge search: asks the public search endpoint and validates the
- * results, so the views can trust their shape. Questions are never stored in
- * the browser.
+ * results, so the views can trust their shape. Questions go in a POST body
+ * (never in URLs) and are never stored in the browser.
  */
 import { HTTP_PROTOCOLS, safeUrl } from './url';
 
@@ -28,16 +28,21 @@ export function createSearcher( {
 		 * @return {Promise<{ok: boolean, status: number, results: Object[]}>} Result.
 		 */
 		async search( query, types = [] ) {
-			const target = new URL( url, window.location.href );
-			target.searchParams.set( 'q', query );
+			const body = { q: query };
 			const only = types.filter( ( type ) => TYPE.test( type ) );
 			if ( only.length ) {
-				target.searchParams.set( 'types', only.join( ',' ) );
+				body.types = only.join( ',' );
 			}
 
-			const response = await fetch( target.href, {
+			const response = await fetch( url, {
+				method: 'POST',
 				credentials: 'omit',
-				headers: { Accept: 'application/json' },
+				cache: 'no-store',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify( body ),
 			} );
 			let data = null;
 			try {

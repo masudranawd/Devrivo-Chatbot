@@ -79,9 +79,31 @@ final class KnowledgeSearchTest extends WP_UnitTestCase {
 		$this->assertSame( get_permalink( $content_hit ), $results[1]['url'] );
 		$this->assertSame( array( 'type', 'title', 'url', 'excerpt', 'score' ), array_keys( $results[0] ) );
 
-		// All terms must match with LIKE.
-		$this->assertSame( array( 'Visiting us' ), array_column( $this->search( 'free parking building' ), 'title' ) );
-		$this->assertSame( array(), $this->search( 'parking unicorns' ) );
+		// Any term may match; more distinct terms rank higher (title 3, content 2 per term).
+		$this->assertSame( array( 'Visiting us', 'Long page', 'Parking' ), array_column( $this->search( 'free parking building' ), 'title' ) );
+		$this->assertSame( array( 'Parking', 'Visiting us', 'Long page' ), array_column( $this->search( 'parking unicorns' ), 'title' ) );
+		$this->assertSame( array(), $this->search( 'unicorns' ) );
+	}
+
+	public function test_like_handles_natural_questions(): void {
+		$this->page( 'About us', 'What we do and who we are.' );
+		$this->page( 'Contact', 'Call us during opening hours.' );
+		$this->page( 'Opening hours', 'We are open on weekdays.' );
+		$this->page( 'Your visit', 'Bring your card.' );
+
+		$results = $this->search( 'What are your opening hours?' );
+
+		$this->assertSame( array( 'Opening hours', 'Contact' ), array_column( $results, 'title' ), 'Stopwords ("what", "are", "your") never match.' );
+		$this->assertSame( 6.0, $results[0]['score'], 'Two terms in the title.' );
+		$this->assertSame( 4.0, $results[1]['score'], 'Two terms in the content.' );
+
+		// Distinct terms matched beat a single title match.
+		$this->page( 'Hours', 'See below.' );
+		$this->assertSame( array( 'Opening hours', 'Contact', 'Hours' ), array_column( $this->search( 'opening hours' ), 'title' ) );
+
+		// Only stopwords or short words: nothing to search.
+		$this->assertSame( array(), $this->search( 'what are you up to' ) );
+		$this->assertSame( array( 'opening', 'hours' ), LikeDriver::useful( array( 'what', 'opening', 'on', 'hours', 'your' ) ) );
 	}
 
 	public function test_excerpt_is_plain_text_around_the_first_match(): void {
@@ -198,7 +220,7 @@ final class KnowledgeSearchTest extends WP_UnitTestCase {
 
 		$response = $this->get( array( 'q' => '  opening  ' ) );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertSame( 'public, max-age=300', $response->get_headers()['Cache-Control'] );
+		$this->assertSame( 'no-store', $response->get_headers()['Cache-Control'] );
 		$this->assertSame( array( 'Opening hours' ), array_column( $response->get_data()['results'], 'title' ) );
 
 		foreach ( array( 'a', ' a ', str_repeat( 'x', Search::MAX_LENGTH + 1 ), '' ) as $bad ) {
@@ -245,6 +267,17 @@ final class KnowledgeSearchTest extends WP_UnitTestCase {
 				)
 			)->get_status()
 		);
+
+		// POST only: questions never go in URLs.
+		$get = new WP_REST_Request( 'GET', '/devrivo-chatbot/v1/search' );
+		$get->set_query_params( array( 'q' => 'opening' ) );
+		$this->assertSame( 404, rest_get_server()->dispatch( $get )->get_status() );
+	}
+
+	public function test_privacy_text_says_questions_are_not_stored(): void {
+		$privacy = new \DevRivo\Chatbot\Data\Privacy( new \DevRivo\Chatbot\Data\Leads(), Plugin::instance()->settings() );
+
+		$this->assertStringContainsString( 'Your questions are not stored or logged by the assistant.', $privacy->policy_text() );
 	}
 
 	public function test_search_endpoint_is_rate_limited_per_ip(): void {
@@ -426,13 +459,14 @@ final class KnowledgeSearchTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * GET /search.
+	 * POST /search with a JSON body.
 	 *
-	 * @param array<string, string> $params Query parameters.
+	 * @param array<string, string> $params Body.
 	 */
 	private function get( array $params ): WP_REST_Response {
-		$request = new WP_REST_Request( 'GET', '/devrivo-chatbot/v1/search' );
-		$request->set_query_params( $params );
+		$request = new WP_REST_Request( 'POST', '/devrivo-chatbot/v1/search' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( (string) wp_json_encode( $params ) );
 
 		return rest_get_server()->dispatch( $request );
 	}

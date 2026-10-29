@@ -90,6 +90,8 @@ WooCommerce support (product search, product cards and order status) is planned 
 
 In your own WordPress database (leads in their own table). IP addresses are not stored with leads. You can set how long they are kept, and they are included in WordPress's personal data export and erase tools.
 
+Questions visitors ask in Guided mode are searched against your own pages and FAQs on your site. They are not stored or logged by the plugin, and they are sent in the request body, so they don't appear in URLs or server access logs.
+
 = My site is behind Cloudflare or a proxy. Does spam protection still work? =
 
 Yes. Form submissions are limited per visitor session first, so visitors who share an IP address don't block each other, with a looser limit per IP address on top. By default the plugin uses the connecting IP address and ignores headers such as X-Forwarded-For, because anyone can fake them. If all traffic reaches your server through a proxy you trust (for example Cloudflare, with your server only accepting Cloudflare's IP ranges), a developer can pass the real visitor IP with the `devrivo_chatbot_client_ip` filter.

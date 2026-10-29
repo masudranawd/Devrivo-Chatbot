@@ -68,7 +68,7 @@
 | `devrivo_chatbot_should_index_post` | Whether a single post is indexed (default: published, no password, indexed type, not excluded, not noindex in Yoast SEO or Rank Math) | `bool $index`, `WP_Post $post` | 1.0.0 | In dev |
 | `devrivo_chatbot_post_content` | Plain text extracted from a post (post_content plus Elementor widget text; paragraphs separated by blank lines) before chunking | `string $content`, `WP_Post $post` | 1.0.0 | In dev |
 | `devrivo_chatbot_knowledge_sources` | Knowledge sources (objects implementing `DevRivo\Chatbot\Knowledge\Sources\SourceInterface`; built in: posts and FAQs) | `array $sources` | 1.0.0 | In dev |
-| `devrivo_chatbot_search_results` | Results of a knowledge search (`type` page/faq, `title`, `url`, `excerpt`, `score`; public, cached for 5 minutes, so never add private data) | `array $results`, `string $query` (never stored) | 1.0.0 | In dev |
+| `devrivo_chatbot_search_results` | Results of a knowledge search (`type` page/faq, `title`, `url`, `excerpt`, `score`; public, so never add private data) | `array $results`, `string $query` (never stored) | 1.0.0 | In dev |
 
 ### Leads, security and privacy
 

@@ -23,11 +23,12 @@ use WP_REST_Server;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * GET devrivo-chatbot/v1/search?q=…[&types=post,page]
+ * POST devrivo-chatbot/v1/search with a JSON body { q, types? }.
  *
- * Read-only search over public site content. Rate limited per client IP;
- * successful responses may be cached by browsers and proxies for five
- * minutes. Queries are never stored or logged by the plugin.
+ * Read-only search over public site content. POST keeps visitors' questions
+ * out of URLs, so they don't end up in server, proxy or CDN access logs, and
+ * responses are never cached. Rate limited per client IP. The plugin never
+ * stores or logs questions.
  */
 final class SearchController extends WP_REST_Controller {
 
@@ -50,8 +51,8 @@ final class SearchController extends WP_REST_Controller {
 			'/' . $this->rest_base,
 			array(
 				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_items' ),
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
 					// Public and read-only: it searches content that is already public on the site.
 					'permission_callback' => '__return_true',
 					'args'                => array(
@@ -99,7 +100,7 @@ final class SearchController extends WP_REST_Controller {
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response
 	 */
-	public function get_items( $request ) {
+	public function create_item( $request ) {
 		$limit = Gate::limits( array( 'endpoint' => 'search' ) )['search'];
 		$retry = RateLimiter::hit( 'search:ip', RateLimiter::key( RateLimiter::client_ip( $request ) ), $limit['max'], $limit['window'] );
 
@@ -122,7 +123,7 @@ final class SearchController extends WP_REST_Controller {
 		$results = $this->knowledge->search()->run( trim( (string) $request['q'] ), $this->types( (string) $request['types'] ) );
 
 		$response = new WP_REST_Response( array( 'results' => $results ) );
-		$response->header( 'Cache-Control', 'public, max-age=300' );
+		$response->header( 'Cache-Control', 'no-store' );
 
 		return $response;
 	}
