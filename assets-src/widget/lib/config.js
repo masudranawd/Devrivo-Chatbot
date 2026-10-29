@@ -27,7 +27,26 @@ const I18N_KEYS = [
 	'back_to_menu',
 	'open_now',
 	'closed_now',
+	'required',
+	'submit',
+	'sending',
+	'sent',
+	'form_success',
+	'field_required',
+	'invalid_email',
+	'invalid_phone',
+	'invalid_date',
+	'invalid_option',
+	'too_long',
+	'consent_needed',
+	'form_error',
+	'network_error',
+	'rate_limited',
+	'new_tab',
+	'choose',
 ];
+
+const FIELD_TYPES = [ 'text', 'email', 'tel', 'textarea', 'select', 'date' ];
 
 const NODE_TYPES = [ 'message', 'choices', 'condition', 'action', 'end' ];
 const TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
@@ -59,6 +78,8 @@ export function normalizeConfig( raw, boot ) {
 	const behaviour = isObject( raw.behaviour ) ? raw.behaviour : {};
 	const rawI18n = isObject( raw.i18n ) ? raw.i18n : {};
 	const rawFlows = isObject( raw.flows ) ? raw.flows : {};
+	const forms = normalizeForms( raw.forms );
+	const consent = isObject( raw.consent ) ? raw.consent : {};
 
 	const i18n = {};
 	for ( const key of I18N_KEYS ) {
@@ -72,10 +93,12 @@ export function normalizeConfig( raw, boot ) {
 				text( a.id ) &&
 				text( a.label ) &&
 				text( a.type ) &&
-				// A flow action needs its flow.
+				// Flow and form actions need their flow or form.
 				( a.type !== 'flow' ||
 					( isObject( a.config ) &&
-						isObject( rawFlows[ a.config.flow ] ) ) )
+						isObject( rawFlows[ a.config.flow ] ) ) ) &&
+				( a.type !== 'form' ||
+					( isObject( a.config ) && !! forms[ a.config.form ] ) )
 		)
 		.map( ( a ) => ( {
 			id: a.id,
@@ -120,6 +143,14 @@ export function normalizeConfig( raw, boot ) {
 		utm: behaviour.utm !== false,
 		actions,
 		flows: normalizeFlows( rawFlows, actionIds ),
+		forms,
+		consent: {
+			text: text( consent.text ),
+			policyUrl: safeUrl( consent.policy_url, HTTP_PROTOCOLS ),
+			policyLabel: text( consent.policy_label ),
+		},
+		sessionUrl: safeUrl( raw.session_url, HTTP_PROTOCOLS ),
+		submitUrl: safeUrl( raw.submit_url, HTTP_PROTOCOLS ),
 		offers,
 		i18n,
 	};
@@ -206,6 +237,53 @@ function normalizeFlows( raw, actionIds ) {
 	}
 
 	return flows;
+}
+
+/**
+ * Forms. Null-prototype map, like flows.
+ *
+ * @param {unknown} raw Forms from the config.
+ * @return {Object} Forms keyed by ID.
+ */
+function normalizeForms( raw ) {
+	const forms = Object.create( null );
+
+	for ( const [ id, form ] of Object.entries( isObject( raw ) ? raw : {} ) ) {
+		if ( ! isObject( form ) || ! text( form.title ) ) {
+			continue;
+		}
+		const fields = list( form.fields )
+			.filter(
+				( f ) =>
+					isObject( f ) &&
+					text( f.id ) &&
+					text( f.label ) &&
+					FIELD_TYPES.includes( f.type )
+			)
+			.map( ( f ) => ( {
+				id: f.id,
+				type: f.type,
+				label: f.label,
+				required: f.required === true,
+				placeholder: text( f.placeholder ),
+				maxLength: clamp( f.max_length, 1, 2000, 200 ),
+				options: list( f.options ).filter(
+					( o ) => typeof o === 'string'
+				),
+			} ) );
+
+		if ( fields.length ) {
+			forms[ id ] = {
+				id,
+				title: form.title,
+				submitLabel: text( form.submit_label ),
+				successMessage: text( form.success_message ),
+				fields,
+			};
+		}
+	}
+
+	return forms;
 }
 
 /**

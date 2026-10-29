@@ -121,6 +121,28 @@ export const widgetCss = `
 .dc-dot{position:absolute;inset-inline-end:-1px;inset-block-end:-1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--dc-card);background:#2f8a5f}
 .dc-dot.is-closed{background:#8a9591}
 .dc-status{margin:0;padding:2px 8px;font-size:.82em;color:var(--dc-ink-soft);text-align:center}
+
+/* Inline forms */
+.dc-form{display:flex;flex-direction:column;gap:10px;width:100%;padding:14px;border-radius:14px;background:var(--dc-card);color:var(--dc-ink);box-shadow:0 1px 4px rgba(20,40,35,.06)}
+.dc-form h3{margin:0;font-size:.95em;line-height:1.3}
+.dc-field{display:flex;flex-direction:column;gap:4px}
+.dc-field label{font-size:.82em;font-weight:600;color:var(--dc-ink-soft)}
+.dc-field input,.dc-field select,.dc-field textarea{width:100%;font:inherit;font-size:.92em;color:var(--dc-ink);background:var(--dc-surface);border:1px solid var(--dc-line);border-radius:10px;padding:9px 11px}
+.dc-field textarea{resize:vertical;min-height:4.5em}
+.dc-field input:focus-visible,.dc-field select:focus-visible,.dc-field textarea:focus-visible{outline:2px solid var(--dc-focus);outline-offset:0;border-color:transparent}
+.dc-field [aria-invalid]{border-color:var(--dc-danger)}
+.dc-consent{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px}
+.dc-consent input{width:auto;margin-block-start:3px;flex:none}
+.dc-consent label{font-weight:500;line-height:1.4}
+.dc-consent a{color:inherit;text-decoration:underline}
+.dc-consent .dc-error{flex-basis:100%}
+.dc-req{color:var(--dc-danger)}
+.dc-error,.dc-form-status{margin:0;font-size:.8em;color:var(--dc-danger)}
+.dc-form-status:empty{display:none}
+.dc-submit{border:0;border-radius:10px;padding:11px;background:var(--dc-primary);color:var(--dc-on-primary);font-weight:700;font-size:.92em}
+.dc-submit:disabled{opacity:.7;cursor:default}
+.dc-form.is-done{opacity:.6}
+.dc-sr,.dc-hp{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .dc-composer{display:flex;gap:8px;align-items:center;padding:10px 12px 12px;background:var(--dc-card);border-block-start:1px solid var(--dc-line)}
 .dc-composer input{flex:1;min-width:0;font:inherit;font-size:.95em;border:1px solid var(--dc-line);background:var(--dc-surface);color:var(--dc-ink);border-radius:999px;padding:11px 16px}
 .dc-composer input:focus-visible{outline:2px solid var(--dc-focus);border-color:transparent}

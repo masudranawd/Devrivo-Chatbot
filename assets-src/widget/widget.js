@@ -13,6 +13,7 @@ import { actionTarget, openTarget } from './lib/actions';
 import { normalizeConfig } from './lib/config';
 import { h, icon, ICONS } from './lib/dom';
 import { createRunner } from './lib/flow';
+import { createSubmitter } from './lib/submit';
 import { isOpenNow } from './lib/hours';
 import { rememberDismissed, wasDismissed } from './lib/storage';
 import { widgetCss } from './styles';
@@ -137,6 +138,12 @@ export function render( host, config, options = {} ) {
 			onCta: ( id ) => runAction( id ),
 			onBack: () => showView( 'home', true ),
 			typingTime: options.typingTime || typingTime,
+			submitter:
+				options.submitter ||
+				createSubmitter( {
+					sessionUrl: config.sessionUrl,
+					submitUrl: config.submitUrl,
+				} ),
 		}
 	);
 	const runner = createRunner( {
@@ -338,8 +345,13 @@ export function render( host, config, options = {} ) {
 			} )
 		);
 
-		if ( action.type === 'flow' ) {
-			startFlow( action.config.flow, ! fromFlow );
+		if ( action.type === 'flow' || action.type === 'form' ) {
+			openConversation( ! fromFlow );
+			if ( action.type === 'flow' ) {
+				runner.start( action.config.flow, ! fromFlow );
+			} else {
+				conversation.form( action.config.form );
+			}
 			return;
 		}
 
@@ -353,12 +365,11 @@ export function render( host, config, options = {} ) {
 	}
 
 	/**
-	 * Opens the chat view and runs a flow.
+	 * Opens the chat view for a flow or a form.
 	 *
-	 * @param {string}  flowId Flow ID.
-	 * @param {boolean} fresh  Started from the menu (a new conversation).
+	 * @param {boolean} fresh Started from the menu (a new conversation).
 	 */
-	function startFlow( flowId, fresh ) {
+	function openConversation( fresh ) {
 		if ( fresh ) {
 			conversation.separator();
 		}
@@ -366,7 +377,6 @@ export function render( host, config, options = {} ) {
 		if ( state !== 'panel' ) {
 			setState( 'panel' );
 		}
-		runner.start( flowId, fresh );
 	}
 
 	/**
