@@ -1,6 +1,6 @@
 /**
- * Chat view shell: header, messages area and composer. Only built when chat
- * is enabled; sending messages arrives in Steps 6-7.
+ * Chat view: header, message list (used by flows) and, when chat is enabled,
+ * the composer. Sending messages arrives in Steps 6-7.
  */
 import { h, icon, ICONS } from '../lib/dom';
 import { avatar } from '../launcher';
@@ -24,27 +24,33 @@ export function chatView( config, handlers ) {
 		'aria-label': i18n.message_label,
 	} );
 
-	const composer = h(
-		'form',
-		{
-			class: 'dc-composer',
-			onSubmit: ( event ) => {
-				event.preventDefault();
-				const value = input.value.trim();
-				if ( value ) {
-					handlers.onSend( value );
-				}
-			},
-		},
-		[
-			input,
-			h(
-				'button',
-				{ type: 'submit', class: 'dc-send', 'aria-label': i18n.send },
-				icon( ICONS.send, 18, 'dc-flip' )
-			),
-		]
-	);
+	const composer = config.chatEnabled
+		? h(
+				'form',
+				{
+					class: 'dc-composer',
+					onSubmit: ( event ) => {
+						event.preventDefault();
+						const value = input.value.trim();
+						if ( value ) {
+							handlers.onSend( value );
+						}
+					},
+				},
+				[
+					input,
+					h(
+						'button',
+						{
+							type: 'submit',
+							class: 'dc-send',
+							'aria-label': i18n.send,
+						},
+						icon( ICONS.send, 18, 'dc-flip' )
+					),
+				]
+			)
+		: null;
 
 	return h(
 		'div',

@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Core\Frontend;
 
 use DevRivo\Chatbot\Core\Rest;
+use DevRivo\Chatbot\Core\Settings\Schema;
 use WP_REST_Controller;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -117,7 +118,7 @@ final class ConfigController extends WP_REST_Controller {
 	}
 
 	/**
-	 * JSON shapes: action configs are always objects.
+	 * JSON shapes: action configs, flows and nodes are always objects.
 	 *
 	 * @param array<string, mixed> $data Config.
 	 * @return array<string, mixed>
@@ -129,6 +130,10 @@ final class ConfigController extends WP_REST_Controller {
 					$data['actions'][ $index ]['config'] = (object) ( $action['config'] ?? array() );
 				}
 			}
+		}
+
+		if ( isset( $data['flows'] ) && is_array( $data['flows'] ) ) {
+			$data['flows'] = Schema::to_json_shape( $data['flows'], (array) Schema::section( 'flows' ) );
 		}
 
 		return $data;

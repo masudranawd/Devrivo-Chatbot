@@ -86,9 +86,16 @@ final class PresetApplier {
 				continue;
 			}
 
-			// Settings::update() merges objects over current values and replaces lists.
+			// Settings::update() merges objects over current values and replaces lists and ID maps.
 			$changes[ $section ] = $value;
 			$applied[]           = $section;
+		}
+
+		// Replacing the actions also replaces the flows that point to them, so
+		// flows from an earlier preset can't refer to actions that are gone.
+		if ( 'replace' === $mode && isset( $changes['actions'] ) && ! isset( $changes['flows'] ) ) {
+			$changes['flows'] = array();
+			$applied[]        = 'flows';
 		}
 
 		$changes['general'] = array(

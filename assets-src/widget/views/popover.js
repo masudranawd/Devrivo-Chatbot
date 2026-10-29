@@ -2,12 +2,13 @@
  * Quick-action popover above the launcher.
  */
 import { h, icon, ICONS } from '../lib/dom';
+import { actionControl } from './control';
 
 /**
  * Builds the popover.
  *
  * @param {Object} config   Normalised config.
- * @param {Object} handlers { onClose(), onAction( id ) }.
+ * @param {Object} handlers { onClose(), onAction( id ), target( action ) }.
  * @return {HTMLElement} Popover (role="menu").
  */
 export function popoverView( config, handlers ) {
@@ -23,16 +24,17 @@ export function popoverView( config, handlers ) {
 		icon( ICONS.close, 18 )
 	);
 
-	const chips = config.actions.map( ( action ) =>
-		h( 'button', {
-			type: 'button',
-			class: `dc-chip${ action.urgent ? ' dc-urgent' : '' }`,
-			role: 'menuitem',
-			'data-action': action.id,
-			text: action.label,
-			onClick: () => handlers.onAction( action.id ),
-		} )
-	);
+	const chips = config.actions
+		.filter( ( action ) => action.showInMenu )
+		.map( ( action ) =>
+			actionControl( handlers.target( action ), {
+				class: `dc-chip${ action.urgent ? ' dc-urgent' : '' }`,
+				role: 'menuitem',
+				'data-action': action.id,
+				text: action.label,
+				onClick: () => handlers.onAction( action.id ),
+			} )
+		);
 
 	const menu = h(
 		'div',

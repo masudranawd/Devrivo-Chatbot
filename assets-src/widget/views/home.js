@@ -1,21 +1,24 @@
 /**
  * Home view: greeting, welcome, "Ask a question" (when chat is on) and the
- * quick actions list.
+ * quick actions list, plus an optional open/closed status line.
  */
 import { h, icon, ICONS } from '../lib/dom';
 import { timeGreeting } from '../lib/config';
 import { avatar } from '../launcher';
+import { actionControl } from './control';
 
 /**
  * Builds the Home view.
  *
  * @param {Object} config   Normalised config.
- * @param {Object} handlers { onClose(), onAsk(), onAction( id ) }.
+ * @param {Object} handlers { onClose(), onAsk(), onAction( id ), target( action ) }.
+ * @param {Node}   status   Status line (shown by the widget when enabled).
  * @param {Date}   now      Current time (for the default greeting).
  * @return {HTMLElement} View.
  */
-export function homeView( config, handlers, now = new Date() ) {
+export function homeView( config, handlers, status = null, now = new Date() ) {
 	const { i18n } = config;
+	const menu = config.actions.filter( ( action ) => action.showInMenu );
 
 	const hero = h( 'div', { class: 'dc-hero' }, [
 		h( 'div', { class: 'dc-hero-top' }, [
@@ -56,18 +59,17 @@ export function homeView( config, handlers, now = new Date() ) {
 			)
 		: null;
 
-	const list = config.actions.length
+	const list = menu.length
 		? h(
 				'ul',
 				{ class: 'dc-list' },
-				config.actions.map( ( action ) =>
+				menu.map( ( action ) =>
 					h(
 						'li',
 						{},
-						h(
-							'button',
+						actionControl(
+							handlers.target( action ),
 							{
-								type: 'button',
 								class: `dc-row${
 									action.urgent ? ' dc-urgent' : ''
 								}`,
@@ -91,6 +93,6 @@ export function homeView( config, handlers, now = new Date() ) {
 			id: 'dc-view-home',
 			'data-view': 'home',
 		},
-		[ hero, h( 'div', { class: 'dc-home-body' }, [ ask, list ] ) ]
+		[ hero, h( 'div', { class: 'dc-home-body' }, [ ask, list, status ] ) ]
 	);
 }

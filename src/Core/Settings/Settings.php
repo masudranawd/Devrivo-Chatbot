@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core\Settings;
 
+use DevRivo\Chatbot\Engine\ConfigValidator;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -23,8 +24,9 @@ defined( 'ABSPATH' ) || exit;
  *   settings "version" used by SettingsMigrator.
  *
  * Updates are partial per section: keys sent for a section are merged over its
- * current values (lists are replaced), the whole section is validated, and
- * nothing is saved if any section is invalid.
+ * current values (lists are replaced), the whole section is validated, then
+ * ConfigValidator checks rules across sections. Nothing is saved if anything
+ * is invalid.
  */
 final class Settings {
 
@@ -121,8 +123,9 @@ final class Settings {
 				return self::invalid( $name, __( 'Each settings section must be a JSON object or list.', 'devrivo-chatbot' ) );
 			}
 
-			// Objects merge over current values; lists are replaced as a whole.
-			$candidate = 'object' === $schema['type'] && is_array( $current[ $name ] )
+			// Objects merge over current values. Lists and ID maps (flows, forms) are
+			// replaced as a whole, so items can be removed.
+			$candidate = 'object' === $schema['type'] && isset( $schema['properties'] ) && is_array( $current[ $name ] )
 				? array_merge( $current[ $name ], $value )
 				: $value;
 
@@ -135,7 +138,15 @@ final class Settings {
 		}
 
 		if ( array() !== $next ) {
-			$this->save( array_merge( $current, $next ), array_keys( $next ) );
+			$candidate = array_merge( $current, $next );
+
+			// Only problems this update introduces block it, never ones already stored.
+			$valid = ConfigValidator::validate( $candidate, $current );
+			if ( is_wp_error( $valid ) ) {
+				return $valid;
+			}
+
+			$this->save( $candidate, array_keys( $next ) );
 		}
 
 		return $this->all();
@@ -275,7 +286,7 @@ final class Settings {
 
 			$cleaned = array();
 			foreach ( $value as $key => $item ) {
-				$child = $schema['properties'][ $key ] ?? ( is_array( $schema['additionalProperties'] ?? null ) ? $schema['additionalProperties'] : array() );
+				$child = Schema::child( $schema, (string) $key );
 
 				$cleaned[ is_string( $key ) ? sanitize_key( $key ) : $key ] = self::clean( $item, $child );
 			}

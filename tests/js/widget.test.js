@@ -44,7 +44,7 @@ const RAW = {
 			label: 'Book a visit',
 			type: 'link',
 			urgent: false,
-			config: { url: '' },
+			config: { url: 'https://example.com/book', new_tab: true },
 		},
 		{
 			id: 'urgent',
@@ -54,6 +54,13 @@ const RAW = {
 			config: { flow: 'urgent' },
 		},
 	],
+	flows: {
+		urgent: {
+			title: 'Urgent',
+			start: 'hi',
+			nodes: { hi: { type: 'end', text: 'Help is here' } },
+		},
+	},
 	offers: [],
 	i18n: {
 		assistant: 'Assistant',
@@ -177,10 +184,11 @@ describe( 'rendering', () => {
 		);
 	} );
 
-	it( 'hides "Ask a question" and the chat view while chat is disabled', () => {
+	it( 'hides "Ask a question" and the composer while chat is disabled', () => {
 		setup();
 		expect( $( '.dc-ask' ) ).toBeNull();
-		expect( $( '[data-view="chat"]' ) ).toBeNull();
+		expect( $( '.dc-composer' ) ).toBeNull();
+		expect( $( '[data-view="chat"] .dc-msgs' ) ).not.toBeNull();
 		widget.destroy();
 
 		setup( { chat_enabled: true } );
@@ -262,19 +270,36 @@ describe( 'behaviour and keyboard', () => {
 		expect( host.shadowRoot.activeElement ).toBe( chips[ 1 ] );
 	} );
 
-	it( 'dispatches the action event and closes the popover', () => {
+	it( 'dispatches the action event and closes the popover for links', () => {
 		setup( {}, { open: true } );
+		const listener = vi.fn();
+		host.addEventListener( ACTION_EVENT, listener );
+		const chip = $( '.dc-chip[data-action="book"]' );
+		chip.addEventListener( 'click', ( e ) => e.preventDefault() );
+
+		chip.click();
+
+		expect( listener ).toHaveBeenCalledTimes( 1 );
+		expect( listener.mock.calls[ 0 ][ 0 ].detail ).toEqual( {
+			id: 'book',
+			type: 'link',
+		} );
+		expect( widget.state() ).toBe( 'closed' );
+	} );
+
+	it( 'opens the chat panel for flow actions', () => {
+		setup( {}, { open: true, typingTime: () => 0 } );
 		const listener = vi.fn();
 		host.addEventListener( ACTION_EVENT, listener );
 
 		$( '.dc-chip[data-action="urgent"]' ).click();
 
-		expect( listener ).toHaveBeenCalledTimes( 1 );
 		expect( listener.mock.calls[ 0 ][ 0 ].detail ).toEqual( {
 			id: 'urgent',
 			type: 'flow',
 		} );
-		expect( widget.state() ).toBe( 'closed' );
+		expect( widget.state() ).toBe( 'panel' );
+		expect( widget.view() ).toBe( 'chat' );
 	} );
 
 	it( 'peeks after the delay, and not again once dismissed this visit', () => {

@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.5.0 =
+* Working quick actions (link, call, WhatsApp, email) and guided conversation flows; opening hours.
+
 = 0.4.0 =
 * Front-end widget: launcher, quick-action popover, Home and Offers panel, display rules.
 
@@ -121,6 +124,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.5.0 =
+Development version: adds working quick actions, guided flows and opening hours.
 
 = 0.4.0 =
 Development version: adds the front-end widget.

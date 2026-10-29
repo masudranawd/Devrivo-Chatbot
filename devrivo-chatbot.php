@@ -3,7 +3,7 @@
  * Plugin Name:       DevRivo Chatbot
  * Plugin URI:        https://github.com/masudranawd/Devrivo-Chatbot
  * Description:       A free, customisable AI assistant for any WordPress site. Answers questions from your content, captures leads and guides visitors.
- * Version:           0.4.0
+ * Version:           0.5.0
  * Requires at least: 7.0
  * Requires PHP:      8.1
  * Author:            DevRivo
@@ -26,7 +26,7 @@ if ( defined( 'DEVRIVO_CHATBOT_VERSION' ) ) {
 	return;
 }
 
-define( 'DEVRIVO_CHATBOT_VERSION', '0.4.0' );
+define( 'DEVRIVO_CHATBOT_VERSION', '0.5.0' );
 define( 'DEVRIVO_CHATBOT_SCHEMA_VERSION', 2 );
 define( 'DEVRIVO_CHATBOT_MIN_WP', '7.0' );
 define( 'DEVRIVO_CHATBOT_MIN_PHP', '8.1' );

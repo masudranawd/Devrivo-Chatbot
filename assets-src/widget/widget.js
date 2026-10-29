@@ -9,18 +9,22 @@
  * - panel:  the assistant panel (Home, Offers, Chat).
  */
 import { applyTheme, baseCss, createLauncher } from './launcher';
+import { actionTarget, openTarget } from './lib/actions';
 import { normalizeConfig } from './lib/config';
 import { h, icon, ICONS } from './lib/dom';
+import { createRunner } from './lib/flow';
+import { isOpenNow } from './lib/hours';
 import { rememberDismissed, wasDismissed } from './lib/storage';
 import { widgetCss } from './styles';
 import { chatView } from './views/chat';
+import { conversationView } from './views/conversation';
 import { homeView } from './views/home';
 import { offersView } from './views/offers';
 import { popoverView } from './views/popover';
 
 /**
- * Event dispatched on the host element when a quick action or offer is chosen.
- * detail: { id, type }. Step 4 (Action engine) handles it.
+ * Event dispatched on the host element whenever a quick action runs (menu,
+ * popover, offer, flow). detail: { id, type }. For other scripts, e.g. analytics.
  */
 export const ACTION_EVENT = 'devrivo-chatbot:action';
 
@@ -65,7 +69,7 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open }.
+ * @param {Object}      options { open, typingTime( text ) }.
  * @return {Object} Controller: { state(), view(), destroy() }.
  */
 export function render( host, config, options = {} ) {
@@ -76,9 +80,15 @@ export function render( host, config, options = {} ) {
 	let state = 'closed';
 	let current = 'home';
 
+	const target = ( action ) =>
+		action ? actionTarget( action, config.utm ) : null;
+	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
+	const menu = config.actions.filter( ( a ) => a.showInMenu );
+
 	const handlers = {
 		onClose: () => setState( 'closed' ),
-		onAction: runAction,
+		onAction: ( id ) => runAction( id ),
+		target,
 		onAsk: () => showView( 'chat', true ),
 		onBack: () => showView( 'home', true ),
 		onSend: () => {},
@@ -92,22 +102,48 @@ export function render( host, config, options = {} ) {
 	} );
 	applyTheme( root, config );
 
-	const popover = config.actions.length
-		? popoverView( config, handlers )
-		: null;
+	const popover = menu.length ? popoverView( config, handlers ) : null;
 
 	const launcher = createLauncher( config.launcherLabel, config.avatarUrl );
 	launcher.setAttribute( 'aria-haspopup', popover ? 'menu' : 'dialog' );
 	launcher.setAttribute( 'aria-controls', popover ? 'dc-pop' : 'dc-panel' );
 	launcher.addEventListener( 'click', onLauncher );
 
-	const views = { home: homeView( config, handlers ) };
+	// Open/closed status: a dot on the launcher plus a line of text on Home.
+	const dot = h( 'span', {
+		class: 'dc-dot',
+		'aria-hidden': 'true',
+		hidden: true,
+	} );
+	const status = h( 'p', { class: 'dc-status', hidden: true } );
+	launcher.querySelector( '.dc-avatar' ).append( dot );
+
+	const views = {
+		home: homeView( config, handlers, status ),
+		chat: chatView( config, handlers ),
+	};
 	if ( config.offers.length ) {
 		views.offers = offersView( config, handlers );
 	}
-	if ( config.chatEnabled ) {
-		views.chat = chatView( config, handlers );
-	}
+
+	const conversation = conversationView(
+		views.chat.querySelector( '.dc-msgs' ),
+		{
+			config,
+			target,
+			// Buttons: flows, or choices that run an action.
+			onAction: ( id ) => runAction( id, true, true ),
+			// Links open by themselves.
+			onCta: ( id ) => runAction( id ),
+			onBack: () => showView( 'home', true ),
+			typingTime: options.typingTime || typingTime,
+		}
+	);
+	const runner = createRunner( {
+		flows: config.flows,
+		isOpen: () => isOpenNow( config.hours ),
+		view: conversation,
+	} );
 
 	const tabs = views.offers ? tabBar() : null;
 
@@ -123,14 +159,14 @@ export function render( host, config, options = {} ) {
 		[ ...Object.values( views ), tabs ]
 	);
 
-	root.append(
-		...[
-			h( 'div', { class: 'dc-overlay', onClick: handlers.onClose } ),
-			popover,
-			launcher,
-			panel,
-		].filter( Boolean )
-	);
+	// Only a popover the visitor opened gets the overlay, never the auto-opened one.
+	const overlay = h( 'div', {
+		class: 'dc-overlay',
+		hidden: true,
+		onClick: handlers.onClose,
+	} );
+
+	root.append( ...[ overlay, popover, launcher, panel ].filter( Boolean ) );
 	shadow.replaceChildren( h( 'style', { text: baseCss + widgetCss } ), root );
 	showView( 'home' );
 
@@ -140,6 +176,11 @@ export function render( host, config, options = {} ) {
 		}
 	};
 	document.addEventListener( 'keydown', onKeydown );
+
+	refreshStatus();
+	const statusTimer = config.hours.showStatus
+		? window.setInterval( refreshStatus, 60000 )
+		: 0;
 
 	let timer = 0;
 	if ( options.open ) {
@@ -181,6 +222,7 @@ export function render( host, config, options = {} ) {
 
 		state = next;
 		root.dataset.state = next;
+		overlay.hidden = next !== 'pop';
 		launcher.setAttribute( 'aria-expanded', String( next !== 'closed' ) );
 
 		if ( next === 'pop' ) {
@@ -274,12 +316,16 @@ export function render( host, config, options = {} ) {
 	}
 
 	/**
-	 * Tells listeners a quick action or offer was chosen, then closes the popover.
+	 * Runs a quick action. Links, calls, WhatsApp and email are real links that
+	 * the browser opens itself, unless `navigate` is set (flow choices are
+	 * buttons). Flows open in the chat view.
 	 *
-	 * @param {string} id Action ID.
+	 * @param {string}  id       Action ID.
+	 * @param {boolean} navigate Open the action's URL from script.
+	 * @param {boolean} fromFlow Chosen inside a flow (same conversation).
 	 */
-	function runAction( id ) {
-		const action = config.actions.find( ( a ) => a.id === id );
+	function runAction( id, navigate = false, fromFlow = false ) {
+		const action = byId.get( id );
 		if ( ! action ) {
 			return;
 		}
@@ -292,9 +338,47 @@ export function render( host, config, options = {} ) {
 			} )
 		);
 
+		if ( action.type === 'flow' ) {
+			startFlow( action.config.flow, ! fromFlow );
+			return;
+		}
+
+		const to = target( action );
+		if ( navigate && to ) {
+			openTarget( to );
+		}
 		if ( state === 'pop' || state === 'peek' ) {
 			setState( 'closed' );
 		}
+	}
+
+	/**
+	 * Opens the chat view and runs a flow.
+	 *
+	 * @param {string}  flowId Flow ID.
+	 * @param {boolean} fresh  Started from the menu (a new conversation).
+	 */
+	function startFlow( flowId, fresh ) {
+		if ( fresh ) {
+			conversation.separator();
+		}
+		showView( 'chat' );
+		if ( state !== 'panel' ) {
+			setState( 'panel' );
+		}
+		runner.start( flowId, fresh );
+	}
+
+	/**
+	 * Shows whether the business is open, when the admin turned it on.
+	 */
+	function refreshStatus() {
+		const open = config.hours.showStatus ? isOpenNow( config.hours ) : null;
+
+		dot.hidden = open === null;
+		status.hidden = open === null;
+		dot.classList.toggle( 'is-closed', open === false );
+		status.textContent = open ? i18n.open_now : i18n.closed_now;
 	}
 
 	return {
@@ -302,9 +386,25 @@ export function render( host, config, options = {} ) {
 		view: () => current,
 		destroy() {
 			window.clearTimeout( timer );
+			window.clearInterval( statusTimer );
 			document.removeEventListener( 'keydown', onKeydown );
 		},
 	};
+}
+
+/**
+ * How long the typing indicator shows before a bot message (none when the
+ * visitor prefers reduced motion).
+ *
+ * @param {string} text Message.
+ * @return {number} Milliseconds.
+ */
+function typingTime( text ) {
+	const reduce =
+		typeof window.matchMedia === 'function' &&
+		window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+
+	return reduce ? 0 : Math.min( 1400, 450 + text.length * 6 );
 }
 
 /**

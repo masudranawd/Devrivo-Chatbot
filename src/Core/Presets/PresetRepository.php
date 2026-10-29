@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Core\Presets;
 
 use DevRivo\Chatbot\Core\Settings\Schema;
+use DevRivo\Chatbot\Engine\ConfigValidator;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -217,6 +218,16 @@ final class PresetRepository {
 			if ( is_wp_error( $valid ) ) {
 				return $valid->get_error_message();
 			}
+		}
+
+		// References between sections (actions ↔ flows) must hold within the preset itself.
+		$settings = Schema::defaults();
+		foreach ( $preset['settings'] as $section => $value ) {
+			$settings[ $section ] = self::candidate( $value, (array) Schema::section( (string) $section ) );
+		}
+		$errors = ConfigValidator::errors( $settings );
+		if ( array() !== $errors ) {
+			return sprintf( '%1$s: %2$s', (string) array_key_first( $errors ), reset( $errors ) );
 		}
 
 		return null;

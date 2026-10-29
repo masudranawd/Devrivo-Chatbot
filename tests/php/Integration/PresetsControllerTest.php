@@ -94,9 +94,10 @@ final class PresetsControllerTest extends WP_UnitTestCase {
 		$data = $this->request( 'GET', '/healthcare' )->get_data();
 
 		$this->assertSame( 'healthcare', $data['id'] );
-		$this->assertSame( 1, $data['version'] );
-		$this->assertCount( 5, $data['settings']['actions'] );
-		$this->assertSame( 'treatment', $data['settings']['actions'][0]['config']['flow'] );
+		$this->assertSame( 2, $data['version'] );
+		$this->assertCount( 7, $data['settings']['actions'] );
+		$this->assertSame( 'enquire', $data['settings']['actions'][0]['config']['flow'] );
+		$this->assertSame( 'ask', $data['settings']['flows']['enquire']['start'] );
 		$this->assertNotSame( '', $data['settings']['ai']['custom_instructions'] );
 	}
 

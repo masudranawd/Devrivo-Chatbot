@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Tests\Integration;
 
 use DevRivo\Chatbot\Core\Plugin;
+use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -61,7 +62,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 				),
 				'privacy'      => array( 'consent_text' => 'SECRET CONSENT' ),
 				'integrations' => array( 'notification_emails' => array( 'owner@example.com' ) ),
-				'flows'        => array( 'secret-flow' => array( 'steps' => array() ) ),
+				'flows'        => array( 'help' => self::flow() ),
 				'forms'        => array( 'secret-form' => array( 'fields' => array() ) ),
 			)
 		);
@@ -69,73 +70,181 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'chat_enabled', 'display', 'appearance', 'behaviour', 'actions', 'offers', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'chat_enabled', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'offers', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
-		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay' ), array_keys( $data['behaviour'] ) );
+		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
 		$this->assertFalse( $data['chat_enabled'] );
 		$this->assertSame( 'Talk to us', $data['display']['launcher_label'] );
 		$this->assertSame( 'Acme', $data['appearance']['brand_name'] );
+		$this->assertArrayHasKey( 'help', $data['flows'], 'Flows are public content.' );
 
-		foreach ( array( 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'flows', 'forms', 'SECRET', 'secret-model', 'owner@example.com', 'secret-flow', 'secret-form', '"enabled"', '"rules"' ) as $needle ) {
+		foreach ( array( 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'forms', 'SECRET', 'secret-model', 'owner@example.com', 'secret-form', '"enabled"', '"rules"' ) as $needle ) {
 			$this->assertStringNotContainsString( $needle, $json, $needle );
 		}
 	}
 
 	public function test_action_config_is_filtered_per_type(): void {
-		$extra = array(
-			'url'     => 'https://example.com/a',
-			'phone'   => '+100',
-			'message' => 'Hi',
-			'email'   => 'a@example.com',
-			'subject' => 'Hello',
-			'form'    => 'contact',
-			'flow'    => 'urgent',
-			'prompt'  => 'Where?',
-			'secret'  => 'nope',
-		);
-		$types = array( 'link', 'call', 'whatsapp', 'email', 'form', 'flow', 'ai_prompt', 'page_search', 'custom_thing' );
-
 		$this->settings()->update(
 			array(
-				'actions' => array_map(
-					static fn( string $type ): array => array(
-						'id'     => str_replace( '_', '-', $type ),
-						'label'  => $type,
-						'type'   => $type,
-						'config' => $extra,
+				'actions' => array(
+					$this->action( 'link', array( 'url' => 'https://example.com/a' ) ),
+					$this->action( 'call', array( 'phone' => '+44 1234 567' ) ),
+					$this->action(
+						'whatsapp',
+						array(
+							'phone'   => '+44 7700 900123',
+							'message' => 'Hi',
+						)
 					),
-					$types
+					$this->action(
+						'email',
+						array(
+							'email'   => 'a@example.com',
+							'subject' => 'Hello',
+						)
+					),
+					$this->action( 'flow', array( 'flow' => 'help' ) ),
+				),
+				'flows'   => array( 'help' => self::flow() ),
+			)
+		);
+
+		// Data stored by an older version or a module: extra keys and other types.
+		$stored            = get_option( Settings::OPTION );
+		$stored['actions'] = array_merge(
+			array(
+				$this->action(
+					'link',
+					array(
+						'url'    => 'https://example.com/b',
+						'secret' => 'nope',
+					),
+					'legacy'
+				),
+			),
+			$stored['actions']
+		);
+		update_option( Settings::OPTION, $stored, false );
+		$this->settings()->flush();
+
+		$actions = array_column( $this->request()->get_data()['actions'], null, 'id' );
+		$keys    = static fn( string $id ): array => array_keys( (array) $actions[ $id ]['config'] );
+
+		$this->assertSame( array( 'url', 'new_tab' ), $keys( 'link' ) );
+		$this->assertSame( array( 'url', 'new_tab' ), $keys( 'legacy' ), 'Unknown config keys are never sent.' );
+		$this->assertSame( array( 'phone' ), $keys( 'call' ) );
+		$this->assertSame( array( 'phone', 'message' ), $keys( 'whatsapp' ) );
+		$this->assertSame( array( 'email', 'subject' ), $keys( 'email' ) );
+		$this->assertSame( array( 'flow' ), $keys( 'flow' ) );
+		$this->assertSame( array( 'id', 'label', 'type', 'urgent', 'show_in_menu', 'config' ), array_keys( $actions['link'] ) );
+		$this->assertSame( 'https://example.com/a', $actions['link']['config']->url );
+		$this->assertTrue( $actions['link']['config']->new_tab );
+		$this->assertTrue( $actions['link']['show_in_menu'] );
+	}
+
+	public function test_unsupported_incomplete_and_dangling_actions_are_left_out(): void {
+		$this->settings()->update(
+			array(
+				'actions' => array(
+					$this->action( 'link', array( 'url' => 'https://example.com/' ), 'ready' ),
+					$this->action( 'link', array( 'url' => '' ), 'incomplete' ),
+					$this->action( 'form', array( 'form' => 'contact' ), 'form' ),
+					$this->action( 'ai_prompt', array( 'prompt' => 'Hi' ), 'ai' ),
+					$this->action( 'page_search', array(), 'search' ),
+					$this->action( 'call', array( 'phone' => '+1 555 0100' ), 'helper' ) + array( 'show_in_menu' => false ),
+				),
+				'flows'   => array(
+					'help' => array(
+						'start' => 'ask',
+						'nodes' => array(
+							'ask'  => array(
+								'type'    => 'choices',
+								'choices' => array(
+									array(
+										'label'  => 'Go',
+										'action' => 'ready',
+									),
+									array(
+										'label'  => 'Gone',
+										'action' => 'incomplete',
+									),
+									array(
+										'label'  => 'Gone but continues',
+										'action' => 'form',
+										'next'   => 'done',
+									),
+								),
+							),
+							'done' => array(
+								'type'    => 'action',
+								'actions' => array( 'helper', 'incomplete' ),
+							),
+						),
+					),
 				),
 			)
 		);
 
-		$actions = array_column( $this->request()->get_data()['actions'], null, 'type' );
-		$keys    = static fn( string $type ): array => array_keys( (array) $actions[ $type ]['config'] );
+		// A type from a module that is no longer active, stored earlier.
+		$stored              = get_option( Settings::OPTION );
+		$stored['actions'][] = $this->action( 'custom_thing', array( 'x' => 1 ), 'module' );
+		update_option( Settings::OPTION, $stored, false );
+		$this->settings()->flush();
 
-		$this->assertSame( array( 'url' ), $keys( 'link' ) );
-		$this->assertSame( array( 'phone' ), $keys( 'call' ) );
-		$this->assertSame( array( 'phone', 'message' ), $keys( 'whatsapp' ) );
-		$this->assertSame( array( 'email', 'subject' ), $keys( 'email' ) );
-		$this->assertSame( array( 'form' ), $keys( 'form' ) );
-		$this->assertSame( array( 'flow' ), $keys( 'flow' ) );
-		$this->assertSame( array( 'prompt' ), $keys( 'ai_prompt' ) );
-		$this->assertSame( array(), $keys( 'page_search' ) );
-		$this->assertSame( array(), $keys( 'custom_thing' ) );
-		$this->assertInstanceOf( \stdClass::class, $actions['page_search']['config'], 'Empty config is {}.' );
-		$this->assertSame( array( 'id', 'label', 'type', 'urgent', 'config' ), array_keys( $actions['link'] ) );
-		$this->assertSame( 'https://example.com/a', $actions['link']['config']->url );
+		$data = $this->request()->get_data();
+		$ask  = $data['flows']['help']['nodes']['ask'];
+
+		$this->assertSame( array( 'ready', 'helper' ), array_column( $data['actions'], 'id' ) );
+		$this->assertFalse( $data['actions'][1]['show_in_menu'] );
+		$this->assertSame( array( 'Go', 'Gone but continues' ), array_column( $ask['choices'], 'label' ) );
+		$this->assertSame( '', $ask['choices'][1]['action'] );
+		$this->assertSame( 'done', $ask['choices'][1]['next'] );
+		$this->assertSame( array( 'helper' ), $data['flows']['help']['nodes']['done']['actions'] );
+	}
+
+	public function test_flow_actions_need_their_flow(): void {
+		$stored            = get_option( Settings::OPTION, array() );
+		$stored['actions'] = array( $this->action( 'flow', array( 'flow' => 'missing' ) ) );
+		update_option( Settings::OPTION, $stored, false );
+		$this->settings()->flush();
+
+		$this->assertSame( array(), $this->request()->get_data()['actions'] );
+	}
+
+	public function test_hours_use_the_site_timezone_when_empty(): void {
+		update_option( 'timezone_string', 'Europe/London' );
+		$this->settings()->update(
+			array(
+				'behaviour' => array(
+					'hours' => array(
+						'schedule'    => array(
+							'mon' => array(
+								array(
+									'open'  => '09:00',
+									'close' => '17:00',
+								),
+							),
+						),
+						'show_status' => true,
+					),
+				),
+			)
+		);
+
+		$hours = $this->request()->get_data()['behaviour']['hours'];
+
+		$this->assertSame( 'Europe/London', $hours['timezone'] );
+		$this->assertTrue( $hours['show_status'] );
+		$this->assertSame( '09:00', $hours['schedule']['mon'][0]['open'] );
+		$this->assertSame( Schema::DAYS, array_keys( $hours['schedule'] ) );
 	}
 
 	public function test_offers_pointing_to_unknown_actions_are_dropped(): void {
 		$this->settings()->update(
 			array(
 				'actions' => array(
-					array(
-						'id'    => 'book',
-						'label' => 'Book',
-						'type'  => 'link',
-					),
+					$this->action( 'link', array( 'url' => 'https://example.com/book' ), 'book' ),
 				),
 				'offers'  => array(
 					array(
@@ -168,11 +277,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$this->settings()->update(
 			array(
 				'actions' => array(
-					array(
-						'id'    => 'book',
-						'label' => 'Book',
-						'type'  => 'link',
-					),
+					$this->action( 'link', array( 'url' => 'https://example.com/book' ), 'book' ),
 				),
 			)
 		);
@@ -254,6 +359,41 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 
 	private function settings(): Settings {
 		return Plugin::instance()->settings();
+	}
+
+	/**
+	 * An action of the given type.
+	 *
+	 * @param string               $type   Type.
+	 * @param array<string, mixed> $config Config.
+	 * @param string|null          $id     ID (defaults to the type).
+	 * @return array<string, mixed>
+	 */
+	private function action( string $type, array $config, ?string $id = null ): array {
+		return array(
+			'id'     => $id ?? str_replace( '_', '-', $type ),
+			'label'  => ucfirst( $type ),
+			'type'   => $type,
+			'config' => $config,
+		);
+	}
+
+	/**
+	 * A minimal valid flow.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function flow(): array {
+		return array(
+			'title' => 'Help',
+			'start' => 'hi',
+			'nodes' => array(
+				'hi' => array(
+					'type' => 'end',
+					'text' => 'Hello there',
+				),
+			),
+		);
 	}
 
 	/**
