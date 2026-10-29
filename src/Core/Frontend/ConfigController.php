@@ -135,6 +135,9 @@ final class ConfigController extends WP_REST_Controller {
 		if ( isset( $data['flows'] ) && is_array( $data['flows'] ) ) {
 			$data['flows'] = Schema::to_json_shape( $data['flows'], (array) Schema::section( 'flows' ) );
 		}
+		if ( isset( $data['forms'] ) && array() === $data['forms'] ) {
+			$data['forms'] = new \stdClass();
+		}
 
 		return $data;
 	}

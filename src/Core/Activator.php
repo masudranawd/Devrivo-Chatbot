@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Data\Privacy;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -30,6 +32,9 @@ final class Activator {
 	 */
 	public static function activate(): void {
 		self::maybe_install();
+
+		// Deactivation clears cron events; migrations don't run again on reactivation.
+		Privacy::schedule();
 	}
 
 	/**

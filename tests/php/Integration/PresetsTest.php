@@ -62,7 +62,7 @@ final class PresetsTest extends WP_UnitTestCase {
 	public function test_every_built_in_preset_is_valid(): void {
 		foreach ( $this->presets->all() as $id => $preset ) {
 			$this->assertSame( $id, $preset['id'] );
-			$this->assertSame( 'healthcare' === $id ? 2 : 1, $preset['version'], $id );
+			$this->assertSame( 'healthcare' === $id ? 3 : 2, $preset['version'], $id );
 			$this->assertNotSame( '', $preset['title'] );
 			$this->assertNotSame( '', $preset['description'] );
 			$this->assertNotSame( '', $preset['settings']['behaviour']['welcome'], $id );
@@ -82,7 +82,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$this->assertDoesNotMatchRegularExpression( '/\d{3}/', (string) wp_json_encode( $preset ), 'No phone numbers in the preset.' );
 	}
 
-	public function test_healthcare_v2_flows(): void {
+	public function test_healthcare_flows_and_forms(): void {
 		$settings = $this->presets->get( 'healthcare' )['settings'];
 		$actions  = array_column( $settings['actions'], null, 'id' );
 		$urgent   = $settings['flows']['urgent']['nodes'];
@@ -98,7 +98,10 @@ final class PresetsTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'local emergency services', $urgent['emergency']['text'] );
 		$this->assertSame( 'open_now', $urgent['when']['condition'] );
 		$this->assertSame( array( 'call_practice' ), $urgent[ $urgent['when']['then'] ]['actions'] );
-		$this->assertSame( array( 'whatsapp_practice' ), $urgent[ $urgent['when']['else'] ]['actions'] );
+		$this->assertSame( array( 'whatsapp_practice', 'callback' ), $urgent[ $urgent['when']['else'] ]['actions'] );
+		$this->assertSame( array( 'callback', 'reschedule', 'cancel' ), array_keys( $settings['forms'] ) );
+		$this->assertSame( 'reschedule', $actions['reschedule']['config']['form'] );
+		$this->assertStringContainsString( 'stays booked', $settings['forms']['reschedule']['success_message'] );
 		$this->assertArrayNotHasKey( 'unknown', $urgent['when'], 'Unknown falls back to else.' );
 
 		foreach ( $settings['flows'] as $flow ) {
@@ -189,7 +192,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$result = $this->applier->apply( 'business' );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( array( 'behaviour', 'actions', 'ai', 'flows' ), $result['applied'] );
+		$this->assertSame( array( 'behaviour', 'actions', 'forms', 'ai', 'flows' ), $result['applied'] );
 		$this->assertSame( array(), $result['skipped'] );
 
 		$after = ( new Settings() )->all();
@@ -208,7 +211,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$this->assertSame(
 			array(
 				'preset'         => 'business',
-				'preset_version' => 1,
+				'preset_version' => 2,
 			),
 			$after['general']
 		);
@@ -220,7 +223,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$result = $this->applier->apply( 'agency', 'merge' );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( array( 'actions', 'ai' ), $result['applied'] );
+		$this->assertSame( array( 'actions', 'forms', 'ai' ), $result['applied'] );
 		$this->assertSame( array( 'behaviour' ), $result['skipped'] );
 
 		$after = $this->settings->all();

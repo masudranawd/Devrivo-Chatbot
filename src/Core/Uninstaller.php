@@ -11,12 +11,14 @@ namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Core\Presets\PresetApplier;
 use DevRivo\Chatbot\Core\Settings\Settings;
+use DevRivo\Chatbot\Data\Leads;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Removes the plugin's capability on every site, and its data only on sites
- * where the admin opted in (Privacy → Delete data on uninstall).
+ * Removes the plugin's capability and cron events on every site, and its data
+ * (options and the leads table) only on sites where the admin opted in
+ * (Privacy → Delete data on uninstall).
  */
 final class Uninstaller {
 
@@ -65,6 +67,10 @@ final class Uninstaller {
 	private static function uninstall_site(): void {
 		Capabilities::remove_all();
 
+		foreach ( Deactivator::cron_hooks() as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
+
 		if ( ! Settings::delete_data_on_uninstall() ) {
 			return;
 		}
@@ -73,6 +79,6 @@ final class Uninstaller {
 			delete_option( $option );
 		}
 
-		// v1.0: drop custom tables and delete transients here.
+		Leads::drop_table();
 	}
 }

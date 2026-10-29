@@ -63,7 +63,7 @@ final class Schema {
 			'actions'      => self::actions(),
 			'offers'       => self::offers(),
 			'flows'        => self::flows(),
-			'forms'        => self::free_form_map(),
+			'forms'        => self::forms(),
 			'ai'           => self::ai(),
 			'privacy'      => self::privacy(),
 			'integrations' => self::integrations(),
@@ -591,12 +591,89 @@ final class Schema {
 	}
 
 	/**
-	 * Map of ID => definition for forms. The strict schema arrives in Step 5.
+	 * Enquiry forms: form ID => { title, submit_label, success_message, fields }.
+	 * ConfigValidator checks field IDs (unique, not reserved) and select options.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private static function free_form_map(): array {
-		return self::id_map( array( 'type' => 'object' ), 50 );
+	private static function forms(): array {
+		$field = self::object(
+			array(
+				'id'          => array(
+					'type'     => 'string',
+					'pattern'  => self::ID_PATTERN,
+					'required' => true,
+				),
+				'type'        => array(
+					'type'     => 'string',
+					'enum'     => array( 'text', 'email', 'tel', 'textarea', 'select', 'date' ),
+					'required' => true,
+				),
+				'label'       => array(
+					'type'      => 'string',
+					'minLength' => 1,
+					'maxLength' => 80,
+					'required'  => true,
+				),
+				'required'    => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+				'placeholder' => array(
+					'type'      => 'string',
+					'maxLength' => 80,
+					'default'   => '',
+				),
+				'max_length'  => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 2000,
+					'default' => 200,
+				),
+				// Select fields only.
+				'options'     => array(
+					'type'     => 'array',
+					'maxItems' => 20,
+					'default'  => array(),
+					'items'    => array(
+						'type'      => 'string',
+						'minLength' => 1,
+						'maxLength' => 80,
+					),
+				),
+			)
+		);
+
+		$form = self::object(
+			array(
+				'title'           => array(
+					'type'      => 'string',
+					'minLength' => 1,
+					'maxLength' => 80,
+					'required'  => true,
+				),
+				'submit_label'    => array(
+					'type'      => 'string',
+					'maxLength' => 40,
+					'default'   => '',
+				),
+				'success_message' => array(
+					'type'       => 'string',
+					'maxLength'  => 300,
+					'default'    => '',
+					'x-sanitize' => 'textarea',
+				),
+				'fields'          => array(
+					'type'     => 'array',
+					'minItems' => 1,
+					'maxItems' => 12,
+					'required' => true,
+					'items'    => $field,
+				),
+			)
+		);
+
+		return self::id_map( $form, 50 );
 	}
 
 	/**

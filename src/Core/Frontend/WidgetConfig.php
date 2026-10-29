@@ -9,17 +9,19 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core\Frontend;
 
+use DevRivo\Chatbot\Core\Rest;
 use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Engine\ActionTypes;
+use DevRivo\Chatbot\Engine\Forms;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the config the widget fetches from the public endpoint.
  *
- * Built from an allowlist only: AI, privacy, integration and form settings
- * never leave the server here. Actions are sent only when the widget can run
+ * Built from an allowlist only: AI, privacy and integration settings never
+ * leave the server here (the consent text is public by nature). Actions are sent only when the widget can run
  * them (supported type, required values filled in, target flow present), with
  * only the config keys of their type. Flows are public content; choices and
  * buttons that point to actions that were left out are dropped.
@@ -50,7 +52,7 @@ final class WidgetConfig {
 		$types   = ActionTypes::all();
 		$actions = array();
 		foreach ( $all['actions'] as $action ) {
-			$public = self::action( $action, $types, $all['flows'] );
+			$public = self::action( $action, $types, $all['flows'], $all['forms'] );
 			if ( null !== $public ) {
 				$actions[] = $public;
 			}
@@ -130,6 +132,11 @@ final class WidgetConfig {
 			),
 			'actions'      => $actions,
 			'flows'        => self::flows( $all['flows'], $action_ids ),
+			'forms'        => self::forms( $all['forms'] ),
+			'consent'      => Consent::public( $this->settings ),
+			'session_url'  => rest_url( Rest::NAMESPACE . '/session' ),
+			// Replace {form} with the form ID.
+			'submit_url'   => rest_url( Rest::NAMESPACE . '/forms/{form}/submit' ),
 			'offers'       => $offers,
 			'i18n'         => self::strings(),
 		);
@@ -150,14 +157,15 @@ final class WidgetConfig {
 
 	/**
 	 * One action reduced to its public keys, or null when the widget can't run it
-	 * (unsupported type, empty required value, or a flow that doesn't exist).
+	 * (unsupported type, empty required value, or a flow or form that doesn't exist).
 	 *
 	 * @param array<string, mixed>                $action Stored action.
 	 * @param array<string, array<string, mixed>> $types  Action types.
 	 * @param array<string, mixed>                $flows  Stored flows.
+	 * @param array<string, mixed>                $forms  Stored forms.
 	 * @return array<string, mixed>|null
 	 */
-	private static function action( array $action, array $types, array $flows ): ?array {
+	private static function action( array $action, array $types, array $flows, array $forms ): ?array {
 		// Stored list items only hold the keys that were sent.
 		$action = (array) Schema::with_defaults( $action, (array) ( Schema::section( 'actions' )['items'] ?? array() ) );
 
@@ -165,6 +173,9 @@ final class WidgetConfig {
 			return null;
 		}
 		if ( 'flow' === $action['type'] && ! isset( $flows[ (string) ( $action['config']['flow'] ?? '' ) ] ) ) {
+			return null;
+		}
+		if ( 'form' === $action['type'] && ! isset( $forms[ (string) ( $action['config']['form'] ?? '' ) ] ) ) {
 			return null;
 		}
 
@@ -227,6 +238,41 @@ final class WidgetConfig {
 	}
 
 	/**
+	 * Public forms: title, button label, success message and fields.
+	 *
+	 * @param array<string, mixed> $forms Stored forms.
+	 * @return array<string, mixed>
+	 */
+	private static function forms( array $forms ): array {
+		$public = array();
+
+		foreach ( $forms as $form_id => $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+			$public[ $form_id ] = array(
+				'title'           => (string) $form['title'],
+				'submit_label'    => (string) ( $form['submit_label'] ?? '' ),
+				'success_message' => (string) ( $form['success_message'] ?? '' ),
+				'fields'          => array_map(
+					static fn( array $field ): array => array(
+						'id'          => (string) $field['id'],
+						'type'        => (string) $field['type'],
+						'label'       => (string) $field['label'],
+						'required'    => (bool) ( $field['required'] ?? false ),
+						'placeholder' => (string) ( $field['placeholder'] ?? '' ),
+						'max_length'  => (int) ( $field['max_length'] ?? 200 ),
+						'options'     => array_values( array_map( 'strval', (array) ( $field['options'] ?? array() ) ) ),
+					),
+					Forms::fields( (string) $form_id, $form )
+				),
+			);
+		}
+
+		return $public;
+	}
+
+	/**
 	 * Interface strings for the widget.
 	 *
 	 * @return array<string, string>
@@ -253,6 +299,23 @@ final class WidgetConfig {
 			'back_to_menu'   => __( 'Back to menu', 'devrivo-chatbot' ),
 			'open_now'       => __( 'We are open now', 'devrivo-chatbot' ),
 			'closed_now'     => __( 'We are closed right now', 'devrivo-chatbot' ),
+			'required'       => __( 'required', 'devrivo-chatbot' ),
+			'submit'         => __( 'Send', 'devrivo-chatbot' ),
+			'sending'        => __( 'Sending…', 'devrivo-chatbot' ),
+			'sent'           => __( 'Sent', 'devrivo-chatbot' ),
+			'form_success'   => __( 'Thank you. We have received your details and will be in touch soon.', 'devrivo-chatbot' ),
+			'field_required' => __( 'This field is required.', 'devrivo-chatbot' ),
+			'invalid_email'  => __( 'Enter an email address like name@example.com.', 'devrivo-chatbot' ),
+			'invalid_phone'  => __( 'Enter a valid phone number.', 'devrivo-chatbot' ),
+			'invalid_date'   => __( 'Enter a valid date.', 'devrivo-chatbot' ),
+			'invalid_option' => __( 'Choose one of the options.', 'devrivo-chatbot' ),
+			'too_long'       => __( 'This is too long.', 'devrivo-chatbot' ),
+			'consent_needed' => __( 'Please tick the box to agree before sending.', 'devrivo-chatbot' ),
+			'form_error'     => __( 'Something went wrong. Please try again.', 'devrivo-chatbot' ),
+			'network_error'  => __( 'We could not send your details. Please check your connection and try again.', 'devrivo-chatbot' ),
+			'rate_limited'   => __( 'Too many attempts. Please wait a few minutes and try again.', 'devrivo-chatbot' ),
+			'new_tab'        => __( '(opens in a new tab)', 'devrivo-chatbot' ),
+			'choose'         => __( 'Choose…', 'devrivo-chatbot' ),
 		);
 	}
 }

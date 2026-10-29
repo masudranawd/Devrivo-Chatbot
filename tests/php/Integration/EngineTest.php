@@ -60,7 +60,7 @@ final class EngineTest extends WP_UnitTestCase {
 			),
 			'email empty'     => array( 'email', array( 'email' => '' ) ),
 			'flow empty'      => array( 'flow', array( 'flow' => '' ) ),
-			'form'            => array( 'form', array( 'form' => 'contact' ) ),
+			'form empty'      => array( 'form', array( 'form' => '' ) ),
 			'page_search'     => array( 'page_search', array( 'post_types' => array( 'post' ) ) ),
 			'ai_prompt'       => array( 'ai_prompt', array( 'prompt' => 'Where are you?' ) ),
 			'custom_hook'     => array( 'custom_hook', array( 'hook' => 'my-hook' ) ),
@@ -133,18 +133,18 @@ final class EngineTest extends WP_UnitTestCase {
 	public function test_types_report_support_and_readiness(): void {
 		$types = ActionTypes::all();
 
-		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow' ) as $type ) {
+		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow', 'form' ) as $type ) {
 			$this->assertTrue( $types[ $type ]['supported'], $type );
 			$this->assertSame( 'client', $types[ $type ]['runtime'] );
 		}
-		foreach ( array( 'form', 'page_search', 'ai_prompt', 'custom_hook' ) as $type ) {
+		foreach ( array( 'page_search', 'ai_prompt', 'custom_hook' ) as $type ) {
 			$this->assertFalse( $types[ $type ]['supported'], $type );
 		}
 
 		$this->assertTrue( ActionTypes::is_ready( $this->action( 'call', array( 'phone' => '123 456' ) ), $types ) );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'call', array( 'phone' => '' ) ), $types ), 'Incomplete.' );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'call', array() ), $types ), 'Incomplete.' );
-		$this->assertFalse( ActionTypes::is_ready( $this->action( 'form', array( 'form' => 'x' ) ), $types ), 'Unsupported.' );
+		$this->assertFalse( ActionTypes::is_ready( $this->action( 'ai_prompt', array( 'prompt' => 'x' ) ), $types ), 'Unsupported.' );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'nope', array() ), $types ), 'Unknown.' );
 	}
 
@@ -321,6 +321,80 @@ final class EngineTest extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result, 'New problems still block the save.' );
 	}
 
+	public function test_valid_form_is_saved_with_defaults(): void {
+		$result = $this->settings->update( array( 'forms' => array( 'contact' => $this->form() ) ) );
+
+		$this->assertIsArray( $result, is_wp_error( $result ) ? $result->get_error_message() : '' );
+		$this->assertSame( 'Contact us', $result['forms']['contact']['title'] );
+	}
+
+	/**
+	 * Invalid forms and the field named in the error.
+	 *
+	 * @return array<string, array{0: array<int, string|int>, 1: mixed, 2: string|null}>
+	 */
+	public static function invalid_forms(): array {
+		$field = array( 'forms', 'contact', 'fields' );
+
+		return array(
+			'no title'            => array( array( 'forms', 'contact', 'title' ), '', null ),
+			'no fields'           => array( array( ...$field ), array(), null ),
+			'13 fields'           => array(
+				array( ...$field ),
+				array_map(
+					static fn( int $i ): array => array(
+						'id'    => "f{$i}",
+						'type'  => 'text',
+						'label' => 'F',
+					),
+					range( 1, 13 )
+				),
+				null,
+			),
+			'unknown type'        => array( array( ...$field, 0, 'type' ), 'file', null ),
+			'bad field id'        => array( array( ...$field, 0, 'id' ), 'Your Name', null ),
+			'max_length 0'        => array( array( ...$field, 0, 'max_length' ), 0, null ),
+			'max_length 2001'     => array( array( ...$field, 0, 'max_length' ), 2001, null ),
+			'long option'         => array( array( ...$field, 2, 'options' ), array( str_repeat( 'x', 81 ) ), null ),
+			'21 options'          => array( array( ...$field, 2, 'options' ), array_fill( 0, 21, 'x' ), null ),
+			'duplicate field id'  => array( array( ...$field, 1, 'id' ), 'name', 'forms[contact][fields][1][id]' ),
+			'reserved consent'    => array( array( ...$field, 0, 'id' ), 'consent', 'forms[contact][fields][0][id]' ),
+			'reserved website'    => array( array( ...$field, 0, 'id' ), 'website', 'forms[contact][fields][0][id]' ),
+			'reserved token'      => array( array( ...$field, 0, 'id' ), 'token', 'forms[contact][fields][0][id]' ),
+			'select no options'   => array( array( ...$field, 2, 'options' ), array(), 'forms[contact][fields][2][options]' ),
+			'options on text'     => array( array( ...$field, 0, 'options' ), array( 'a' ), 'forms[contact][fields][0][options]' ),
+			'form action missing' => array( array( 'actions', 0, 'config', 'form' ), 'nowhere', 'actions[0][config][form]' ),
+		);
+	}
+
+	/**
+	 * @dataProvider invalid_forms
+	 *
+	 * @param array<int, string|int> $path  Path of the value to break.
+	 * @param mixed                  $value Broken value.
+	 * @param string|null            $field Expected field in the error (null: schema error).
+	 */
+	public function test_invalid_forms_are_rejected( array $path, mixed $value, ?string $field ): void {
+		$settings = array(
+			'actions' => array( $this->action( 'form', array( 'form' => 'contact' ) ) ),
+			'forms'   => array( 'contact' => $this->form() ),
+		);
+		$target   = &$settings;
+		foreach ( $path as $key ) {
+			$target = &$target[ $key ];
+		}
+		$target = $value;
+		unset( $target );
+
+		$result = $this->settings->update( $settings );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		if ( null !== $field ) {
+			$this->assertArrayHasKey( $field, $result->get_error_data()['params'] );
+		}
+		$this->assertSame( array(), $this->settings->get( 'forms' ), 'All or nothing.' );
+	}
+
 	public function test_hours_are_validated(): void {
 		$valid = $this->settings->update(
 			array(
@@ -433,6 +507,36 @@ final class EngineTest extends WP_UnitTestCase {
 			'label'  => 'Label',
 			'type'   => $type,
 			'config' => $config,
+		);
+	}
+
+	/**
+	 * A valid form: text, email and select fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function form(): array {
+		return array(
+			'title'  => 'Contact us',
+			'fields' => array(
+				array(
+					'id'       => 'name',
+					'type'     => 'text',
+					'label'    => 'Name',
+					'required' => true,
+				),
+				array(
+					'id'    => 'email',
+					'type'  => 'email',
+					'label' => 'Email',
+				),
+				array(
+					'id'      => 'topic',
+					'type'    => 'select',
+					'label'   => 'Topic',
+					'options' => array( 'Sales', 'Support' ),
+				),
+			),
 		);
 	}
 

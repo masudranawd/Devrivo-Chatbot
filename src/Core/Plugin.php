@@ -13,6 +13,8 @@ use DevRivo\Chatbot\Core\Frontend\Assets;
 use DevRivo\Chatbot\Core\Frontend\Display;
 use DevRivo\Chatbot\Core\Presets\PresetRepository;
 use DevRivo\Chatbot\Core\Settings\Settings;
+use DevRivo\Chatbot\Data\Leads;
+use DevRivo\Chatbot\Data\Privacy;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -94,7 +96,9 @@ final class Plugin {
 		// Covers updates without reactivation and network-activated sites.
 		Activator::maybe_install();
 
-		( new Rest( $this->settings(), $this->presets() ) )->register();
+		$leads = new Leads();
+		( new Rest( $this->settings(), $this->presets(), $leads ) )->register();
+		( new Privacy( $leads, $this->settings() ) )->register();
 
 		if ( ! is_admin() ) {
 			( new Assets( new Display() ) )->register();

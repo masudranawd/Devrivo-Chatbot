@@ -94,8 +94,8 @@ final class PresetsControllerTest extends WP_UnitTestCase {
 		$data = $this->request( 'GET', '/healthcare' )->get_data();
 
 		$this->assertSame( 'healthcare', $data['id'] );
-		$this->assertSame( 2, $data['version'] );
-		$this->assertCount( 7, $data['settings']['actions'] );
+		$this->assertSame( 3, $data['version'] );
+		$this->assertCount( 8, $data['settings']['actions'] );
 		$this->assertSame( 'enquire', $data['settings']['actions'][0]['config']['flow'] );
 		$this->assertSame( 'ask', $data['settings']['flows']['enquire']['start'] );
 		$this->assertNotSame( '', $data['settings']['ai']['custom_instructions'] );
@@ -123,7 +123,7 @@ final class PresetsControllerTest extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertSame( array( 'settings', 'applied', 'skipped' ), array_keys( $data ) );
 		$this->assertSame( 'business', $data['settings']['general']['preset'] );
-		$this->assertSame( array( 'behaviour', 'actions', 'ai' ), $data['applied'] );
+		$this->assertSame( array( 'behaviour', 'actions', 'forms', 'ai' ), $data['applied'] );
 		$this->assertSame( array(), $data['skipped'] );
 		$this->assertInstanceOf( \stdClass::class, $data['settings']['flows'], 'Empty objects are returned as {}.' );
 	}

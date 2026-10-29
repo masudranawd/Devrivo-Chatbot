@@ -1,10 +1,11 @@
 /**
  * Conversation view: bot and visitor bubbles, typing indicator, quick replies,
- * call-to-action buttons and "Back to menu". Implements the view the flow
- * runner talks to. All text is set with textContent.
+ * call-to-action buttons, inline forms and "Back to menu". Implements the
+ * view the flow runner talks to. All text is set with textContent.
  */
 import { h } from '../lib/dom';
 import { actionControl } from './control';
+import { formView } from './form';
 
 /**
  * Builds the conversation view on a message list.
@@ -17,10 +18,12 @@ import { actionControl } from './control';
  * @param {(id: string) => void}        options.onCta      Called when a link is used (it opens by itself).
  * @param {() => void}                  options.onBack     Back to the menu.
  * @param {(text: string) => number}    options.typingTime Typing indicator time in ms (0 = none).
- * @return {Object} View for the flow runner, plus separator().
+ * @param {Object}                      options.submitter  Form submitter (lib/submit).
+ * @return {Object} View for the flow runner, plus form() and separator().
  */
 export function conversationView( log, options ) {
-	const { config, target, onAction, onCta, onBack, typingTime } = options;
+	const { config, target, onAction, onCta, onBack, typingTime, submitter } =
+		options;
 	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
 
 	const scroll = () => {
@@ -29,15 +32,18 @@ export function conversationView( log, options ) {
 
 	// Keyboard users keep their place: while focus is in the chat view (or the
 	// control they used just disappeared), it moves to the next control shown.
-	const show = ( element ) => {
+	const show = ( element, focus = true ) => {
 		const active = log.getRootNode().activeElement;
 		const focusIt =
-			! active ||
-			! active.isConnected ||
-			( log.parentElement || log ).contains( active );
+			focus &&
+			( ! active ||
+				! active.isConnected ||
+				( log.parentElement || log ).contains( active ) );
 		log.append( element );
 		scroll();
-		const first = element.querySelector( 'a,button' );
+		const first = element.querySelector(
+			'a,button,input:not([tabindex="-1"]),select,textarea'
+		);
 		if ( focusIt && first ) {
 			first.focus();
 		}
@@ -57,7 +63,7 @@ export function conversationView( log, options ) {
 			onClick,
 		} );
 
-	return {
+	const view = {
 		async bot( text ) {
 			const wait = typingTime( text );
 			if ( wait > 0 ) {
@@ -129,12 +135,40 @@ export function conversationView( log, options ) {
 
 		end() {
 			clearReplies();
+			// Don't pull focus away from a form the visitor still has to fill in.
+			const last = log.lastElementChild;
+			const formOpen =
+				!! last &&
+				last.matches( '.dc-form' ) &&
+				! last.matches( '.is-done' );
 			show(
 				h(
 					'div',
 					{ class: 'dc-replies', role: 'group' },
 					reply( config.i18n.back_to_menu, false, onBack )
-				)
+				),
+				! formOpen
+			);
+		},
+
+		form( formId ) {
+			const form = config.forms[ formId ];
+			if ( ! form ) {
+				view.end();
+				return;
+			}
+			submitter.prepare();
+			clearReplies();
+			show(
+				formView( form, {
+					consent: config.consent,
+					i18n: config.i18n,
+					send: ( payload ) => submitter.submit( formId, payload ),
+					onSuccess: async ( message ) => {
+						await view.bot( message );
+						view.end();
+					},
+				} )
 			);
 		},
 
@@ -145,4 +179,6 @@ export function conversationView( log, options ) {
 			}
 		},
 	};
+
+	return view;
 }

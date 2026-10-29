@@ -27,7 +27,7 @@ AI findings so far: see `docs/spikes/ai-client.md` (native function declarations
 
 **WordPress.org:** GPL-compatible only; no trialware or upsells; readable source ships with builds; readme "External services" section kept accurate; no tracking without opt-in; no remote/CDN assets; credit link opt-in and off by default; admin notices only when relevant and dismissible; use core APIs/libraries; must pass Plugin Check and PHPCS (WordPress-Extra).
 
-**Security:** sanitise early, escape late; nonces + capability checks on every state change; every REST route has a real `permission_callback`; public chat endpoint has rate limits (IP + session), length caps and nonce checks; `$wpdb->prepare()` for all SQL; retrieved content and user input are data, never instructions to the AI; order lookups need order number + email; validate uploads; consent, retention + cron purge, privacy export/erase, suggested privacy text.
+**Security:** sanitise early, escape late; nonces + capability checks on every state change; every REST route has a real `permission_callback`; public chat endpoint has rate limits (IP + session), length caps and nonce checks; `$wpdb->prepare()` for all SQL; retrieved content and user input are data, never instructions to the AI; order lookups need order number + email; validate uploads; consent, retention + cron purge, privacy export/erase, suggested privacy text. Inbox UI (Step 8) must escape all lead data on output.
 
 **Performance:** enqueue only where needed; background indexing in batches; cache config and expensive queries; never autoload large options.
 
@@ -60,4 +60,4 @@ The test database `devrivo_chatbot_tests` is wiped on every run; never point tes
 
 Phase 0 Foundations → v1.0 Core MVP + WordPress.org submission → v1.1 WooCommerce → v1.2 Listings + Quotes → v1.3 Webhooks + Analytics → v1.4 Multilingual + Triggers → v2.0 Visual flows, Abilities/MCP, human handoff.
 
-**Current: v1.0, Step 4 (Action and Flow engines) done; next Step 5 (Forms and leads).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.
+**Current: v1.0, Step 5 (Forms and leads) done; next Step 6 (Knowledge index).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.
