@@ -46,7 +46,7 @@
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
 | `devrivo_chatbot_modules` | Registered module class names | `string[] $modules` | 1.0.0 | Planned |
-| `devrivo_chatbot_action_types` | Available action types and their handlers | `array $types` | 1.0.0 | Planned |
+| `devrivo_chatbot_action_types` | Quick action types: `schema` (config JSON schema, public), `runtime` (`client`), `supported`, `required` config keys. Unknown or unsupported types are hidden from visitors | `array $types` | 1.0.0 | In dev |
 | `devrivo_chatbot_presets` | Available industry presets: definition arrays, or paths to `.php` (returns an array) or `.json` files. Invalid presets are skipped with `_doing_it_wrong()` | `array $presets` | 1.0.0 | In dev |
 | `devrivo_chatbot_form_fields` | Field definitions for a form before render | `array $fields`, `string $form_id` | 1.0.0 | Planned |
 | `devrivo_chatbot_cards` | Registered card types (link, product, property, post) | `array $cards` | 1.0.0 | Planned |
@@ -79,6 +79,12 @@
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
 | `devrivo_chatbot_rate_limit` | Rate-limit settings for the public chat endpoint | `array $limits`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_retention_days` | Days to keep conversations and leads | `int $days` | 1.0.0 | Planned |
+
+### Front-end events (JavaScript)
+
+| Event | Fires when | `event.detail` | Since | Status |
+|---|---|---|---|---|
+| `devrivo-chatbot:action` | A quick action runs (menu, popover, offer or flow), dispatched on the widget host element `#devrivo-chatbot`; bubbles and is composed | `{ id, type }` | 1.0.0 | In dev |
 
 ---
 
