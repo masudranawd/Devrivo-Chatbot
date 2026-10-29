@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.7.0
+Stable tag: 0.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,14 +45,24 @@ The full, human-readable source (including the uncompiled JavaScript in `assets-
 
 == External services ==
 
-This plugin can connect to an external AI service to answer visitor questions. This only happens when **AI mode** is enabled by the site administrator **and** an AI provider has been connected in WordPress under Settings → Connectors. In Guided mode, no data is sent to any external AI service.
+This plugin can use an external AI service to answer visitor questions. This only happens when the site administrator has **turned on AI mode, chosen a model and set a monthly token limit**, and an AI provider plugin is installed and connected under Settings → Connectors. In Guided mode, no data is sent to any external AI service.
 
-**What is sent and when:** each time a visitor sends a message in AI mode, the plugin sends the visitor's message, recent messages from the same conversation, relevant excerpts of the site's own published content, the current page title and URL, and the site's assistant instructions to the AI provider selected in Connectors. Contact details entered in forms are stored on your own site and are not sent to the AI provider.
+**How:** the plugin never contacts an AI service itself and never stores or reads API keys. Requests are made through the WordPress AI Client by the AI provider plugin the site administrator installed (AI Provider for Anthropic, Google or OpenAI).
 
-The request is made through the WordPress core AI Client to whichever provider the site administrator has connected. Depending on that choice, this may be:
+**What is sent and when:** each time a visitor sends a chat message in AI mode:
+
+* the visitor's message;
+* up to 8 recent messages from the same conversation (kept only in the visitor's browser memory);
+* short excerpts of the site's own published pages, posts and FAQs that match the question;
+* the current page title and URL (without query string);
+* the site's assistant instructions (rules, the business name and the administrator's custom instructions).
+
+**What is not sent or stored:** contact details entered in forms are stored on your own site and are never sent to the AI provider. The assistant is told never to ask for personal details in the chat. This plugin does not store chat messages or AI replies; it only counts the tokens used each month.
+
+Depending on the provider the site administrator connected, the request goes to:
 
 * Anthropic (Claude): [Commercial terms](https://www.anthropic.com/legal/commercial-terms), [Privacy policy](https://www.anthropic.com/legal/privacy)
-* OpenAI: [Terms](https://openai.com/policies/business-terms), [Privacy policy](https://openai.com/policies/privacy-policy)
+* OpenAI: [Services agreement](https://openai.com/policies/services-agreement/), [Privacy policy](https://openai.com/policies/privacy-policy/)
 * Google (Gemini): [Gemini API terms](https://ai.google.dev/gemini-api/terms), [Privacy policy](https://policies.google.com/privacy)
 
 Site owners are responsible for reviewing their chosen provider's terms and for describing this processing in their own privacy policy. The plugin adds suggested text to Settings → Privacy to help with this.
@@ -62,7 +72,7 @@ Site owners are responsible for reviewing their chosen provider's terms and for 
 1. In your WordPress admin, go to Plugins → Add New and search for "DevRivo Chatbot".
 2. Click Install, then Activate.
 3. Follow the setup wizard under DevRivo Chatbot in the admin menu. It scans your site and suggests settings.
-4. Optional: to use AI mode, connect an AI provider under Settings → Connectors, then enable AI mode in the plugin's AI settings.
+4. Optional: to use AI mode, install an AI provider plugin (AI Provider for Anthropic, Google or OpenAI), add your key under Settings → Connectors, then in the plugin's AI settings choose the provider, a model and a monthly token limit, and turn AI on.
 
 == Frequently Asked Questions ==
 
@@ -113,6 +123,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.8.0 =
+* AI answers from your own site content through the WordPress AI Client, with tools, guardrails, monthly token limit and automatic fallback to Guided mode.
+
 = 0.7.0 =
 * Knowledge index and site search: answers from your pages, posts and FAQs (works with Elementor).
 
@@ -136,6 +149,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.8.0 =
+Development version: adds optional AI answers through the WordPress AI Client. AI stays off until you choose a provider, a model and a monthly token limit.
 
 = 0.7.0 =
 Development version: adds the knowledge index (a new table, built in the background) and "Ask a question" answers from your site.
