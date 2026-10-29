@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\AI\AiClientInterface;
+use DevRivo\Chatbot\AI\WpAiClientAdapter;
 use DevRivo\Chatbot\Core\Frontend\Assets;
 use DevRivo\Chatbot\Core\Frontend\Display;
 use DevRivo\Chatbot\Core\Presets\PresetRepository;
@@ -54,6 +56,13 @@ final class Plugin {
 	 * @var Knowledge|null
 	 */
 	private ?Knowledge $knowledge = null;
+
+	/**
+	 * AI client.
+	 *
+	 * @var AiClientInterface|null
+	 */
+	private ?AiClientInterface $ai_client = null;
 
 	/**
 	 * Whether boot() has already run.
@@ -132,6 +141,28 @@ final class Plugin {
 		}
 
 		return $this->settings;
+	}
+
+	/**
+	 * AI client (shared instance): the WordPress AI Client adapter.
+	 */
+	public function ai_client(): AiClientInterface {
+		if ( null === $this->ai_client ) {
+			$this->ai_client = new WpAiClientAdapter();
+		}
+
+		return $this->ai_client;
+	}
+
+	/**
+	 * Replaces the AI client before routes are registered.
+	 *
+	 * @internal For tests (a fake client, no network).
+	 *
+	 * @param AiClientInterface|null $client Client, or null for the default.
+	 */
+	public function set_ai_client( ?AiClientInterface $client ): void {
+		$this->ai_client = $client;
 	}
 
 	/**

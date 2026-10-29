@@ -146,7 +146,7 @@ final class FormsController extends WP_REST_Controller {
 				'email'        => $email,
 				'name'         => $values['name'] ?? '',
 				'data'         => $data,
-				'page_url'     => self::page_url( $request->get_param( 'page_url' ) ),
+				'page_url'     => Gate::page_url( $request->get_param( 'page_url' ) ),
 				'consent_text' => Consent::text( $this->settings ),
 			),
 			$form_id
@@ -225,19 +225,5 @@ final class FormsController extends WP_REST_Controller {
 		$response->header( 'Cache-Control', 'no-store' );
 
 		return $response;
-	}
-
-	/**
-	 * The page the visitor was on: only this site's URLs, without query string
-	 * or fragment (they can contain personal data).
-	 *
-	 * @param mixed $url Submitted URL.
-	 */
-	private static function page_url( mixed $url ): string {
-		if ( ! is_string( $url ) || strlen( $url ) > 2000 || ! Gate::is_site_url( $url ) ) {
-			return '';
-		}
-
-		return esc_url_raw( (string) preg_replace( '/[?#].*$/s', '', $url ) );
 	}
 }

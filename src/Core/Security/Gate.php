@@ -34,7 +34,8 @@ final class Gate {
 	 * Checks a request.
 	 *
 	 * @param WP_REST_Request      $request Request.
-	 * @param array<string, mixed> $context Context: endpoint (e.g. "form") and endpoint details.
+	 * @param array<string, mixed> $context Context: endpoint ("form", "chat"), endpoint details, and
+	 *                                      min_age (seconds since the token was issued; default 3).
 	 * @return true|WP_Error
 	 */
 	public static function check( WP_REST_Request $request, array $context ): bool|WP_Error {
@@ -54,7 +55,7 @@ final class Gate {
 			);
 		}
 
-		$token = SessionToken::verify( $request->get_param( 'token' ) );
+		$token = SessionToken::verify( $request->get_param( 'token' ), null, (int) ( $context['min_age'] ?? SessionToken::MIN_AGE ) );
 		if ( is_wp_error( $token ) ) {
 			return $token;
 		}
@@ -62,17 +63,19 @@ final class Gate {
 		$limits = self::limits( $context );
 
 		$endpoint = (string) ( $context['endpoint'] ?? 'default' );
-		$clients  = array(
+		// Chat has its own, higher limits; forms use "session" and "ip".
+		$prefix  = 'chat' === $endpoint ? 'chat_' : '';
+		$clients = array(
 			'session' => $token['sid'],
 			'ip'      => RateLimiter::client_ip( $request ),
 		);
-		$checks   = array();
+		$checks  = array();
 		foreach ( $clients as $name => $id ) {
 			$checks[] = array(
 				$endpoint . ':' . $name,
 				RateLimiter::key( $id ),
-				$limits[ $name ]['max'],
-				$limits[ $name ]['window'],
+				$limits[ $prefix . $name ]['max'],
+				$limits[ $prefix . $name ]['window'],
 			);
 		}
 
@@ -103,22 +106,30 @@ final class Gate {
 	/**
 	 * Rate limits for a public endpoint, filtered and cleaned.
 	 *
-	 * @param array<string, mixed> $context Context: endpoint ("form", "search") and endpoint details.
-	 * @return array<string, array{max: int, window: int}> session, ip and search limits.
+	 * @param array<string, mixed> $context Context: endpoint ("form", "search", "chat") and endpoint details.
+	 * @return array<string, array{max: int, window: int}> session, ip, search, chat_session and chat_ip limits.
 	 */
 	public static function limits( array $context ): array {
 		$defaults = array(
-			'session' => array(
+			'session'      => array(
 				'max'    => 5,
 				'window' => 10 * MINUTE_IN_SECONDS,
 			),
-			'ip'      => array(
+			'ip'           => array(
 				'max'    => 30,
 				'window' => 10 * MINUTE_IN_SECONDS,
 			),
-			'search'  => array(
+			'search'       => array(
 				'max'    => 60,
 				'window' => MINUTE_IN_SECONDS,
+			),
+			'chat_session' => array(
+				'max'    => 20,
+				'window' => 10 * MINUTE_IN_SECONDS,
+			),
+			'chat_ip'      => array(
+				'max'    => 60,
+				'window' => 10 * MINUTE_IN_SECONDS,
 			),
 		);
 
@@ -129,12 +140,13 @@ final class Gate {
 		 * sharing an IP address — offices, mobile networks, sites behind a
 		 * proxy — don't block each other) and the looser 'ip' (per client IP,
 		 * which also catches clients that fetch a new token for every request).
-		 * Search uses 'search', per client IP.
+		 * Search uses 'search', per client IP. Chat messages must pass both
+		 * 'chat_session' and 'chat_ip'.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param array<string, array<string, int>> $limits  'session', 'ip' and 'search', each with 'max' requests per 'window' seconds.
-		 * @param array<string, mixed>              $context Context: endpoint ("form", "search") and details such as form_id.
+		 * @param array<string, array<string, int>> $limits  'session', 'ip', 'search', 'chat_session' and 'chat_ip', each with 'max' requests per 'window' seconds.
+		 * @param array<string, mixed>              $context Context: endpoint ("form", "search", "chat") and details such as form_id.
 		 */
 		$filtered = (array) apply_filters( 'devrivo_chatbot_rate_limit', $defaults, $context );
 
@@ -148,6 +160,20 @@ final class Gate {
 		}
 
 		return $limits;
+	}
+
+	/**
+	 * The page a visitor was on: only this site's URLs, without query string
+	 * or fragment (they can contain personal data).
+	 *
+	 * @param mixed $url Submitted URL.
+	 */
+	public static function page_url( mixed $url ): string {
+		if ( ! is_string( $url ) || strlen( $url ) > 2000 || ! self::is_site_url( $url ) ) {
+			return '';
+		}
+
+		return esc_url_raw( (string) preg_replace( '/[?#].*$/s', '', $url ) );
 	}
 
 	/**

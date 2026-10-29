@@ -239,7 +239,8 @@ describe( 'normalizeConfig', () => {
 		expect( config.colorScheme ).toBe( 'auto' );
 		expect( config.avatarUrl ).toBe( '' );
 		expect( config.autoOpenDelay ).toBe( 0 );
-		expect( config.chatEnabled ).toBe( false );
+		expect( config.aiAvailable ).toBe( false );
+		expect( config.chatUrl ).toBe( '' );
 	} );
 
 	it( 'greets by time of day', () => {

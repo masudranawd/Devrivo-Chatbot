@@ -1,5 +1,6 @@
 /**
- * Guided answers: "Ask a question", page_search actions, results, fallback.
+ * Page searches (page_search actions use the search endpoint): results,
+ * fallback, errors. "Ask a question" goes to the chat (see chat-widget.test.js).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '../../assets-src/widget/widget';
@@ -51,6 +52,7 @@ const RAW = {
 let host;
 let widget;
 let searcher;
+let chat;
 
 const $ = ( selector ) => host.shadowRoot.querySelector( selector );
 const $$ = ( selector ) => [ ...host.shadowRoot.querySelectorAll( selector ) ];
@@ -66,12 +68,28 @@ function setup( raw = RAW, response = { ok: true, status: 200, results: [] } ) {
 			typeof response === 'function' ? response() : response
 		),
 	};
+	chat = {
+		send: vi.fn( async () => ( {
+			ok: true,
+			status: 200,
+			answer: {
+				mode: 'guided',
+				text: 'Chat answer',
+				sources: [],
+				actions: [],
+			},
+		} ) ),
+	};
 	widget = render( host, normalizeConfig( raw, boot ), {
 		typingTime: () => 0,
 		searcher,
+		chat,
 		submitter: { prepare: vi.fn(), submit: vi.fn() },
 	} );
 }
+
+// Opens the page search ("Find an article", post types: post).
+const openSearch = () => $( '.dc-row[data-action="articles"]' ).click();
 
 async function ask( text ) {
 	$( '.dc-composer input' ).value = text;
@@ -87,11 +105,11 @@ afterEach( () => {
 	host.remove();
 } );
 
-describe( 'ask a question', () => {
+describe( 'page search', () => {
 	beforeEach( () => setup() );
 
-	it( 'shows "Ask a question" and opens the chat with the composer focused', () => {
-		$( '.dc-ask' ).click();
+	it( 'opens the chat with the composer focused and a short limit', () => {
+		openSearch();
 
 		expect( widget.view() ).toBe( 'chat' );
 		expect( botTexts() ).toEqual( [ 'What would you like to know?' ] );
@@ -104,16 +122,18 @@ describe( 'ask a question', () => {
 	} );
 
 	it( 'sends the question and shows the visitor bubble', async () => {
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( '  opening hours ' );
 
-		expect( searcher.search ).toHaveBeenCalledWith( 'opening hours', [] );
+		expect( searcher.search ).toHaveBeenCalledWith( 'opening hours', [
+			'post',
+		] );
 		expect( $( '.dc-msg.dc-user' ).textContent ).toBe( 'opening hours' );
 		expect( $( '.dc-composer input' ).value ).toBe( '' );
 	} );
 
 	it( 'ignores questions shorter than two characters', async () => {
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'a' );
 
 		expect( searcher.search ).not.toHaveBeenCalled();
@@ -127,7 +147,7 @@ describe( 'ask a question', () => {
 					finish = resolve;
 				} )
 		);
-		$( '.dc-ask' ).click();
+		openSearch();
 		$( '.dc-composer input' ).value = 'hours';
 		$( '.dc-composer' ).dispatchEvent(
 			new window.Event( 'submit', { cancelable: true } )
@@ -165,7 +185,7 @@ describe( 'results', () => {
 				},
 			],
 		} );
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'hours' );
 
 		expect( botTexts().at( -1 ) ).toBe( 'Here is what I found:' );
@@ -203,7 +223,7 @@ describe( 'results', () => {
 				},
 			],
 		} );
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'deliver' );
 
 		expect( botTexts().at( -1 ) ).toBe( 'Yes, we deliver locally.' );
@@ -223,7 +243,7 @@ describe( 'results', () => {
 				},
 			],
 		} );
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'xss' );
 
 		expect( $( '.dc-link img' ) ).toBeNull();
@@ -235,7 +255,7 @@ describe( 'results', () => {
 
 	it( 'offers the fallback action when nothing is found', async () => {
 		setup();
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'unicorns' );
 
 		expect( botTexts().at( -1 ) ).toBe( 'Not found.' );
@@ -245,7 +265,7 @@ describe( 'results', () => {
 
 	it( 'shows only "Back to menu" without a fallback action', async () => {
 		setup( { ...RAW, fallback_action: '' } );
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'unicorns' );
 
 		expect( $$( '.dc-reply' ).map( ( r ) => r.textContent ) ).toEqual( [
@@ -255,7 +275,7 @@ describe( 'results', () => {
 
 	it( 'shows friendly messages for rate limits and network errors', async () => {
 		setup( RAW, { ok: false, status: 429, results: [] } );
-		$( '.dc-ask' ).click();
+		openSearch();
 		await ask( 'hours' );
 		expect( botTexts().at( -1 ) ).toBe( 'Slow down.' );
 
@@ -274,11 +294,15 @@ describe( 'page_search actions', () => {
 		await ask( 'design' );
 		expect( searcher.search ).toHaveBeenCalledWith( 'design', [ 'post' ] );
 
-		// "Ask a question" searches everything again.
+		// "Ask a question" goes to the chat instead.
 		$( '.dc-chat-head .dc-icon-btn' ).click();
 		$( '.dc-ask' ).click();
+		expect( $( '.dc-composer input' ).getAttribute( 'maxlength' ) ).toBe(
+			'500'
+		);
 		await ask( 'design' );
-		expect( searcher.search ).toHaveBeenLastCalledWith( 'design', [] );
+		expect( searcher.search ).toHaveBeenCalledTimes( 1 );
+		expect( chat.send ).toHaveBeenCalledWith( 'design', [] );
 	} );
 
 	it( 'hides search when there is nothing to search', () => {

@@ -13,7 +13,9 @@ import { actionTarget, openTarget } from './lib/actions';
 import { normalizeConfig } from './lib/config';
 import { h, icon, ICONS } from './lib/dom';
 import { createRunner } from './lib/flow';
+import { createChat } from './lib/chat';
 import { createSearcher } from './lib/search';
+import { createSession } from './lib/session';
 import { createSubmitter } from './lib/submit';
 import { isOpenNow } from './lib/hours';
 import { rememberDismissed, wasDismissed } from './lib/storage';
@@ -71,7 +73,7 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open, typingTime( text ), submitter, searcher }.
+ * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat }.
  * @return {Object} Controller: { state(), view(), destroy() }.
  */
 export function render( host, config, options = {} ) {
@@ -95,7 +97,11 @@ export function render( host, config, options = {} ) {
 		target,
 		onAsk: () => ask(),
 		onBack: () => showView( 'home', true ),
-		onSend: ( text ) => conversation.search( text, searchTypes ),
+		// Page searches use the search endpoint; everything else asks the chat (AI or Guided).
+		onSend: ( text ) =>
+			searchTypes.length
+				? conversation.search( text, searchTypes )
+				: conversation.chat( text ),
 	};
 
 	const root = h( 'div', {
@@ -130,6 +136,9 @@ export function render( host, config, options = {} ) {
 		views.offers = offersView( config, handlers );
 	}
 
+	// One session token for forms and chat.
+	const session = createSession( { sessionUrl: config.sessionUrl } );
+
 	const conversation = conversationView(
 		views.chat.querySelector( '.dc-msgs' ),
 		{
@@ -144,9 +153,12 @@ export function render( host, config, options = {} ) {
 			submitter:
 				options.submitter ||
 				createSubmitter( {
-					sessionUrl: config.sessionUrl,
 					submitUrl: config.submitUrl,
+					session,
 				} ),
+			chat:
+				options.chat ||
+				createChat( { chatUrl: config.chatUrl, session } ),
 			searcher:
 				options.searcher || createSearcher( { url: config.searchUrl } ),
 		}
@@ -402,6 +414,8 @@ export function render( host, config, options = {} ) {
 		conversation.prompt( i18n.ask_prompt );
 		const input = views.chat.querySelector( '.dc-composer input' );
 		if ( input ) {
+			// Search questions are short; chat messages may be longer.
+			input.maxLength = searchTypes.length ? 100 : 500;
 			input.focus();
 		}
 	}

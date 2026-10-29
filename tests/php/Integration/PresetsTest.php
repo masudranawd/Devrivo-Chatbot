@@ -172,7 +172,18 @@ final class PresetsTest extends WP_UnitTestCase {
 	}
 
 	public function test_replace_overwrites_preset_keys_and_keeps_everything_else(): void {
-		$this->settings->update(
+		// A provider whose model list is cached, so AI can be turned on without network.
+		set_transient(
+			'devrivo_chatbot_models_' . md5( 'fake' ),
+			array(
+				array(
+					'id'   => 'old-model',
+					'name' => 'Old',
+				),
+			),
+			HOUR_IN_SECONDS
+		);
+		$saved = $this->settings->update(
 			array(
 				'display'      => array( 'enabled' => true ),
 				'appearance'   => array( 'brand_name' => 'Acme' ),
@@ -184,11 +195,14 @@ final class PresetsTest extends WP_UnitTestCase {
 				),
 				'ai'           => array(
 					'enabled'             => true,
+					'provider'            => 'fake',
 					'model'               => 'old-model',
+					'monthly_token_limit' => 1000,
 					'custom_instructions' => 'Old instructions',
 				),
 			)
 		);
+		$this->assertIsArray( $saved );
 		$before = $this->settings->all();
 		$preset = $this->presets->get( 'business' );
 

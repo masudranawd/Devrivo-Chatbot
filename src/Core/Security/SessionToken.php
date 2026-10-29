@@ -63,11 +63,12 @@ final class SessionToken {
 	/**
 	 * Verifies a token.
 	 *
-	 * @param mixed    $token Token from the request.
-	 * @param int|null $now   Current time (tests).
+	 * @param mixed    $token   Token from the request.
+	 * @param int|null $now     Current time (tests).
+	 * @param int      $min_age Minimum seconds since the token was issued (forms 3, chat 1).
 	 * @return array{sid: string, iat: int, exp: int}|WP_Error Payload, or a 403 error.
 	 */
-	public static function verify( mixed $token, ?int $now = null ): array|WP_Error {
+	public static function verify( mixed $token, ?int $now = null, int $min_age = self::MIN_AGE ): array|WP_Error {
 		$now   = $now ?? time();
 		$parts = is_string( $token ) && strlen( $token ) <= 512 ? explode( '.', $token ) : array();
 
@@ -87,7 +88,7 @@ final class SessionToken {
 			return self::invalid();
 		}
 
-		if ( $now - $payload['iat'] < self::MIN_AGE ) {
+		if ( $now - $payload['iat'] < $min_age ) {
 			return new WP_Error(
 				'devrivo_chatbot_too_fast',
 				__( 'Please take a moment before sending.', 'devrivo-chatbot' ),

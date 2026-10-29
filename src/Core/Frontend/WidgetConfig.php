@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core\Frontend;
 
+use DevRivo\Chatbot\AI\Models;
 use DevRivo\Chatbot\Core\Rest;
 use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
@@ -50,28 +51,7 @@ final class WidgetConfig {
 		$appearance = $all['appearance'];
 		$behaviour  = $all['behaviour'];
 
-		$types   = ActionTypes::all();
-		$actions = array();
-		foreach ( $all['actions'] as $action ) {
-			$public = self::action( $action, $types, $all['flows'], $all['forms'] );
-			if ( null !== $public ) {
-				$actions[] = $public;
-			}
-		}
-
-		/**
-		 * Filters the quick actions sent to the widget (menu, popover, flows).
-		 *
-		 * Each action has id, label, type, urgent, show_in_menu and config
-		 * (only the keys of its type). Actions with show_in_menu false are only
-		 * used inside flows.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array<int, array<string, mixed>> $actions Quick actions.
-		 * @param array<string, mixed>             $context { @type string $locale Locale. }
-		 */
-		$actions = array_values( (array) apply_filters( 'devrivo_chatbot_quick_actions', $actions, $context ) );
+		$actions = $this->actions( $locale );
 
 		$action_ids   = array_column( $actions, 'id' );
 		$offer_schema = (array) ( Schema::section( 'offers' )['items'] ?? array() );
@@ -108,7 +88,11 @@ final class WidgetConfig {
 
 		$config = array(
 			'version'         => Settings::config_version(),
-			'chat_enabled'    => false,
+			// AI answers: turned on, with a limit and a model from the provider's list.
+			'ai_available'    => self::ai_available( (array) $all['ai'] ),
+			// Shown under the composer in AI mode.
+			'disclaimer'      => '' !== trim( (string) ( $all['ai']['disclaimer'] ?? '' ) ) ? trim( (string) $all['ai']['disclaimer'] ) : __( 'AI assistant. General information only.', 'devrivo-chatbot' ),
+			'chat_url'        => rest_url( Rest::NAMESPACE . '/chat' ),
 			// Guided answers: on when the index has pages or FAQs.
 			'search_enabled'  => Index::has_content(),
 			'search_url'      => rest_url( Rest::NAMESPACE . '/search' ),
@@ -161,6 +145,52 @@ final class WidgetConfig {
 		 * @param array<string, mixed> $context { @type string $locale Locale. }
 		 */
 		return (array) apply_filters( 'devrivo_chatbot_widget_config', $config, $context );
+	}
+
+	/**
+	 * Whether AI can answer: turned on, a monthly limit above 0 and a model
+	 * that is in the provider's list. Uses the cached model list only, so the
+	 * public config never calls the provider (the model was checked on save).
+	 *
+	 * @param array<string, mixed> $ai AI settings.
+	 */
+	public static function ai_available( array $ai ): bool {
+		return ! empty( $ai['enabled'] )
+			&& (int) ( $ai['monthly_token_limit'] ?? 0 ) > 0
+			&& Models::is_valid( (string) ( $ai['provider'] ?? '' ), (string) ( $ai['model'] ?? '' ), false );
+	}
+
+	/**
+	 * Quick actions the widget can run, with only their public keys.
+	 *
+	 * @param string $locale Locale (passed to filters).
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function actions( string $locale ): array {
+		$all     = $this->settings->all();
+		$types   = ActionTypes::all();
+		$actions = array();
+		foreach ( $all['actions'] as $action ) {
+			$public = self::action( $action, $types, $all['flows'], $all['forms'] );
+			if ( null !== $public ) {
+				$actions[] = $public;
+			}
+		}
+
+		/**
+		 * Filters the quick actions sent to the widget (menu, popover, flows)
+		 * and offered to the AI's suggest_action tool.
+		 *
+		 * Each action has id, label, type, urgent, show_in_menu and config
+		 * (only the keys of its type). Actions with show_in_menu false are only
+		 * used inside flows.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<int, array<string, mixed>> $actions Quick actions.
+		 * @param array<string, mixed>             $context { @type string $locale Locale. }
+		 */
+		return array_values( (array) apply_filters( 'devrivo_chatbot_quick_actions', $actions, array( 'locale' => $locale ) ) );
 	}
 
 	/**
@@ -333,6 +363,9 @@ final class WidgetConfig {
 			'read_more'      => __( 'Read more on our site', 'devrivo-chatbot' ),
 			'search_limited' => __( 'You have asked a lot of questions in a short time. Please wait a moment and try again.', 'devrivo-chatbot' ),
 			'search_error'   => __( 'Sorry, I couldn’t search just now. Please check your connection and try again.', 'devrivo-chatbot' ),
+			'ai_tag'         => __( 'AI', 'devrivo-chatbot' ),
+			'chat_limited'   => __( 'You have sent a lot of messages in a short time. Please wait a moment and try again.', 'devrivo-chatbot' ),
+			'chat_error'     => __( 'Sorry, I couldn’t answer just now. Please check your connection and try again.', 'devrivo-chatbot' ),
 		);
 	}
 }

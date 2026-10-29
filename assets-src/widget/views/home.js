@@ -1,5 +1,5 @@
 /**
- * Home view: greeting, welcome, "Ask a question" (when search or chat is on) and the
+ * Home view: greeting, welcome, "Ask a question" (when search or AI is on) and the
  * quick actions list, plus an optional open/closed status line.
  */
 import { h, icon, ICONS } from '../lib/dom';
@@ -45,7 +45,7 @@ export function homeView( config, handlers, status = null, now = new Date() ) {
 	] );
 
 	const ask =
-		config.chatEnabled || config.searchEnabled
+		config.aiAvailable || config.searchEnabled
 			? h(
 					'button',
 					{

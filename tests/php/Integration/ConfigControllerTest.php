@@ -51,13 +51,25 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 	}
 
 	public function test_response_has_only_allowlisted_keys(): void {
-		$this->settings()->update(
+		set_transient(
+			'devrivo_chatbot_models_' . md5( 'secret-provider' ),
+			array(
+				array(
+					'id'   => 'secret-model',
+					'name' => 'Secret',
+				),
+			),
+			HOUR_IN_SECONDS
+		);
+		$saved = $this->settings()->update(
 			array(
 				'display'      => array( 'launcher_label' => 'Talk to us' ),
 				'appearance'   => array( 'brand_name' => 'Acme' ),
 				'ai'           => array(
 					'enabled'             => true,
+					'provider'            => 'secret-provider',
 					'model'               => 'secret-model',
+					'monthly_token_limit' => 12345,
 					'custom_instructions' => 'SECRET INSTRUCTIONS',
 				),
 				'privacy'      => array(
@@ -69,22 +81,23 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 				'forms'        => array( 'contact' => self::form() ),
 			)
 		);
+		$this->assertIsArray( $saved );
 
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'chat_enabled', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
-		$this->assertFalse( $data['chat_enabled'] );
+		$this->assertTrue( $data['ai_available'] );
 		$this->assertSame( 'Talk to us', $data['display']['launcher_label'] );
 		$this->assertSame( 'Acme', $data['appearance']['brand_name'] );
 		$this->assertArrayHasKey( 'help', $data['flows'], 'Flows are public content.' );
 		$this->assertArrayHasKey( 'contact', $data['forms'], 'Forms are public content.' );
 		$this->assertSame( 'I agree to the policy.', $data['consent']['text'], 'Consent text only, as plain text.' );
 
-		foreach ( array( 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'retention_days', 'delete_data_on_uninstall', 'SECRET', 'secret-model', 'owner@example.com', '"enabled"', '"rules"', 'href' ) as $needle ) {
+		foreach ( array( 'secret-provider', '12345', 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'retention_days', 'delete_data_on_uninstall', 'SECRET', 'secret-model', 'owner@example.com', '"enabled"', '"rules"', 'href' ) as $needle ) {
 			$this->assertStringNotContainsString( $needle, $json, $needle );
 		}
 	}

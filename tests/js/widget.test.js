@@ -19,7 +19,6 @@ const boot = parseBoot( {
 
 const RAW = {
 	version: 1,
-	chat_enabled: false,
 	display: {
 		position: 'right',
 		primary_color: '#1e3b36',
@@ -184,14 +183,17 @@ describe( 'rendering', () => {
 		);
 	} );
 
-	it( 'hides "Ask a question" and the composer while chat is disabled', () => {
+	it( 'hides "Ask a question" and the composer without AI or search', () => {
 		setup();
 		expect( $( '.dc-ask' ) ).toBeNull();
 		expect( $( '.dc-composer' ) ).toBeNull();
 		expect( $( '[data-view="chat"] .dc-msgs' ) ).not.toBeNull();
 		widget.destroy();
 
-		setup( { chat_enabled: true } );
+		setup( {
+			ai_available: true,
+			chat_url: 'https://example.com/wp-json/devrivo-chatbot/v1/chat',
+		} );
 		expect( $( '.dc-ask' ) ).not.toBeNull();
 		expect( $( '[data-view="chat"] .dc-composer' ) ).not.toBeNull();
 	} );
