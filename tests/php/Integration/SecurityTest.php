@@ -297,17 +297,25 @@ final class SecurityTest extends WP_UnitTestCase {
 		$this->assertSame( 429, $this->status( $third ) );
 		$this->assertSame(
 			array(
-				'session' => array(
+				'session'      => array(
 					'max'    => 5,
 					'window' => 600,
 				),
-				'ip'      => array(
+				'ip'           => array(
 					'max'    => 30,
 					'window' => 600,
 				),
-				'search'  => array(
+				'search'       => array(
 					'max'    => 60,
 					'window' => 60,
+				),
+				'chat_session' => array(
+					'max'    => 20,
+					'window' => 600,
+				),
+				'chat_ip'      => array(
+					'max'    => 60,
+					'window' => 600,
 				),
 			),
 			$seen[0],

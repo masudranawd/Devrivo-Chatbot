@@ -61,12 +61,69 @@ final class Search {
 	 * @return array<int, array{type: string, title: string, url: string, excerpt: string, score: float}>
 	 */
 	public function run( string $query, array $post_types = array() ): array {
-		$terms = self::terms( $query );
-		$rows  = array() === $terms ? array() : $this->rows( $terms, $post_types );
+		$terms   = self::terms( $query );
+		$results = array();
 
+		foreach ( $this->items( $terms, $post_types, self::MAX_RESULTS ) as list( $row, $public ) ) {
+			$results[] = array(
+				'type'    => $public['type'],
+				'title'   => $public['title'],
+				'url'     => $public['url'],
+				'excerpt' => $public['excerpt'] ?? self::excerpt( (string) $row['content'], $terms ),
+				'score'   => round( (float) $row['score'], 4 ),
+			);
+		}
+
+		/**
+		 * Filters the results of a knowledge search.
+		 *
+		 * The response is public (sent to any visitor): never add personal or
+		 * private data.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<int, array<string, mixed>> $results Results: type (page|faq), title, url, excerpt, score.
+		 * @param string                           $query   Visitor's question (never stored).
+		 */
+		return array_values( (array) apply_filters( 'devrivo_chatbot_search_results', $results, $query ) );
+	}
+
+	/**
+	 * Best matching content for an AI prompt: the full best chunk of each item
+	 * (FAQ answers in full), still published at query time.
+	 *
+	 * @param string $query Visitor's question.
+	 * @param int    $limit Most items.
+	 * @return list<array{title: string, url: string, content: string}>
+	 */
+	public function context( string $query, int $limit = 3 ): array {
+		$context = array();
+
+		foreach ( $this->items( self::terms( $query ), array(), $limit ) as list( $row, $public ) ) {
+			$context[] = array(
+				'title'   => $public['title'],
+				'url'     => $public['url'],
+				'content' => 'faq' === $public['type'] ? (string) $public['excerpt'] : (string) $row['content'],
+			);
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Matching items: the best row per item with its public result, items
+	 * that may no longer be shown left out.
+	 *
+	 * @param string[] $terms      Terms.
+	 * @param string[] $post_types Post types.
+	 * @param int      $limit      Most items.
+	 * @return list<array{0: array<string, mixed>, 1: array{type: string, title: string, url: string, excerpt: string|null}}>
+	 */
+	private function items( array $terms, array $post_types, int $limit ): array {
+		$rows    = array() === $terms ? array() : $this->rows( $terms, $post_types );
 		$sources = $this->knowledge->sources();
 		$seen    = array();
-		$results = array();
+		$items   = array();
 
 		foreach ( $rows as $row ) {
 			// Rows come best first, so the first row per item is its best chunk.
@@ -82,30 +139,13 @@ final class Search {
 				continue;
 			}
 
-			$results[] = array(
-				'type'    => $public['type'],
-				'title'   => $public['title'],
-				'url'     => $public['url'],
-				'excerpt' => $public['excerpt'] ?? self::excerpt( (string) $row['content'], $terms ),
-				'score'   => round( (float) $row['score'], 4 ),
-			);
-			if ( count( $results ) >= self::MAX_RESULTS ) {
+			$items[] = array( $row, $public );
+			if ( count( $items ) >= $limit ) {
 				break;
 			}
 		}
 
-		/**
-		 * Filters the results of a knowledge search.
-		 *
-		 * The response is public (sent to any visitor): never add personal or
-		 * private data.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array<int, array<string, mixed>> $results Results: type (page|faq), title, url, excerpt, score.
-		 * @param string                           $query   Visitor's question (never stored).
-		 */
-		return array_values( (array) apply_filters( 'devrivo_chatbot_search_results', $results, $query ) );
+		return $items;
 	}
 
 	/**

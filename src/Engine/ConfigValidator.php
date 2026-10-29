@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Engine;
 
+use DevRivo\Chatbot\AI\Models;
 use DevRivo\Chatbot\Core\Settings\Schema;
 use WP_Error;
 
@@ -17,8 +18,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Checks rules that span settings sections, after each section passed its
  * own schema: action configs per type, unique action IDs, flow, form and
- * action references, form fields, FAQ IDs, the search fallback action and
- * opening hours.
+ * action references, form fields, FAQ IDs, the search fallback action,
+ * opening hours, and the AI provider, model and limit when AI is enabled.
  *
  * Settings::update() only rejects errors the update introduces, so problems
  * already stored (e.g. from an older version) never block unrelated saves.
@@ -75,8 +76,44 @@ final class ConfigValidator {
 			self::form_errors( $forms ),
 			self::faq_errors( is_array( $faqs ) ? $faqs : array() ),
 			self::fallback_errors( (string) ( $settings['behaviour']['fallback_action'] ?? '' ), array_column( $actions, 'id' ) ),
-			self::hours_errors( is_array( $hours ) ? $hours : array() )
+			self::hours_errors( is_array( $hours ) ? $hours : array() ),
+			self::ai_errors( is_array( $settings['ai'] ?? null ) ? $settings['ai'] : array() )
 		);
+	}
+
+	/**
+	 * Enabled AI needs a provider, a model from that provider's list and a
+	 * monthly token limit above 0, so core never picks a model by itself.
+	 *
+	 * @param array<string, mixed> $ai AI settings.
+	 * @return array<string, string>
+	 */
+	private static function ai_errors( array $ai ): array {
+		if ( empty( $ai['enabled'] ) ) {
+			return array();
+		}
+
+		$errors   = array();
+		$provider = (string) ( $ai['provider'] ?? '' );
+		$model    = (string) ( $ai['model'] ?? '' );
+
+		if ( (int) ( $ai['monthly_token_limit'] ?? 0 ) <= 0 ) {
+			$errors['ai[monthly_token_limit]'] = __( 'Set a monthly token limit above 0 to turn on AI.', 'devrivo-chatbot' );
+		}
+
+		if ( '' === $provider ) {
+			$errors['ai[provider]'] = __( 'Choose an AI provider to turn on AI.', 'devrivo-chatbot' );
+			return $errors;
+		}
+
+		$models = Models::list( $provider );
+		if ( is_wp_error( $models ) ) {
+			$errors['ai[model]'] = __( 'The model list for this AI provider could not be loaded. Check that the provider plugin is active and connected in Settings → Connectors, then try again.', 'devrivo-chatbot' );
+		} elseif ( '' === $model || ! in_array( $model, array_column( $models, 'id' ), true ) ) {
+			$errors['ai[model]'] = __( 'Choose a model from the provider\'s list.', 'devrivo-chatbot' );
+		}
+
+		return $errors;
 	}
 
 	/**

@@ -49,7 +49,7 @@ final class PresetRepository {
 	 * survive applying any preset.
 	 */
 	private const FORBIDDEN_KEYS = array(
-		'ai'         => array( 'enabled', 'model', 'monthly_token_limit' ),
+		'ai'         => array( 'enabled', 'provider', 'model', 'monthly_token_limit' ),
 		'appearance' => array( 'brand_name', 'avatar_id' ),
 		'knowledge'  => array( 'post_types', 'exclude_ids' ),
 	);

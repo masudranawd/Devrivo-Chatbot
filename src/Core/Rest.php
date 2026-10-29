@@ -9,6 +9,9 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\AI\AiController;
+use DevRivo\Chatbot\AI\ChatEngine;
+use DevRivo\Chatbot\Core\Frontend\ChatController;
 use DevRivo\Chatbot\Core\Frontend\ConfigController;
 use DevRivo\Chatbot\Core\Frontend\FormsController;
 use DevRivo\Chatbot\Core\Frontend\SearchController;
@@ -66,5 +69,7 @@ final class Rest {
 		( new LeadsController( $this->leads ) )->register_routes();
 		( new SearchController( $this->knowledge ) )->register_routes();
 		( new KnowledgeController( $this->knowledge ) )->register_routes();
+		( new ChatController( new ChatEngine( $this->settings, $this->knowledge, Plugin::instance()->ai_client() ) ) )->register_routes();
+		( new AiController( $this->settings ) )->register_routes();
 	}
 }

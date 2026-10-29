@@ -80,6 +80,7 @@ final class Privacy {
 		$paragraphs = array(
 			__( 'This website uses DevRivo Chatbot, an assistant that helps visitors find information and get in touch.', 'devrivo-chatbot' ),
 			__( 'When you ask the assistant a question, it searches this website\'s own pages and FAQs for an answer. Your questions are not stored or logged by the assistant.', 'devrivo-chatbot' ),
+			__( 'If AI answers are turned on, your chat message, up to 8 recent messages from the same conversation, matching excerpts of this website\'s published content, and the title and address of the page you are on are sent to our AI service provider through WordPress to write a reply. Contact details you enter in forms are never sent to the AI provider. The assistant does not store your messages or its replies; the conversation is kept only in your browser until you leave the page.', 'devrivo-chatbot' ),
 			__( 'When you send an enquiry through the assistant, we collect the details you enter in the form (for example your name, email address, phone number and message), the page you were on, and a record of the consent you gave. We use these details only to reply to your enquiry.', 'devrivo-chatbot' ),
 			__( 'Your enquiry is stored in this website\'s database and sent by email to our team. Your IP address is not stored with your enquiry.', 'devrivo-chatbot' ),
 			sprintf(

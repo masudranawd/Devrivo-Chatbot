@@ -769,6 +769,8 @@ final class Schema {
 
 	/**
 	 * AI. Keys are never stored here: providers are configured in Settings → Connectors.
+	 * AI runs only when enabled, with a provider, a model from that provider's
+	 * list and a monthly token limit above 0 (checked by ConfigValidator).
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -779,9 +781,16 @@ final class Schema {
 					'type'    => 'boolean',
 					'default' => false,
 				),
+				// Provider ID from the WordPress AI Client registry ('' for none).
+				'provider'            => array(
+					'type'    => 'string',
+					'pattern' => '^([a-z0-9_-]{1,64})?$',
+					'default' => '',
+				),
 				'model'               => array(
 					'type'      => 'string',
 					'maxLength' => 100,
+					'pattern'   => '^[A-Za-z0-9._:/@-]{0,100}$',
 					'default'   => '',
 				),
 				'monthly_token_limit' => array(
@@ -794,6 +803,12 @@ final class Schema {
 					'maxLength'  => 2000,
 					'default'    => '',
 					'x-sanitize' => 'textarea',
+				),
+				// Shown under the composer in AI mode ('' = translated default).
+				'disclaimer'          => array(
+					'type'      => 'string',
+					'maxLength' => 200,
+					'default'   => '',
 				),
 			)
 		);

@@ -19,14 +19,14 @@
 |---|---|---|---|---|
 | `devrivo_chatbot_loaded` | Plugin has loaded core services and modules | `Plugin $plugin` | 1.0.0 | Planned |
 | `devrivo_chatbot_register_modules` | Before modules are booted; register custom modules | `ModuleRegistry $registry` | 1.0.0 | Planned |
-| `devrivo_chatbot_message_received` | A visitor message passed the security gate | `array $message`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_response_sent` | A response was returned to the widget | `array $response`, `array $context` | 1.0.0 | Planned |
+| `devrivo_chatbot_message_received` | A visitor's chat message passed the security checks (never stored by the plugin) | `string $message`, `array $context` (`page_url`, `history`) | 1.0.0 | In dev |
+| `devrivo_chatbot_response_sent` | A chat answer was built, before it is sent | `array $answer` (`mode` ai/guided, `text`, `sources`, `actions`), `array $context` | 1.0.0 | In dev |
 | `devrivo_chatbot_lead_created` | A lead was saved (after consent); the notification email has already been attempted | `int $lead_id`, `array $lead_data` | 1.0.0 | In dev |
 | `devrivo_chatbot_form_submitted` | Any widget form was submitted and saved (not for honeypot hits) | `string $form_id`, `array $data` (clean values by field ID) | 1.0.0 | In dev |
 | `devrivo_chatbot_custom_action` | A quick action of type `custom_hook` was triggered | `string $action_id`, `array $config`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_post_indexed` | A post was added to or updated in the knowledge index (not when unchanged or removed) | `int $post_id`, `int $chunk_count` | 1.0.0 | In dev |
 | `devrivo_chatbot_index_rebuilt` | A full index rebuild finished | `array $stats` (`posts`, `chunks`, `faqs`, `processed`, `removed`, `seconds`) | 1.0.0 | In dev |
-| `devrivo_chatbot_ai_fallback` | AI mode failed and Guided mode was used | `string $reason`, `array $context` | 1.0.0 | Planned |
+| `devrivo_chatbot_ai_fallback` | AI mode was meant to answer but the Guided answer was used | `string $reason` (`provider_error`, `rate_limited`, `timeout`, `budget`, `model_unavailable`, `unsupported`, `disabled`), `array $context` | 1.0.0 | In dev |
 | `devrivo_chatbot_data_purged` | The daily retention purge ran | `array $counts` (`leads`) | 1.0.0 | In dev |
 | `devrivo_chatbot_preset_applied` | A preset was applied to the settings (replace or merge) | `string $preset_id`, `string $mode`, `array $settings` | 1.0.0 | In dev |
 
@@ -55,10 +55,10 @@
 
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
-| `devrivo_chatbot_system_prompt` | Final system prompt before it is sent | `string $prompt`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_ai_tools` | Tools the AI may call for this request | `array $tools`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_ai_enabled` | Whether AI mode is used for this request | `bool $enabled`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_ai_response` | AI response before output checks | `array $response`, `array $context` | 1.0.0 | Planned |
+| `devrivo_chatbot_system_prompt` | System instruction sent to the AI model (keep the guardrails and the `<site_data>` rule) | `string $prompt`, `array $context` (`page_url`, `items`) | 1.0.0 | In dev |
+| `devrivo_chatbot_ai_tools` | Tools the AI can call (`name`, `description`, `parameters`, `callback`); only return public data | `array $tools`, `array $context` | 1.0.0 | In dev |
+| `devrivo_chatbot_ai_enabled` | Whether AI answers this message (only asked when AI is on, configured and within budget) | `bool $enabled`, `array $context` | 1.0.0 | In dev |
+| `devrivo_chatbot_ai_response` | AI answer before the output checks (HTML, external links, sources and actions are checked after it) | `array $response` (`text`, `sources`, `actions`), `array $context` | 1.0.0 | In dev |
 
 ### Knowledge index
 
@@ -77,7 +77,7 @@
 | `devrivo_chatbot_lead_data` | Lead before saving (`form_id`, `email`, `name`, `data`, `page_url`, `consent_text`) | `array $data`, `string $form_id` | 1.0.0 | In dev |
 | `devrivo_chatbot_notification_recipients` | Email recipients for a lead (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` | 1.0.0 | In dev |
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
-| `devrivo_chatbot_rate_limit` | Rate limits for public endpoints, each `max` per `window` seconds. Form submits must pass both `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s); search uses `search` (per client IP, default 60 per 60 s) | `array $limits`, `array $context` (`endpoint` form/search, `form_id`) | 1.0.0 | In dev |
+| `devrivo_chatbot_rate_limit` | Rate limits for public endpoints, each `max` per `window` seconds. Form submits must pass both `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s); chat messages both `chat_session` (default 20 per 600 s) and `chat_ip` (default 60 per 600 s); search uses `search` (per client IP, default 60 per 60 s) | `array $limits`, `array $context` (`endpoint` form/search/chat, `form_id`) | 1.0.0 | In dev |
 | `devrivo_chatbot_client_ip` | Client IP used for rate limiting (default `REMOTE_ADDR`; forwarded headers are never trusted by default). Sites behind a trusted proxy can return e.g. `CF-Connecting-IP`; values that are not an IP address are ignored | `string $ip`, `WP_REST_Request $request` | 1.0.0 | In dev |
 | `devrivo_chatbot_retention_days` | Days to keep leads (Settings → Privacy) | `int $days` | 1.0.0 | In dev |
 
