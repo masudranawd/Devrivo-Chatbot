@@ -137,6 +137,56 @@ final class SecurityTest extends WP_UnitTestCase {
 		$this->assertTrue( Gate::check( $referer, array( 'endpoint' => 'test' ) ) );
 	}
 
+	public function test_origin_ignores_case_and_www(): void {
+		$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+
+		$this->assertTrue( Gate::is_site_url( 'https://www.' . $host ) );
+		$this->assertTrue( Gate::is_site_url( 'http://WWW.' . strtoupper( $host ) . '/page/' ) );
+		$this->assertTrue( Gate::is_site_url( 'https://' . strtoupper( $host ) ) );
+
+		$www_home = static fn(): string => 'https://www.' . $host;
+		add_filter( 'pre_option_home', $www_home );
+		$bare     = Gate::is_site_url( 'https://' . $host );
+		remove_filter( 'pre_option_home', $www_home );
+		$this->assertTrue( $bare, 'Bare host against a www home URL.' );
+
+		$others = array(
+			'https://evil.example',
+			'https://www.evil.example',
+			'https://ww.' . $host,
+			'https://wwwx' . $host,
+			'https://evil' . $host,
+			'https://' . $host . '.evil.example',
+			'https://sub.' . $host,
+			'ftp://' . $host,
+			'not a url',
+		);
+		foreach ( $others as $url ) {
+			$this->assertFalse( Gate::is_site_url( $url ), $url );
+		}
+
+		$www   = $this->request( array(), array( 'Origin' => 'https://www.' . $host ) );
+		$other = $this->request( array(), array( 'Origin' => 'https://www.evil.example' ) );
+		$this->assertTrue( Gate::check( $www, array( 'endpoint' => 'test' ) ) );
+		$this->assertSame( 403, $this->status( Gate::check( $other, array( 'endpoint' => 'test' ) ) ) );
+	}
+
+	public function test_origin_accepts_the_wordpress_address(): void {
+		$site_url = static fn(): string => 'https://wp.example.net';
+		add_filter( 'pre_option_siteurl', $site_url );
+
+		$wp   = Gate::is_site_url( 'https://wp.example.net/wp-admin/' );
+		$www  = Gate::is_site_url( 'https://www.wp.example.net' );
+		$home = Gate::is_site_url( home_url( '/' ) );
+		$evil = Gate::is_site_url( 'https://example.net' );
+		remove_filter( 'pre_option_siteurl', $site_url );
+
+		$this->assertTrue( $wp );
+		$this->assertTrue( $www );
+		$this->assertTrue( $home );
+		$this->assertFalse( $evil );
+	}
+
 	public function test_gate_requires_a_valid_token(): void {
 		$missing = Gate::check( $this->request( array( 'token' => null ) ), array( 'endpoint' => 'test' ) );
 		$invalid = Gate::check( $this->request( array( 'token' => 'nope.nope' ) ), array( 'endpoint' => 'test' ) );
@@ -146,49 +196,127 @@ final class SecurityTest extends WP_UnitTestCase {
 		$this->assertSame( 'devrivo_chatbot_invalid_token', $invalid->get_error_code() );
 	}
 
-	public function test_gate_rate_limits_per_client(): void {
+	public function test_gate_rate_limits_per_session(): void {
+		$token = $this->token();
 		for ( $i = 0; $i < 5; $i++ ) {
-			$this->assertTrue( Gate::check( $this->request(), array( 'endpoint' => 'test' ) ), "Hit {$i}" );
+			$this->assertTrue( Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'test' ) ), "Hit {$i}" );
 		}
 
-		$limited = Gate::check( $this->request(), array( 'endpoint' => 'test' ) );
+		$limited = Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'test' ) );
 		$this->assertSame( 429, $this->status( $limited ) );
+		$this->assertSame( 'devrivo_chatbot_rate_limited', $limited->get_error_code() );
 		$this->assertGreaterThan( 0, $limited->get_error_data()['retry_after'] );
 		$this->assertLessThanOrEqual( 600, $limited->get_error_data()['retry_after'] );
 
+		$this->assertTrue( Gate::check( $this->request(), array( 'endpoint' => 'test' ) ), 'Another visitor on the same IP is not blocked.' );
+		$this->assertTrue( Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'other' ) ), 'Endpoints are counted apart.' );
+	}
+
+	public function test_shared_ip_is_limited_only_at_the_ip_limit(): void {
+		// 30 visitors behind one IP (office, proxy), one request each.
+		for ( $i = 0; $i < 30; $i++ ) {
+			$this->assertTrue( Gate::check( $this->request(), array( 'endpoint' => 'test' ) ), "Visitor {$i}" );
+		}
+
+		$token   = $this->token();
+		$limited = Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'test' ) );
+		$this->assertSame( 429, $this->status( $limited ), 'The 31st request from the IP is blocked, even with a new session.' );
+
 		$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
-		$this->assertTrue( Gate::check( $this->request(), array( 'endpoint' => 'test' ) ), 'Other clients are not affected.' );
+		$other                  = Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'test' ) );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+		$this->assertTrue( $other, 'Other IPs are not affected.' );
+
+		// The blocked request did not use up the session's own limit.
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.10';
+		for ( $i = 0; $i < 3; $i++ ) {
+			$this->assertTrue( Gate::check( $this->request( array( 'token' => $token ) ), array( 'endpoint' => 'test' ) ), "Session hit {$i}" );
+		}
 		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 	}
 
-	public function test_forwarded_headers_are_ignored(): void {
+	public function test_forwarded_headers_are_ignored_by_default(): void {
+		$request                         = $this->request(
+			array(),
+			array(
+				'X-Forwarded-For'  => '198.51.100.1',
+				'CF-Connecting-IP' => '198.51.100.2',
+			)
+		);
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.1';
-		$first                           = RateLimiter::client_key();
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.2';
 
-		$this->assertSame( $first, RateLimiter::client_key() );
-		$this->assertStringNotContainsString( '127.0.0.1', $first, 'Hashed, never the raw IP.' );
+		$ip = RateLimiter::client_ip( $request );
 		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
+
+		$this->assertSame( '127.0.0.1', $ip );
+		$this->assertStringNotContainsString( '127.0.0.1', RateLimiter::key( $ip ), 'Hashed, never the raw IP.' );
+	}
+
+	public function test_client_ip_filter_can_trust_a_proxy_header(): void {
+		$cloudflare = static function ( string $ip, WP_REST_Request $request ): string {
+			$cf = $request->get_header( 'cf_connecting_ip' );
+			return $cf ? $cf : $ip;
+		};
+		add_filter( 'devrivo_chatbot_client_ip', $cloudflare, 10, 2 );
+
+		$visitor = RateLimiter::client_ip( $this->request( array(), array( 'CF-Connecting-IP' => '198.51.100.2' ) ) );
+		$v6      = RateLimiter::client_ip( $this->request( array(), array( 'CF-Connecting-IP' => '2001:db8::1' ) ) );
+		$junk    = RateLimiter::client_ip( $this->request( array(), array( 'CF-Connecting-IP' => 'not-an-ip' ) ) );
+
+		// Visitors behind the same proxy now get their own IP limit.
+		for ( $i = 0; $i < 30; $i++ ) {
+			Gate::check( $this->request( array(), array( 'CF-Connecting-IP' => '198.51.100.3' ) ), array( 'endpoint' => 'test' ) );
+		}
+		$blocked = Gate::check( $this->request( array(), array( 'CF-Connecting-IP' => '198.51.100.3' ) ), array( 'endpoint' => 'test' ) );
+		$free    = Gate::check( $this->request( array(), array( 'CF-Connecting-IP' => '198.51.100.4' ) ), array( 'endpoint' => 'test' ) );
+		remove_filter( 'devrivo_chatbot_client_ip', $cloudflare, 10 );
+
+		$this->assertSame( '198.51.100.2', $visitor );
+		$this->assertSame( '2001:db8::1', $v6 );
+		$this->assertSame( '127.0.0.1', $junk, 'Values that are not an IP address fall back to REMOTE_ADDR.' );
+		$this->assertSame( 429, $this->status( $blocked ) );
+		$this->assertTrue( $free );
 	}
 
 	public function test_rate_limit_filter(): void {
 		$seen   = array();
 		$filter = static function ( array $limits, array $context ) use ( &$seen ): array {
-			$seen = $context;
-			return array(
-				'max'    => 1,
-				'window' => 60,
-			);
+			$seen                = array( $limits, $context );
+			$limits['ip']['max'] = 2;
+			return $limits;
 		};
 		add_filter( 'devrivo_chatbot_rate_limit', $filter, 10, 2 );
 
 		$first  = Gate::check( $this->request(), array( 'endpoint' => 'filtered' ) );
 		$second = Gate::check( $this->request(), array( 'endpoint' => 'filtered' ) );
+		$third  = Gate::check( $this->request(), array( 'endpoint' => 'filtered' ) );
 		remove_filter( 'devrivo_chatbot_rate_limit', $filter, 10 );
 
 		$this->assertTrue( $first );
-		$this->assertSame( 429, $this->status( $second ) );
-		$this->assertSame( array( 'endpoint' => 'filtered' ), $seen );
+		$this->assertTrue( $second );
+		$this->assertSame( 429, $this->status( $third ) );
+		$this->assertSame(
+			array(
+				'session' => array(
+					'max'    => 5,
+					'window' => 600,
+				),
+				'ip'      => array(
+					'max'    => 30,
+					'window' => 600,
+				),
+			),
+			$seen[0],
+			'Defaults.'
+		);
+		$this->assertSame( array( 'endpoint' => 'filtered' ), $seen[1] );
+	}
+
+	/**
+	 * A signed session token old enough to use.
+	 */
+	private function token(): string {
+		return SessionToken::issue( time() - 10 )['token'];
 	}
 
 	/**
@@ -203,7 +331,7 @@ final class SecurityTest extends WP_UnitTestCase {
 		foreach ( array_merge( array( 'Origin' => home_url() ), $headers ) as $name => $value ) {
 			$request->set_header( $name, $value );
 		}
-		$request->set_body( (string) wp_json_encode( array_merge( array( 'token' => SessionToken::issue( time() - 10 )['token'] ), $body ) ) );
+		$request->set_body( (string) wp_json_encode( array_merge( array( 'token' => $this->token() ), $body ) ) );
 
 		return $request;
 	}

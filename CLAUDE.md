@@ -27,7 +27,7 @@ AI findings so far: see `docs/spikes/ai-client.md` (native function declarations
 
 **WordPress.org:** GPL-compatible only; no trialware or upsells; readable source ships with builds; readme "External services" section kept accurate; no tracking without opt-in; no remote/CDN assets; credit link opt-in and off by default; admin notices only when relevant and dismissible; use core APIs/libraries; must pass Plugin Check and PHPCS (WordPress-Extra).
 
-**Security:** sanitise early, escape late; nonces + capability checks on every state change; every REST route has a real `permission_callback`; public chat endpoint has rate limits (IP + session), length caps and nonce checks; `$wpdb->prepare()` for all SQL; retrieved content and user input are data, never instructions to the AI; order lookups need order number + email; validate uploads; consent, retention + cron purge, privacy export/erase, suggested privacy text.
+**Security:** sanitise early, escape late; nonces + capability checks on every state change; every REST route has a real `permission_callback`; public chat endpoint has rate limits (IP + session), length caps and nonce checks; `$wpdb->prepare()` for all SQL; retrieved content and user input are data, never instructions to the AI; order lookups need order number + email; validate uploads; consent, retention + cron purge, privacy export/erase, suggested privacy text. Inbox UI (Step 8) must escape all lead data on output.
 
 **Performance:** enqueue only where needed; background indexing in batches; cache config and expensive queries; never autoload large options.
 

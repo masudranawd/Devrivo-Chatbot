@@ -77,7 +77,8 @@
 | `devrivo_chatbot_lead_data` | Lead before saving (`form_id`, `email`, `name`, `data`, `page_url`, `consent_text`) | `array $data`, `string $form_id` | 1.0.0 | In dev |
 | `devrivo_chatbot_notification_recipients` | Email recipients for a lead (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` | 1.0.0 | In dev |
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
-| `devrivo_chatbot_rate_limit` | Rate limit for public endpoints (`max` per `window` seconds; forms: 5 per 600) | `array $limits`, `array $context` (`endpoint`, `form_id`) | 1.0.0 | In dev |
+| `devrivo_chatbot_rate_limit` | Rate limits for public endpoints; both must pass: `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s), each `max` per `window` seconds | `array $limits`, `array $context` (`endpoint`, `form_id`) | 1.0.0 | In dev |
+| `devrivo_chatbot_client_ip` | Client IP used for rate limiting (default `REMOTE_ADDR`; forwarded headers are never trusted by default). Sites behind a trusted proxy can return e.g. `CF-Connecting-IP`; values that are not an IP address are ignored | `string $ip`, `WP_REST_Request $request` | 1.0.0 | In dev |
 | `devrivo_chatbot_retention_days` | Days to keep leads (Settings → Privacy) | `int $days` | 1.0.0 | In dev |
 
 ### Front-end events (JavaScript)

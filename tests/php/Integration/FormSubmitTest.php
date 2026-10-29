@@ -213,11 +213,12 @@ final class FormSubmitTest extends WP_UnitTestCase {
 	}
 
 	public function test_rate_limit_returns_429_with_retry_after(): void {
+		$token = SessionToken::issue( time() - 10 )['token'];
 		for ( $i = 0; $i < 5; $i++ ) {
-			$this->submit();
+			$this->submit( array( 'token' => $token ) );
 		}
 
-		$response = $this->submit();
+		$response = $this->submit( array( 'token' => $token ) );
 
 		$this->assertSame( 429, $response->get_status() );
 		$this->assertGreaterThan( 0, (int) $response->get_headers()['Retry-After'] );
