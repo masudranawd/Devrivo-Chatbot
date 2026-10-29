@@ -61,7 +61,7 @@ final class LeadsTest extends WP_UnitTestCase {
 		);
 		$keys = array_unique( $wpdb->get_col( $wpdb->prepare( 'SHOW INDEX FROM %i', Leads::table() ), 2 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$this->assertEqualsCanonicalizing( array( 'PRIMARY', 'email', 'status_created', 'created_at' ), $keys );
-		$this->assertSame( 3, (int) get_option( Activator::SCHEMA_OPTION ) );
+		$this->assertSame( DEVRIVO_CHATBOT_SCHEMA_VERSION, (int) get_option( Activator::SCHEMA_OPTION ) );
 		$this->assertNotFalse( wp_next_scheduled( Privacy::PURGE_HOOK ) );
 		$this->assertContains( Privacy::PURGE_HOOK, Deactivator::cron_hooks() );
 	}

@@ -73,7 +73,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'chat_enabled', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'chat_enabled', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );

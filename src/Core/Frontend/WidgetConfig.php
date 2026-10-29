@@ -14,14 +14,15 @@ use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Engine\ActionTypes;
 use DevRivo\Chatbot\Engine\Forms;
+use DevRivo\Chatbot\Knowledge\Index;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the config the widget fetches from the public endpoint.
  *
- * Built from an allowlist only: AI, privacy and integration settings never
- * leave the server here (the consent text is public by nature). Actions are sent only when the widget can run
+ * Built from an allowlist only: AI, knowledge, privacy and integration
+ * settings never leave the server here (the consent text is public by nature). Actions are sent only when the widget can run
  * them (supported type, required values filled in, target flow present), with
  * only the config keys of their type. Flows are public content; choices and
  * buttons that point to actions that were left out are dropped.
@@ -103,22 +104,29 @@ final class WidgetConfig {
 		 */
 		$greeting = (string) apply_filters( 'devrivo_chatbot_greeting', $behaviour['greeting'], $context );
 
+		$fallback = (string) $behaviour['fallback_action'];
+
 		$config = array(
-			'version'      => Settings::config_version(),
-			'chat_enabled' => false,
-			'display'      => array(
+			'version'         => Settings::config_version(),
+			'chat_enabled'    => false,
+			// Guided answers: on when the index has pages or FAQs.
+			'search_enabled'  => Index::has_content(),
+			'search_url'      => rest_url( Rest::NAMESPACE . '/search' ),
+			// Quick action offered when a search finds nothing.
+			'fallback_action' => in_array( $fallback, $action_ids, true ) ? $fallback : '',
+			'display'         => array(
 				'position'       => $display['position'],
 				'primary_color'  => $display['primary_color'],
 				'launcher_label' => Display::launcher_label( (string) $display['launcher_label'] ),
 			),
-			'appearance'   => array(
+			'appearance'      => array(
 				'color_scheme' => $appearance['color_scheme'],
 				'radius'       => $appearance['radius'],
 				'brand_name'   => $appearance['brand_name'],
 				'font'         => $appearance['font'],
 				'avatar_url'   => $appearance['avatar_id'] > 0 ? (string) wp_get_attachment_image_url( $appearance['avatar_id'], 'thumbnail' ) : '',
 			),
-			'behaviour'    => array(
+			'behaviour'       => array(
 				'greeting'        => $greeting,
 				'welcome'         => $behaviour['welcome'],
 				'auto_open'       => $behaviour['auto_open'],
@@ -130,15 +138,15 @@ final class WidgetConfig {
 				),
 				'utm'             => $behaviour['utm'],
 			),
-			'actions'      => $actions,
-			'flows'        => self::flows( $all['flows'], $action_ids ),
-			'forms'        => self::forms( $all['forms'] ),
-			'consent'      => Consent::public( $this->settings ),
-			'session_url'  => rest_url( Rest::NAMESPACE . '/session' ),
+			'actions'         => $actions,
+			'flows'           => self::flows( $all['flows'], $action_ids ),
+			'forms'           => self::forms( $all['forms'] ),
+			'consent'         => Consent::public( $this->settings ),
+			'session_url'     => rest_url( Rest::NAMESPACE . '/session' ),
 			// Replace {form} with the form ID.
-			'submit_url'   => rest_url( Rest::NAMESPACE . '/forms/{form}/submit' ),
-			'offers'       => $offers,
-			'i18n'         => self::strings(),
+			'submit_url'      => rest_url( Rest::NAMESPACE . '/forms/{form}/submit' ),
+			'offers'          => $offers,
+			'i18n'            => self::strings(),
 		);
 
 		/**
@@ -177,6 +185,9 @@ final class WidgetConfig {
 		}
 		if ( 'form' === $action['type'] && ! isset( $forms[ (string) ( $action['config']['form'] ?? '' ) ] ) ) {
 			return null;
+		}
+		if ( 'page_search' === $action['type'] && ! Index::has_content() ) {
+			return null; // Nothing to search yet.
 		}
 
 		return array(
@@ -316,6 +327,12 @@ final class WidgetConfig {
 			'rate_limited'   => __( 'Too many attempts. Please wait a few minutes and try again.', 'devrivo-chatbot' ),
 			'new_tab'        => __( '(opens in a new tab)', 'devrivo-chatbot' ),
 			'choose'         => __( 'Choose…', 'devrivo-chatbot' ),
+			'ask_prompt'     => __( 'What would you like to know?', 'devrivo-chatbot' ),
+			'search_found'   => __( 'Here is what I found on our website:', 'devrivo-chatbot' ),
+			'no_results'     => __( 'I couldn’t find that on our website. Would you like the team to get back to you about it?', 'devrivo-chatbot' ),
+			'read_more'      => __( 'Read more on our site', 'devrivo-chatbot' ),
+			'search_limited' => __( 'You have asked a lot of questions in a short time. Please wait a moment and try again.', 'devrivo-chatbot' ),
+			'search_error'   => __( 'Sorry, I couldn’t search just now. Please check your connection and try again.', 'devrivo-chatbot' ),
 		);
 	}
 }

@@ -13,6 +13,8 @@ use DevRivo\Chatbot\Core\Settings\Schema;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Data\Leads;
 use DevRivo\Chatbot\Data\Privacy;
+use DevRivo\Chatbot\Knowledge\Index;
+use DevRivo\Chatbot\Knowledge\Rebuild;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -62,6 +64,7 @@ final class Migrations {
 			1 => array( self::class, 'v1_baseline' ),
 			2 => array( self::class, 'v2_settings_and_capabilities' ),
 			3 => array( self::class, 'v3_leads' ),
+			4 => array( self::class, 'v4_knowledge_index' ),
 		);
 	}
 
@@ -103,5 +106,15 @@ final class Migrations {
 	public static function v3_leads(): void {
 		Leads::create_table();
 		Privacy::schedule();
+	}
+
+	/**
+	 * 0.7.0: knowledge index table, FULLTEXT key when the database supports it
+	 * (otherwise search uses LIKE), and a first full rebuild in the background.
+	 */
+	public static function v4_knowledge_index(): void {
+		Index::create_table();
+		Index::add_fulltext();
+		Rebuild::start();
 	}
 }

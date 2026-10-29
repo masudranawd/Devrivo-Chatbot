@@ -62,7 +62,10 @@ final class PresetsTest extends WP_UnitTestCase {
 	public function test_every_built_in_preset_is_valid(): void {
 		foreach ( $this->presets->all() as $id => $preset ) {
 			$this->assertSame( $id, $preset['id'] );
-			$this->assertSame( 'healthcare' === $id ? 3 : 2, $preset['version'], $id );
+			$this->assertSame( 'healthcare' === $id ? 4 : 3, $preset['version'], $id );
+			$this->assertNotSame( '', $preset['settings']['behaviour']['fallback_action'], $id );
+			$this->assertGreaterThanOrEqual( 3, count( $preset['settings']['knowledge']['faqs'] ), $id );
+			$this->assertSame( array( 'faqs' ), array_keys( $preset['settings']['knowledge'] ), 'Only FAQs, never indexed content.' );
 			$this->assertNotSame( '', $preset['title'] );
 			$this->assertNotSame( '', $preset['description'] );
 			$this->assertNotSame( '', $preset['settings']['behaviour']['welcome'], $id );
@@ -192,7 +195,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$result = $this->applier->apply( 'business' );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( array( 'behaviour', 'actions', 'forms', 'ai', 'flows' ), $result['applied'] );
+		$this->assertSame( array( 'behaviour', 'actions', 'forms', 'knowledge', 'ai', 'flows' ), $result['applied'] );
 		$this->assertSame( array(), $result['skipped'] );
 
 		$after = ( new Settings() )->all();
@@ -211,7 +214,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$this->assertSame(
 			array(
 				'preset'         => 'business',
-				'preset_version' => 2,
+				'preset_version' => 3,
 			),
 			$after['general']
 		);
@@ -223,7 +226,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$result = $this->applier->apply( 'agency', 'merge' );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( array( 'actions', 'forms', 'ai' ), $result['applied'] );
+		$this->assertSame( array( 'actions', 'forms', 'knowledge', 'ai' ), $result['applied'] );
 		$this->assertSame( array( 'behaviour' ), $result['skipped'] );
 
 		$after = $this->settings->all();

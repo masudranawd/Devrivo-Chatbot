@@ -160,7 +160,7 @@ final class ActionTypes {
 				array( 'form' ),
 				true
 			),
-			// Not supported yet: search (Step 6), AI (Step 7) and custom hooks.
+			// Searches the knowledge index, optionally only these post types.
 			'page_search' => self::type(
 				array(
 					'post_types' => array(
@@ -173,8 +173,10 @@ final class ActionTypes {
 						),
 					),
 				),
-				array()
+				array(),
+				true
 			),
+			// Not supported yet: AI (Step 7) and custom hooks.
 			'ai_prompt'   => self::type( array( 'prompt' => self::text( 300 ) ), array( 'prompt' ) ),
 			'custom_hook' => self::type( array( 'hook' => self::text( 40, Schema::OPTIONAL_ID_PATTERN ) ), array( 'hook' ) ),
 		);

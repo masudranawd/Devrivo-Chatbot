@@ -133,11 +133,11 @@ final class EngineTest extends WP_UnitTestCase {
 	public function test_types_report_support_and_readiness(): void {
 		$types = ActionTypes::all();
 
-		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow', 'form' ) as $type ) {
+		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow', 'form', 'page_search' ) as $type ) {
 			$this->assertTrue( $types[ $type ]['supported'], $type );
 			$this->assertSame( 'client', $types[ $type ]['runtime'] );
 		}
-		foreach ( array( 'page_search', 'ai_prompt', 'custom_hook' ) as $type ) {
+		foreach ( array( 'ai_prompt', 'custom_hook' ) as $type ) {
 			$this->assertFalse( $types[ $type ]['supported'], $type );
 		}
 

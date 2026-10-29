@@ -15,6 +15,7 @@ use DevRivo\Chatbot\Core\Presets\PresetRepository;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Data\Leads;
 use DevRivo\Chatbot\Data\Privacy;
+use DevRivo\Chatbot\Knowledge\Knowledge;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -46,6 +47,13 @@ final class Plugin {
 	 * @var PresetRepository|null
 	 */
 	private ?PresetRepository $presets = null;
+
+	/**
+	 * Knowledge index.
+	 *
+	 * @var Knowledge|null
+	 */
+	private ?Knowledge $knowledge = null;
 
 	/**
 	 * Whether boot() has already run.
@@ -97,7 +105,8 @@ final class Plugin {
 		Activator::maybe_install();
 
 		$leads = new Leads();
-		( new Rest( $this->settings(), $this->presets(), $leads ) )->register();
+		( new Rest( $this->settings(), $this->presets(), $leads, $this->knowledge() ) )->register();
+		$this->knowledge()->register();
 		( new Privacy( $leads, $this->settings() ) )->register();
 
 		if ( ! is_admin() ) {
@@ -123,6 +132,17 @@ final class Plugin {
 		}
 
 		return $this->settings;
+	}
+
+	/**
+	 * Knowledge index (shared instance).
+	 */
+	public function knowledge(): Knowledge {
+		if ( null === $this->knowledge ) {
+			$this->knowledge = new Knowledge( $this->settings() );
+		}
+
+		return $this->knowledge;
 	}
 
 	/**

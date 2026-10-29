@@ -14,12 +14,13 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'agency',
-	'version'     => 2,
+	'version'     => 3,
 	'title'       => __( 'Agency', 'devrivo-chatbot' ),
 	'description' => __( 'For creative and digital agencies: services, estimates, case studies and discovery calls.', 'devrivo-chatbot' ),
 	'settings'    => array(
 		'behaviour' => array(
-			'welcome' => __( 'Hi there! Planning a project? I can walk you through our services, show our work or help you get an estimate.', 'devrivo-chatbot' ),
+			'welcome'         => __( 'Hi there! Planning a project? I can walk you through our services, show our work or help you get an estimate.', 'devrivo-chatbot' ),
+			'fallback_action' => 'brief',
 		),
 		'actions'   => array(
 			array(
@@ -137,6 +138,25 @@ return array(
 						'type'  => 'date',
 						'label' => __( 'Ideal launch date (optional)', 'devrivo-chatbot' ),
 					),
+				),
+			),
+		),
+		'knowledge' => array(
+			'faqs' => array(
+				array(
+					'id'       => 'estimate',
+					'question' => __( 'How do I get an estimate for my project?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Get an estimate" in the menu and tell us about your project. We will get back to you.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'brief',
+					'question' => __( 'Can I send you a project brief?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Yes. Choose "Send a project brief" in the menu and share the details. We will review it and get back to you.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'services',
+					'question' => __( 'What services do you offer?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Our services are described on this website. Ask me about a service and I will point you to the right page.', 'devrivo-chatbot' ),
 				),
 			),
 		),

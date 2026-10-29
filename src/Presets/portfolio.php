@@ -14,12 +14,13 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'portfolio',
-	'version'     => 2,
+	'version'     => 3,
 	'title'       => __( 'Portfolio / Blog', 'devrivo-chatbot' ),
 	'description' => __( 'For freelancers, creators and writers: work, articles, hiring and newsletter.', 'devrivo-chatbot' ),
 	'settings'    => array(
 		'behaviour' => array(
-			'welcome' => __( 'Hi! Have a look around. I can show you my work, find an article or help you get in touch.', 'devrivo-chatbot' ),
+			'welcome'         => __( 'Hi! Have a look around. I can show you my work, find an article or help you get in touch.', 'devrivo-chatbot' ),
+			'fallback_action' => 'hire',
 		),
 		'actions'   => array(
 			array(
@@ -88,6 +89,25 @@ return array(
 						'type'  => 'text',
 						'label' => __( 'When would you like to start? (optional)', 'devrivo-chatbot' ),
 					),
+				),
+			),
+		),
+		'knowledge' => array(
+			'faqs' => array(
+				array(
+					'id'       => 'hire',
+					'question' => __( 'How can I work with you?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Hire me" in the menu and tell me about your project. I will get back to you.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'articles',
+					'question' => __( 'Where can I find your articles?', 'devrivo-chatbot' ),
+					'answer'   => __( 'Choose "Find an article" in the menu and type a topic. I will show you matching articles.', 'devrivo-chatbot' ),
+				),
+				array(
+					'id'       => 'work',
+					'question' => __( 'Where can I see your work?', 'devrivo-chatbot' ),
+					'answer'   => __( 'My work is shown on this website. Ask me about a project or topic and I will point you to the right page.', 'devrivo-chatbot' ),
 				),
 			),
 		),

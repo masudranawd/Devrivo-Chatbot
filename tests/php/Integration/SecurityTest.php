@@ -305,6 +305,10 @@ final class SecurityTest extends WP_UnitTestCase {
 					'max'    => 30,
 					'window' => 600,
 				),
+				'search'  => array(
+					'max'    => 60,
+					'window' => 60,
+				),
 			),
 			$seen[0],
 			'Defaults.'
