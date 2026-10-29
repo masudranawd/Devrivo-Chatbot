@@ -21,7 +21,8 @@ import { formView } from './form';
  * @param {(text: string) => number}    options.typingTime Typing indicator time in ms (0 = none).
  * @param {Object}                      options.submitter  Form submitter (lib/submit).
  * @param {Object}                      options.searcher   Searcher (lib/search).
- * @return {Object} View for the flow runner, plus form(), search() and separator().
+ * @param {Object}                      options.chat       Chat client (lib/chat).
+ * @return {Object} View for the flow runner, plus form(), chat(), search() and separator().
  */
 export function conversationView( log, options ) {
 	const {
@@ -33,8 +34,12 @@ export function conversationView( log, options ) {
 		typingTime,
 		submitter,
 		searcher,
+		chat,
 	} = options;
 	const { i18n } = config;
+
+	// The conversation sent with chat messages: memory only, never stored.
+	const turns = [];
 	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
 
 	const scroll = () => {
@@ -221,6 +226,48 @@ export function conversationView( log, options ) {
 					},
 				} )
 			);
+		},
+
+		/**
+		 * Sends a chat message and shows the answer: text, source cards and
+		 * suggested quick actions (AI or Guided answer).
+		 *
+		 * @param {string} text Message.
+		 */
+		async chat( text ) {
+			view.user( text );
+			const dots = typing();
+			let result = null;
+			try {
+				result = await chat.send( text, turns.slice() );
+			} catch {
+				result = null;
+			}
+			dots.remove();
+
+			if ( ! result || ! result.ok || ! result.answer ) {
+				say(
+					result && result.status === 429
+						? i18n.chat_limited
+						: i18n.chat_error
+				);
+				view.end();
+				return;
+			}
+
+			const { answer } = result;
+			turns.push(
+				{ role: 'user', text },
+				{ role: 'assistant', text: answer.text }
+			);
+			turns.splice( 0, Math.max( 0, turns.length - 8 ) );
+
+			say( answer.text );
+			if ( answer.sources.length ) {
+				show( cards( answer.sources ), false );
+			}
+			view.ctas( answer.actions );
+			view.end();
 		},
 
 		/**

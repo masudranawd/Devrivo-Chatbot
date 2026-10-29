@@ -149,6 +149,8 @@ export const widgetCss = `
 .dc-submit:disabled{opacity:.7;cursor:default}
 .dc-form.is-done{opacity:.6}
 .dc-sr,.dc-hp{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.dc-ai-tag{flex:none;padding:2px 7px;border-radius:999px;border:1px solid currentColor;font-size:.72em;font-weight:700;letter-spacing:.04em}
+.dc-disclaimer{margin:0;padding:0 12px 10px;font-size:.72em;color:var(--dc-ink-soft);text-align:center;background:var(--dc-card)}
 .dc-composer{display:flex;gap:8px;align-items:center;padding:10px 12px 12px;background:var(--dc-card);border-block-start:1px solid var(--dc-line)}
 .dc-composer input{flex:1;min-width:0;font:inherit;font-size:.95em;border:1px solid var(--dc-line);background:var(--dc-surface);color:var(--dc-ink);border-radius:999px;padding:11px 16px}
 .dc-composer input:focus-visible{outline:2px solid var(--dc-focus);border-color:transparent}

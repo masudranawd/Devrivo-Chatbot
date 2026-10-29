@@ -50,6 +50,9 @@ const I18N_KEYS = [
 	'read_more',
 	'search_limited',
 	'search_error',
+	'ai_tag',
+	'chat_limited',
+	'chat_error',
 ];
 
 const FIELD_TYPES = [ 'text', 'email', 'tel', 'textarea', 'select', 'date' ];
@@ -88,6 +91,7 @@ export function normalizeConfig( raw, boot ) {
 	const consent = isObject( raw.consent ) ? raw.consent : {};
 	const searchUrl = safeUrl( raw.search_url, HTTP_PROTOCOLS );
 	const searchEnabled = raw.search_enabled === true && !! searchUrl;
+	const chatUrl = safeUrl( raw.chat_url, HTTP_PROTOCOLS );
 
 	const i18n = {};
 	for ( const key of I18N_KEYS ) {
@@ -132,7 +136,10 @@ export function normalizeConfig( raw, boot ) {
 		} ) );
 
 	return {
-		chatEnabled: raw.chat_enabled === true,
+		// AI answers in the composer (otherwise the composer gives Guided answers).
+		aiAvailable: raw.ai_available === true && !! chatUrl,
+		disclaimer: text( raw.disclaimer ),
+		chatUrl,
 		searchEnabled,
 		searchUrl,
 		fallbackAction: actionIds.has( raw.fallback_action )

@@ -1,6 +1,7 @@
 /**
- * Chat view: header, message list (flows, forms, answers) and, when search or
- * chat is enabled, the composer.
+ * Chat view: header (with an "AI" tag in AI mode), message list (flows,
+ * forms, answers) and, when search or AI is available, the composer, with
+ * the AI disclaimer under it in AI mode.
  */
 import { h, icon, ICONS } from '../lib/dom';
 import { avatar } from '../launcher';
@@ -18,8 +19,8 @@ export function chatView( config, handlers ) {
 	const input = h( 'input', {
 		type: 'text',
 		name: 'message',
-		// Search questions are short; AI chat (Step 7) allows longer messages.
-		maxlength: config.chatEnabled ? '400' : '100',
+		// Page searches lower this to 100 (see widget.js).
+		maxlength: '500',
 		autocomplete: 'off',
 		placeholder: i18n.placeholder,
 		'aria-label': i18n.message_label,
@@ -36,7 +37,7 @@ export function chatView( config, handlers ) {
 	);
 
 	const composer =
-		config.chatEnabled || config.searchEnabled
+		config.aiAvailable || config.searchEnabled
 			? h(
 					'form',
 					{
@@ -80,6 +81,9 @@ export function chatView( config, handlers ) {
 					class: 'dc-chat-title',
 					text: config.brandName || i18n.assistant,
 				} ),
+				config.aiAvailable
+					? h( 'span', { class: 'dc-ai-tag', text: i18n.ai_tag } )
+					: null,
 				h(
 					'button',
 					{
@@ -97,6 +101,12 @@ export function chatView( config, handlers ) {
 				'aria-live': 'polite',
 			} ),
 			composer,
+			composer && config.aiAvailable && config.disclaimer
+				? h( 'p', {
+						class: 'dc-disclaimer',
+						text: config.disclaimer,
+					} )
+				: null,
 		]
 	);
 }
