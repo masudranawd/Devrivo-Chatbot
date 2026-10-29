@@ -21,13 +21,13 @@
 | `devrivo_chatbot_register_modules` | Before modules are booted; register custom modules | `ModuleRegistry $registry` | 1.0.0 | Planned |
 | `devrivo_chatbot_message_received` | A visitor message passed the security gate | `array $message`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_response_sent` | A response was returned to the widget | `array $response`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_lead_created` | A lead was saved (after consent) | `int $lead_id`, `array $lead_data` | 1.0.0 | Planned |
-| `devrivo_chatbot_form_submitted` | Any widget form was submitted successfully | `string $form_id`, `array $data` | 1.0.0 | Planned |
+| `devrivo_chatbot_lead_created` | A lead was saved (after consent); the notification email has already been attempted | `int $lead_id`, `array $lead_data` | 1.0.0 | In dev |
+| `devrivo_chatbot_form_submitted` | Any widget form was submitted and saved (not for honeypot hits) | `string $form_id`, `array $data` (clean values by field ID) | 1.0.0 | In dev |
 | `devrivo_chatbot_custom_action` | A quick action of type `custom_hook` was triggered | `string $action_id`, `array $config`, `array $context` | 1.0.0 | Planned |
 | `devrivo_chatbot_post_indexed` | A post was added or updated in the knowledge index | `int $post_id`, `int $chunk_count` | 1.0.0 | Planned |
 | `devrivo_chatbot_index_rebuilt` | A full index rebuild finished | `array $stats` | 1.0.0 | Planned |
 | `devrivo_chatbot_ai_fallback` | AI mode failed and Guided mode was used | `string $reason`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_data_purged` | Retention cron removed old conversations/leads | `array $counts` | 1.0.0 | Planned |
+| `devrivo_chatbot_data_purged` | The daily retention purge ran | `array $counts` (`leads`) | 1.0.0 | In dev |
 | `devrivo_chatbot_preset_applied` | A preset was applied to the settings (replace or merge) | `string $preset_id`, `string $mode`, `array $settings` | 1.0.0 | In dev |
 
 ## Filters
@@ -48,7 +48,7 @@
 | `devrivo_chatbot_modules` | Registered module class names | `string[] $modules` | 1.0.0 | Planned |
 | `devrivo_chatbot_action_types` | Quick action types: `schema` (config JSON schema, public), `runtime` (`client`), `supported`, `required` config keys. Unknown or unsupported types are hidden from visitors | `array $types` | 1.0.0 | In dev |
 | `devrivo_chatbot_presets` | Available industry presets: definition arrays, or paths to `.php` (returns an array) or `.json` files. Invalid presets are skipped with `_doing_it_wrong()` | `array $presets` | 1.0.0 | In dev |
-| `devrivo_chatbot_form_fields` | Field definitions for a form before render | `array $fields`, `string $form_id` | 1.0.0 | Planned |
+| `devrivo_chatbot_form_fields` | A form's fields, used both for the widget and for server-side validation | `array $fields`, `string $form_id` | 1.0.0 | In dev |
 | `devrivo_chatbot_cards` | Registered card types (link, product, property, post) | `array $cards` | 1.0.0 | Planned |
 
 ### AI
@@ -74,11 +74,11 @@
 
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
-| `devrivo_chatbot_lead_data` | Lead data before saving | `array $data`, `string $form_id` | 1.0.0 | Planned |
-| `devrivo_chatbot_notification_recipients` | Email recipients for a lead | `string[] $emails`, `array $lead` | 1.0.0 | Planned |
+| `devrivo_chatbot_lead_data` | Lead before saving (`form_id`, `email`, `name`, `data`, `page_url`, `consent_text`) | `array $data`, `string $form_id` | 1.0.0 | In dev |
+| `devrivo_chatbot_notification_recipients` | Email recipients for a lead (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` | 1.0.0 | In dev |
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
-| `devrivo_chatbot_rate_limit` | Rate-limit settings for the public chat endpoint | `array $limits`, `array $context` | 1.0.0 | Planned |
-| `devrivo_chatbot_retention_days` | Days to keep conversations and leads | `int $days` | 1.0.0 | Planned |
+| `devrivo_chatbot_rate_limit` | Rate limit for public endpoints (`max` per `window` seconds; forms: 5 per 600) | `array $limits`, `array $context` (`endpoint`, `form_id`) | 1.0.0 | In dev |
+| `devrivo_chatbot_retention_days` | Days to keep leads (Settings → Privacy) | `int $days` | 1.0.0 | In dev |
 
 ### Front-end events (JavaScript)
 

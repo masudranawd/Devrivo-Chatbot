@@ -60,4 +60,4 @@ The test database `devrivo_chatbot_tests` is wiped on every run; never point tes
 
 Phase 0 Foundations → v1.0 Core MVP + WordPress.org submission → v1.1 WooCommerce → v1.2 Listings + Quotes → v1.3 Webhooks + Analytics → v1.4 Multilingual + Triggers → v2.0 Visual flows, Abilities/MCP, human handoff.
 
-**Current: v1.0, Step 4 (Action and Flow engines) done; next Step 5 (Forms and leads).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.
+**Current: v1.0, Step 5 (Forms and leads) done; next Step 6 (Knowledge index).** Phase 0: Done: skeleton, tooling, CI, docs, AI spike plugin (`spikes/ai-client-spike`). Open: run the spike (see docs/development.md) and fill `docs/spikes/ai-client.md`; add the provider-plugin step to `readme.txt`; confirm slug availability and WordPress.org username.

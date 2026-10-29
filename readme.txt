@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,7 +88,7 @@ WooCommerce support (product search, product cards and order status) is planned 
 
 = Where are leads and conversations stored? =
 
-In your own WordPress database. You can set how long they are kept, and they are included in WordPress's personal data export and erase tools.
+In your own WordPress database (leads in their own table). IP addresses are not stored with leads. You can set how long they are kept, and they are included in WordPress's personal data export and erase tools.
 
 = Can developers extend it? =
 
@@ -107,6 +107,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.6.0 =
+* Enquiry forms with consent, leads storage, email notifications, privacy export/erase and retention.
+
 = 0.5.0 =
 * Working quick actions (link, call, WhatsApp, email) and guided conversation flows; opening hours.
 
@@ -124,6 +127,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.6.0 =
+Development version: adds enquiry forms, a leads table (created automatically) and privacy tools.
 
 = 0.5.0 =
 Development version: adds working quick actions, guided flows and opening hours.
