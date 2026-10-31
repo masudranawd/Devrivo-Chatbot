@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Admin\PreviewController;
+use DevRivo\Chatbot\Admin\TransferController;
 use DevRivo\Chatbot\AI\AiController;
 use DevRivo\Chatbot\AI\ChatEngine;
 use DevRivo\Chatbot\Core\Frontend\ChatController;
@@ -26,6 +27,7 @@ use DevRivo\Chatbot\Core\Settings\SettingsController;
 use DevRivo\Chatbot\Data\Leads;
 use DevRivo\Chatbot\Data\LeadsController;
 use DevRivo\Chatbot\Integrations\Email;
+use DevRivo\Chatbot\Integrations\IntegrationsController;
 use DevRivo\Chatbot\Knowledge\Knowledge;
 use DevRivo\Chatbot\Knowledge\KnowledgeController;
 
@@ -73,5 +75,7 @@ final class Rest {
 		( new ChatController( new ChatEngine( $this->settings, $this->knowledge, Plugin::instance()->ai_client() ) ) )->register_routes();
 		( new AiController( $this->settings ) )->register_routes();
 		( new PreviewController( $this->settings ) )->register_routes();
+		( new TransferController( $this->settings, new PresetApplier( $this->settings, $this->presets ) ) )->register_routes();
+		( new IntegrationsController( new Email( $this->settings ) ) )->register_routes();
 	}
 }

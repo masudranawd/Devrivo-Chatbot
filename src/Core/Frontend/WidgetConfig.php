@@ -23,7 +23,8 @@ defined( 'ABSPATH' ) || exit;
  * Builds the config the widget fetches from the public endpoint.
  *
  * Built from an allowlist only: AI, knowledge, privacy and integration
- * settings never leave the server here (the consent text is public by nature). Actions are sent only when the widget can run
+ * settings never leave the server here (the consent text is public by nature,
+ * and the credit link is a single opt-in boolean). Actions are sent only when the widget can run
  * them (supported type, required values filled in, target flow present), with
  * only the config keys of their type. Flows are public content; choices and
  * buttons that point to actions that were left out are dropped.
@@ -130,6 +131,8 @@ final class WidgetConfig {
 			// Replace {form} with the form ID.
 			'submit_url'      => rest_url( Rest::NAMESPACE . '/forms/{form}/submit' ),
 			'offers'          => $offers,
+			// "Powered by DevRivo" link in the panel footer (opt-in, off by default).
+			'credit_link'     => (bool) ( $all['privacy']['credit_link'] ?? false ),
 			'i18n'            => self::strings(),
 		);
 
@@ -366,6 +369,7 @@ final class WidgetConfig {
 			'ai_tag'         => __( 'AI', 'devrivo-chatbot' ),
 			'chat_limited'   => __( 'You have sent a lot of messages in a short time. Please wait a moment and try again.', 'devrivo-chatbot' ),
 			'chat_error'     => __( 'Sorry, I couldn’t answer just now. Please check your connection and try again.', 'devrivo-chatbot' ),
+			'powered_by'     => __( 'Powered by DevRivo', 'devrivo-chatbot' ),
 		);
 	}
 }

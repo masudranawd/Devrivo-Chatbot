@@ -75,6 +75,49 @@ final class Email {
 	}
 
 	/**
+	 * Sends a test notification to the same recipients as a lead (the filter
+	 * receives an empty lead).
+	 *
+	 * @return array{sent: bool, recipients: string[]}
+	 */
+	public function test(): array {
+		$recipients = $this->recipients( array() );
+		if ( array() === $recipients ) {
+			return array(
+				'sent'       => false,
+				'recipients' => array(),
+			);
+		}
+
+		$site    = wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES );
+		$subject = self::header_value(
+			/* translators: %s: Site name. */
+			sprintf( __( '[%s] Test email from DevRivo Chatbot', 'devrivo-chatbot' ), $site )
+		);
+		$body = implode(
+			"\n",
+			array(
+				__( 'This is a test email from DevRivo Chatbot.', 'devrivo-chatbot' ),
+				__( 'New enquiries from your chat widget will be sent to this address.', 'devrivo-chatbot' ),
+				'',
+				/* translators: %s: Date and time. */
+				sprintf( __( 'Time: %s', 'devrivo-chatbot' ), wp_date( (string) get_option( 'date_format' ) . ' ' . (string) get_option( 'time_format' ) ) ),
+			)
+		);
+
+		try {
+			$sent = (bool) wp_mail( $recipients, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+		} catch ( \Throwable $e ) {
+			$sent = false;
+		}
+
+		return array(
+			'sent'       => $sent,
+			'recipients' => $recipients,
+		);
+	}
+
+	/**
 	 * Notification addresses: Integrations → Notification emails, else the site admin email.
 	 *
 	 * @param array<string, mixed> $lead Lead.
@@ -92,7 +135,7 @@ final class Email {
 		 * @since 1.0.0
 		 *
 		 * @param string[]             $emails Email addresses.
-		 * @param array<string, mixed> $lead   The saved lead.
+		 * @param array<string, mixed> $lead   The saved lead (empty for the admin's test email).
 		 */
 		$emails = (array) apply_filters( 'devrivo_chatbot_notification_recipients', $emails, $lead );
 

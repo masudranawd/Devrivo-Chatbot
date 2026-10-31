@@ -12,7 +12,14 @@ import Appearance from './screens/appearance';
 import Behaviour from './screens/behaviour';
 import Dashboard from './screens/dashboard';
 import Display from './screens/display';
+import Flows from './screens/flows';
+import Forms from './screens/forms';
 import Inbox from './screens/inbox';
+import Integrations from './screens/integrations';
+import Knowledge from './screens/knowledge';
+import Offers from './screens/offers';
+import Privacy from './screens/privacy';
+import Tools from './screens/tools';
 
 export const SCREENS = [
 	{
@@ -40,11 +47,46 @@ export const SCREENS = [
 		label: () => __( 'Quick actions', 'devrivo-chatbot' ),
 		Screen: Actions,
 	},
+	{
+		id: 'flows',
+		label: () => __( 'Guided conversations', 'devrivo-chatbot' ),
+		Screen: Flows,
+	},
+	{
+		id: 'forms',
+		label: () => __( 'Forms', 'devrivo-chatbot' ),
+		Screen: Forms,
+	},
+	{
+		id: 'offers',
+		label: () => __( 'Offers', 'devrivo-chatbot' ),
+		Screen: Offers,
+	},
+	{
+		id: 'knowledge',
+		label: () => __( 'Knowledge', 'devrivo-chatbot' ),
+		Screen: Knowledge,
+	},
 	{ id: 'ai', label: () => __( 'AI', 'devrivo-chatbot' ), Screen: Ai },
+	{
+		id: 'integrations',
+		label: () => __( 'Integrations', 'devrivo-chatbot' ),
+		Screen: Integrations,
+	},
+	{
+		id: 'privacy',
+		label: () => __( 'Privacy', 'devrivo-chatbot' ),
+		Screen: Privacy,
+	},
 	{
 		id: 'inbox',
 		label: () => __( 'Inbox', 'devrivo-chatbot' ),
 		Screen: Inbox,
+	},
+	{
+		id: 'tools',
+		label: () => __( 'Tools', 'devrivo-chatbot' ),
+		Screen: Tools,
 	},
 ];
 

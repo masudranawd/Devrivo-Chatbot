@@ -253,7 +253,7 @@ export default function Appearance( { notify, setDirty } ) {
 
 				<SaveBar settings={ settings } notify={ notify } />
 			</div>
-			<Preview changes={ settings.changes } />
+			<Preview changes={ settings.changes } devices />
 		</div>
 	);
 }

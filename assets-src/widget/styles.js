@@ -81,6 +81,11 @@ export const widgetCss = `
 .dc-tab{border:0;background:none;color:var(--dc-ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.8em;font-weight:600}
 .dc-tab[aria-selected="true"]{color:var(--dc-ink)}
 
+/* Opt-in credit link */
+.dc-credit{margin:0;padding:4px 12px 6px;background:var(--dc-card);font-size:.75em;text-align:center}
+.dc-credit a{color:var(--dc-ink-soft);text-decoration:none}
+.dc-credit a:hover,.dc-credit a:focus-visible{text-decoration:underline}
+
 /* Offers */
 .dc-view-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px;background:var(--dc-primary);color:var(--dc-on-primary)}
 .dc-view-head h2{margin:0;font-size:1.25em;line-height:1.3}
@@ -160,6 +165,7 @@ export const widgetCss = `
 .dc[data-preview]{position:absolute;inset:0;overflow:hidden}
 .dc[data-preview] :is(.dc-launcher,.dc-pop,.dc-panel,.dc-overlay){position:absolute}
 .dc[data-preview] .dc-panel{height:calc(100% - 2 * var(--dc-gap));max-width:calc(100% - 2 * var(--dc-gap))}
+.dc[data-mobile] .dc-panel{inset:0;width:100%;max-width:none;height:100%;border-radius:0}
 .dc-preview-note{position:absolute;inset-inline:16px;top:16px;z-index:100000;margin:0;padding:8px 12px;border-radius:8px;background:#1d2327;color:#fff;font-size:.85em;text-align:center}
 
 @media (max-width:520px){

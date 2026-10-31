@@ -86,7 +86,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'credit_link', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
@@ -99,6 +99,29 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 
 		foreach ( array( 'secret-provider', '12345', 'custom_instructions', 'notification_emails', 'privacy', 'integrations', 'retention_days', 'delete_data_on_uninstall', 'SECRET', 'secret-model', 'owner@example.com', '"enabled"', '"rules"', 'href' ) as $needle ) {
 			$this->assertStringNotContainsString( $needle, $json, $needle );
+		}
+	}
+
+	public function test_credit_link_is_an_opt_in_boolean(): void {
+		$data = $this->request()->get_data();
+		$this->assertFalse( $data['credit_link'], 'Off by default.' );
+		$this->assertNotSame( '', $data['i18n']['powered_by'] );
+
+		$this->settings()->update(
+			array(
+				'privacy' => array(
+					'credit_link'    => true,
+					'retention_days' => 42,
+				),
+			)
+		);
+		$data = $this->request()->get_data();
+		$json = (string) wp_json_encode( $data );
+
+		$this->assertTrue( $data['credit_link'] );
+		$this->assertArrayNotHasKey( 'privacy', $data );
+		foreach ( array( 'retention_days', 'delete_data_on_uninstall', 'anonymize_ip', '42' ) as $needle ) {
+			$this->assertStringNotContainsString( $needle, $json, 'Only the credit boolean leaves the privacy section: ' . $needle );
 		}
 	}
 
