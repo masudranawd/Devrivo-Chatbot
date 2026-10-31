@@ -1,0 +1,360 @@
+// Admin app styles. Logical properties where possible; build/admin-rtl.css is
+// generated for the rest. Colours follow WP admin.
+
+.devrivo-admin {
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+	margin-block-start: 16px;
+
+	@media (max-width: 782px) {
+		flex-direction: column;
+	}
+}
+
+.devrivo-admin__nav {
+	flex: 0 0 200px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding-block: 8px;
+
+	ul {
+		margin: 0;
+	}
+
+	li {
+		margin: 0;
+	}
+
+	a {
+		display: block;
+		padding-block: 8px;
+		padding-inline: 16px;
+		text-decoration: none;
+		color: #1d2327;
+
+		&:hover {
+			color: var(--wp-admin-theme-color, #2271b1);
+		}
+
+		&[aria-current="page"] {
+			font-weight: 600;
+			box-shadow: inset 3px 0 0 var(--wp-admin-theme-color, #2271b1);
+			color: var(--wp-admin-theme-color, #2271b1);
+		}
+	}
+
+	@media (max-width: 782px) {
+		flex-basis: auto;
+		inline-size: 100%;
+	}
+}
+
+.devrivo-admin__brand {
+	margin: 0;
+	padding-block: 4px 8px;
+	padding-inline: 16px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.devrivo-admin__main {
+	flex: 1;
+	min-inline-size: 0;
+}
+
+.devrivo-admin__title {
+	margin-block: 0 16px;
+	font-size: 23px;
+	font-weight: 400;
+
+	&:focus {
+		outline: none;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+		outline-offset: 2px;
+	}
+}
+
+.devrivo-form {
+	max-inline-size: 640px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+
+	.components-base-control {
+		margin-block-end: 0;
+	}
+}
+
+.devrivo-split {
+	display: grid;
+	grid-template-columns: minmax(0, 640px) minmax(320px, 1fr);
+	gap: 32px;
+	align-items: start;
+
+	@media (max-width: 1100px) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.devrivo-fieldset {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+
+	legend {
+		font-weight: 600;
+		padding-inline: 4px;
+	}
+}
+
+.devrivo-field-error {
+	margin: 0;
+	color: #cc1818;
+	font-size: 12px;
+}
+
+.devrivo-error-list {
+	margin-block: 4px 0;
+	padding-inline-start: 20px;
+	list-style: disc;
+}
+
+.devrivo-savebar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	padding-block: 12px;
+	border-block-start: 1px solid #dcdcde;
+}
+
+.devrivo-savebar__state {
+	color: #50575e;
+	font-style: italic;
+}
+
+.devrivo-modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-block-start: 16px;
+}
+
+.devrivo-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 16px;
+
+	h2 {
+		margin: 0;
+		font-size: 14px;
+	}
+}
+
+.devrivo-grid__wide {
+	grid-column: 1 / -1;
+}
+
+.devrivo-stat {
+	margin: 0 0 8px;
+	font-size: 32px;
+	font-weight: 600;
+}
+
+.devrivo-checklist {
+	margin: 0;
+	padding-inline-start: 20px;
+	list-style: disc;
+
+	li {
+		margin-block-end: 8px;
+	}
+}
+
+.devrivo-avatar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	img {
+		border-radius: 50%;
+		object-fit: cover;
+	}
+}
+
+.devrivo-preview {
+	position: sticky;
+	inset-block-start: 48px;
+
+	h2 {
+		margin-block: 0 4px;
+		font-size: 14px;
+	}
+}
+
+.devrivo-preview__stage {
+	position: relative;
+	block-size: 640px;
+	overflow: hidden;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background:
+		repeating-linear-gradient(45deg, #f6f7f7 0 12px, #f0f0f1 12px 24px);
+}
+
+.devrivo-hours__day {
+	border-block-start: 1px solid #f0f0f1;
+	padding-block-start: 8px;
+
+	h3 {
+		margin: 0 0 4px;
+		font-size: 13px;
+	}
+}
+
+.devrivo-hours__range {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 8px;
+	align-items: end;
+	margin-block-end: 8px;
+
+	.devrivo-field-error {
+		grid-column: 1 / -1;
+	}
+}
+
+.devrivo-hours__buttons {
+	display: flex;
+	gap: 8px;
+	margin-block-end: 8px;
+}
+
+.devrivo-actions {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.devrivo-actions__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.devrivo-actions__buttons {
+	display: flex;
+	gap: 4px;
+}
+
+.devrivo-actions__edit {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-block-start: 12px;
+}
+
+.devrivo-badge {
+	display: inline-block;
+	margin-inline-start: 4px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	font-size: 12px;
+	color: #1d2327;
+}
+
+.devrivo-badge--warning {
+	background: #fcf0e3;
+	color: #8a4d00;
+}
+
+.devrivo-usage__bar {
+	block-size: 8px;
+	border-radius: 4px;
+	background: #f0f0f1;
+	overflow: hidden;
+
+	span {
+		display: block;
+		block-size: 100%;
+		background: var(--wp-admin-theme-color, #2271b1);
+	}
+}
+
+.devrivo-usage p {
+	margin-block: 4px 0;
+	color: #50575e;
+}
+
+.devrivo-inbox__filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+	margin-block-end: 16px;
+
+	.components-base-control {
+		min-inline-size: 180px;
+	}
+}
+
+.devrivo-inbox__table td,
+.devrivo-inbox__table th {
+	overflow-wrap: anywhere;
+}
+
+.devrivo-inbox__pages {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-block-start: 12px;
+}
+
+.devrivo-lead {
+	max-inline-size: 760px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 24px;
+
+	h2 {
+		margin-block-start: 0;
+	}
+}
+
+.devrivo-lead__fields {
+	margin: 0 0 16px;
+}
+
+.devrivo-lead__row {
+	display: grid;
+	grid-template-columns: minmax(120px, 200px) 1fr;
+	gap: 12px;
+	padding-block: 8px;
+	border-block-end: 1px solid #f0f0f1;
+
+	dt {
+		font-weight: 600;
+	}
+
+	dd {
+		margin: 0;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+}
