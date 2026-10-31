@@ -14,16 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'portfolio',
-	'version'     => 4,
+	'version'     => 3,
 	'title'       => __( 'Portfolio / Blog', 'devrivo-chatbot' ),
 	'description' => __( 'For freelancers, creators and writers: work, articles, hiring and newsletter.', 'devrivo-chatbot' ),
 	'settings'    => array(
-		'appearance' => array( 'font' => 'figtree' ),
-		'behaviour'  => array(
+		'behaviour' => array(
 			'welcome'         => __( 'Hi! Have a look around. I can show you my work, find an article or help you get in touch.', 'devrivo-chatbot' ),
 			'fallback_action' => 'hire',
 		),
-		'actions'    => array(
+		'actions'   => array(
 			array(
 				'id'     => 'work',
 				'label'  => __( 'Explore my work', 'devrivo-chatbot' ),
@@ -60,7 +59,7 @@ return array(
 				'config' => array( 'url' => '' ),
 			),
 		),
-		'forms'      => array(
+		'forms'     => array(
 			'hire' => array(
 				'title'           => __( 'Work with me', 'devrivo-chatbot' ),
 				'submit_label'    => __( 'Send', 'devrivo-chatbot' ),
@@ -93,7 +92,7 @@ return array(
 				),
 			),
 		),
-		'knowledge'  => array(
+		'knowledge' => array(
 			'faqs' => array(
 				array(
 					'id'       => 'hire',
@@ -112,7 +111,7 @@ return array(
 				),
 			),
 		),
-		'ai'         => array(
+		'ai'        => array(
 			'custom_instructions' => __( 'You are a friendly assistant for a personal portfolio and blog. Keep answers short, warm and in plain English, and speak about the site owner in the first person ("my work", "I write about"). Answer only from the site content you are given and link to the most relevant article or project. If you are not sure, say so and offer the hire form instead of guessing.', 'devrivo-chatbot' ),
 		),
 	),

@@ -14,16 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'agency',
-	'version'     => 4,
+	'version'     => 3,
 	'title'       => __( 'Agency', 'devrivo-chatbot' ),
 	'description' => __( 'For creative and digital agencies: services, estimates, case studies and discovery calls.', 'devrivo-chatbot' ),
 	'settings'    => array(
-		'appearance' => array( 'font' => 'figtree' ),
-		'behaviour'  => array(
+		'behaviour' => array(
 			'welcome'         => __( 'Hi there! Planning a project? I can walk you through our services, show our work or help you get an estimate.', 'devrivo-chatbot' ),
 			'fallback_action' => 'brief',
 		),
-		'actions'    => array(
+		'actions'   => array(
 			array(
 				'id'     => 'services',
 				'label'  => __( 'Our services', 'devrivo-chatbot' ),
@@ -60,7 +59,7 @@ return array(
 				'config' => array( 'form' => 'brief' ),
 			),
 		),
-		'forms'      => array(
+		'forms'     => array(
 			'estimate' => array(
 				'title'           => __( 'Get an estimate', 'devrivo-chatbot' ),
 				'submit_label'    => __( 'Request an estimate', 'devrivo-chatbot' ),
@@ -142,7 +141,7 @@ return array(
 				),
 			),
 		),
-		'knowledge'  => array(
+		'knowledge' => array(
 			'faqs' => array(
 				array(
 					'id'       => 'estimate',
@@ -161,7 +160,7 @@ return array(
 				),
 			),
 		),
-		'ai'         => array(
+		'ai'        => array(
 			'custom_instructions' => __( 'You are a friendly assistant for a creative and digital agency. Keep answers short, warm and in plain English. Answer only from the site content you are given. Do not quote prices or timelines unless the site states them; instead, offer the estimate form or a discovery call.', 'devrivo-chatbot' ),
 		),
 	),

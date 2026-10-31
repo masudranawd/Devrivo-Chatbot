@@ -86,29 +86,41 @@ final class TypographyTest extends WP_UnitTestCase {
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'text_size', 'avatar_url' ), array_keys( $appearance ) );
 	}
 
-	public function test_built_in_presets_are_valid_and_use_figtree(): void {
+	public function test_font_is_a_site_choice_presets_never_set(): void {
 		$presets = ( new PresetRepository() )->all();
-
 		$this->assertSame( array( 'business', 'healthcare', 'portfolio', 'agency' ), array_keys( $presets ), 'All load without errors.' );
 		foreach ( $presets as $id => $preset ) {
-			$this->assertSame( array( 'font' => 'figtree' ), $preset['settings']['appearance'], $id );
+			$this->assertArrayNotHasKey( 'font', (array) ( $preset['settings']['appearance'] ?? array() ), $id );
 		}
 
-		// Replace sets the preset's font but keeps the admin's other appearance values.
+		$this->setExpectedIncorrectUsage( PresetRepository::class . '::all' );
+		$add = static function ( array $sources ): array {
+			$sources[] = array(
+				'id'       => 'fonty',
+				'version'  => 1,
+				'title'    => 'Fonty',
+				'settings' => array( 'appearance' => array( 'font' => 'system' ) ),
+			);
+			return $sources;
+		};
+		add_filter( 'devrivo_chatbot_presets', $add );
+		$this->assertNull( ( new PresetRepository() )->get( 'fonty' ), 'A preset that sets the font is skipped.' );
+		remove_filter( 'devrivo_chatbot_presets', $add );
+
+		// Applying a preset keeps the admin's font and text size.
 		$this->settings()->update(
 			array(
 				'appearance' => array(
-					'font'       => 'system',
-					'brand_name' => 'Acme',
-					'text_size'  => 'large',
+					'font'      => 'system',
+					'text_size' => 'large',
 				),
 			)
 		);
 		$result = ( new PresetApplier( $this->settings(), Plugin::instance()->presets() ) )->apply( 'business' );
 		$this->assertIsArray( $result );
-		$this->assertSame( 'figtree', $result['settings']['appearance']['font'] );
-		$this->assertSame( 'Acme', $result['settings']['appearance']['brand_name'] );
+		$this->assertSame( 'system', $result['settings']['appearance']['font'] );
 		$this->assertSame( 'large', $result['settings']['appearance']['text_size'] );
+		$this->assertNotContains( 'appearance', $result['applied'] );
 	}
 
 	public function test_font_files_ship_with_the_plugin(): void {

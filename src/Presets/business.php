@@ -14,16 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'business',
-	'version'     => 4,
+	'version'     => 3,
 	'title'       => __( 'Business', 'devrivo-chatbot' ),
 	'description' => __( 'For company and service websites: services, contact, careers and support.', 'devrivo-chatbot' ),
 	'settings'    => array(
-		'appearance' => array( 'font' => 'figtree' ),
-		'behaviour'  => array(
+		'behaviour' => array(
 			'welcome'         => __( 'Hi there! I can tell you about our services, help you get in touch or point you to the right page.', 'devrivo-chatbot' ),
 			'fallback_action' => 'contact',
 		),
-		'actions'    => array(
+		'actions'   => array(
 			array(
 				'id'     => 'services',
 				'label'  => __( 'Our services', 'devrivo-chatbot' ),
@@ -60,7 +59,7 @@ return array(
 				'config' => array( 'form' => 'support' ),
 			),
 		),
-		'forms'      => array(
+		'forms'     => array(
 			'contact' => array(
 				'title'           => __( 'Contact us', 'devrivo-chatbot' ),
 				'submit_label'    => __( 'Send message', 'devrivo-chatbot' ),
@@ -131,7 +130,7 @@ return array(
 				),
 			),
 		),
-		'knowledge'  => array(
+		'knowledge' => array(
 			'faqs' => array(
 				array(
 					'id'       => 'get-in-touch',
@@ -150,7 +149,7 @@ return array(
 				),
 			),
 		),
-		'ai'         => array(
+		'ai'        => array(
 			'custom_instructions' => __( 'You are a friendly assistant for this business. Keep answers short, warm and in plain English. Answer only from the site content you are given. If you are not sure, say so and offer the contact form instead of guessing. Never make up prices, dates or promises.', 'devrivo-chatbot' ),
 		),
 	),
