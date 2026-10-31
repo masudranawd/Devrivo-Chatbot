@@ -156,6 +156,12 @@ export const widgetCss = `
 .dc-composer input:focus-visible{outline:2px solid var(--dc-focus);border-color:transparent}
 .dc-send{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--dc-primary);color:var(--dc-on-primary);display:grid;place-items:center}
 
+/* Admin preview: contained in its host, never fixed over the page. */
+.dc[data-preview]{position:absolute;inset:0;overflow:hidden}
+.dc[data-preview] :is(.dc-launcher,.dc-pop,.dc-panel,.dc-overlay){position:absolute}
+.dc[data-preview] .dc-panel{height:calc(100% - 2 * var(--dc-gap));max-width:calc(100% - 2 * var(--dc-gap))}
+.dc-preview-note{position:absolute;inset-inline:16px;top:16px;z-index:100000;margin:0;padding:8px 12px;border-radius:8px;background:#1d2327;color:#fff;font-size:.85em;text-align:center}
+
 @media (max-width:520px){
 	.dc-panel,.dc[data-position="left"] .dc-panel{inset:0;width:100%;max-width:none;height:100%;border-radius:0;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 }

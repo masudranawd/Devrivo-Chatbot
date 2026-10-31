@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.8.0
+Stable tag: 0.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,6 +123,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.9.0 =
+* Admin app: dashboard, appearance with live preview, display rules, behaviour and opening hours, quick actions, AI settings, leads inbox with CSV export.
+
 = 0.8.0 =
 * AI answers from your own site content through the WordPress AI Client, with tools, guardrails, monthly token limit and automatic fallback to Guided mode.
 
@@ -149,6 +152,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.9.0 =
+Development version: adds the admin app under DevRivo Chatbot in the admin menu, with a live preview and a leads inbox with CSV export.
 
 = 0.8.0 =
 Development version: adds optional AI answers through the WordPress AI Client. AI stays off until you choose a provider, a model and a monthly token limit.

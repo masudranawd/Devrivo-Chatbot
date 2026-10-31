@@ -1,6 +1,6 @@
 {
 	"name": "devrivo-chatbot",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"private": true,
 	"description": "A free, customisable AI assistant for any WordPress site.",
 	"license": "GPL-2.0-or-later",
@@ -34,9 +34,20 @@
 		"env:plugin-check": "wp-env run cli wp plugin check devrivo-chatbot"
 	},
 	"devDependencies": {
+		"@testing-library/dom": "^10.4.2",
+		"@testing-library/react": "^16.3.3",
+		"@wordpress/api-fetch": "^8.0.0",
+		"@wordpress/components": "^43.0.0",
+		"@wordpress/dom-ready": "^5.0.0",
+		"@wordpress/element": "^10.0.0",
 		"@wordpress/env": "^12.0.0",
+		"@wordpress/html-entities": "^5.0.0",
+		"@wordpress/i18n": "^7.0.0",
 		"@wordpress/scripts": "^37.0.0",
+		"@wordpress/url": "^5.0.0",
 		"jsdom": "^30.1.3",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
 		"vite": "^8.3.5",
 		"vitest": "^5.0.5"
 	}

@@ -73,7 +73,7 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat }.
+ * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat, preview, previewNote }.
  * @return {Object} Controller: { state(), view(), destroy() }.
  */
 export function render( host, config, options = {} ) {
@@ -86,8 +86,9 @@ export function render( host, config, options = {} ) {
 	// Post types the composer searches (set by page_search actions).
 	let searchTypes = [];
 
+	// In the admin preview nothing navigates: actions are buttons that show a note.
 	const target = ( action ) =>
-		action ? actionTarget( action, config.utm ) : null;
+		action && ! options.preview ? actionTarget( action, config.utm ) : null;
 	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
 	const menu = config.actions.filter( ( a ) => a.showInMenu );
 
@@ -190,7 +191,19 @@ export function render( host, config, options = {} ) {
 		onClick: handlers.onClose,
 	} );
 
-	root.append( ...[ overlay, popover, launcher, panel ].filter( Boolean ) );
+	const previewNote = h( 'p', {
+		class: 'dc-preview-note',
+		role: 'status',
+		hidden: true,
+	} );
+	let noteTimer = 0;
+	if ( options.preview ) {
+		root.dataset.preview = '';
+	}
+
+	root.append(
+		...[ overlay, popover, launcher, panel, previewNote ].filter( Boolean )
+	);
 	shadow.replaceChildren( h( 'style', { text: baseCss + widgetCss } ), root );
 	showView( 'home' );
 
@@ -207,7 +220,12 @@ export function render( host, config, options = {} ) {
 		: 0;
 
 	let timer = 0;
-	if ( options.open ) {
+	if ( options.preview ) {
+		// Show the panel without moving focus away from the admin form.
+		state = 'panel';
+		root.dataset.state = 'panel';
+		launcher.setAttribute( 'aria-expanded', 'true' );
+	} else if ( options.open ) {
 		onLauncher();
 	} else {
 		if ( launcherHadFocus ) {
@@ -256,7 +274,9 @@ export function render( host, config, options = {} ) {
 		} else if ( next === 'panel' ) {
 			focusFirst( views[ current ] );
 		} else if ( next === 'closed' && previous !== 'closed' ) {
-			rememberDismissed();
+			if ( ! options.preview ) {
+				rememberDismissed();
+			}
 			if ( focusInside ) {
 				launcher.focus();
 			}
@@ -381,6 +401,9 @@ export function render( host, config, options = {} ) {
 		if ( navigate && to ) {
 			openTarget( to );
 		}
+		if ( options.preview ) {
+			showPreviewNote();
+		}
 		if ( state === 'pop' || state === 'peek' ) {
 			setState( 'closed' );
 		}
@@ -399,6 +422,18 @@ export function render( host, config, options = {} ) {
 		if ( state !== 'panel' ) {
 			setState( 'panel' );
 		}
+	}
+
+	/**
+	 * Admin preview: says the action would run on the site.
+	 */
+	function showPreviewNote() {
+		previewNote.textContent = options.previewNote || '';
+		previewNote.hidden = ! previewNote.textContent;
+		window.clearTimeout( noteTimer );
+		noteTimer = window.setTimeout( () => {
+			previewNote.hidden = true;
+		}, 2500 );
 	}
 
 	/**
@@ -437,6 +472,7 @@ export function render( host, config, options = {} ) {
 		view: () => current,
 		destroy() {
 			window.clearTimeout( timer );
+			window.clearTimeout( noteTimer );
 			window.clearInterval( statusTimer );
 			document.removeEventListener( 'keydown', onKeydown );
 		},
@@ -470,4 +506,57 @@ function focusFirst( container ) {
 	}
 }
 
-window.devrivoChatbotWidget = { mount };
+// Fallbacks for the admin preview, which has no boot data.
+const PREVIEW_BOOT = {
+	position: 'right',
+	primaryColor: '#1e3b36',
+	launcherLabel: '',
+};
+
+/**
+ * Admin preview: renders a config inside the host element (no fixed
+ * positioning over the page), with auto-open off and no network requests.
+ * Actions, forms and chat only show the note.
+ *
+ * @param {HTMLElement} host    Host element (a shadow root is attached if missing).
+ * @param {unknown}     raw     Public config, as returned by /preview-config.
+ * @param {Object}      options { note: "Preview only" text }.
+ * @return {Object} Widget controller (call destroy() before rendering again).
+ */
+export function preview( host, raw, options = {} ) {
+	if ( ! host.shadowRoot ) {
+		host.attachShadow( { mode: 'open' } );
+	}
+	const config = { ...normalizeConfig( raw, PREVIEW_BOOT ), autoOpen: false };
+	const note = typeof options.note === 'string' ? options.note : '';
+
+	return render( host, config, {
+		preview: true,
+		previewNote: note,
+		submitter: {
+			prepare: async () => {},
+			submit: async () => ( {
+				ok: true,
+				status: 200,
+				data: { success: true, message: note },
+			} ),
+		},
+		chat: {
+			send: async () => ( {
+				ok: true,
+				status: 200,
+				answer: {
+					mode: 'guided',
+					text: note,
+					sources: [],
+					actions: [],
+				},
+			} ),
+		},
+		searcher: {
+			search: async () => ( { ok: true, status: 200, results: [] } ),
+		},
+	} );
+}
+
+window.devrivoChatbotWidget = { mount, preview };

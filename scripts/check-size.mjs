@@ -6,6 +6,7 @@ import { statSync } from 'node:fs';
 const LIMITS = {
 	'build/widget-loader.js': 15 * 1024,
 	'build/widget.js': 60 * 1024,
+	'build/admin.js': 300 * 1024,
 };
 
 let failed = false;

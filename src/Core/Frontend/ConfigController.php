@@ -123,7 +123,7 @@ final class ConfigController extends WP_REST_Controller {
 	 * @param array<string, mixed> $data Config.
 	 * @return array<string, mixed>
 	 */
-	private static function shape( array $data ): array {
+	public static function shape( array $data ): array {
 		if ( isset( $data['actions'] ) && is_array( $data['actions'] ) ) {
 			foreach ( $data['actions'] as $index => $action ) {
 				if ( is_array( $action ) ) {

@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace DevRivo\Chatbot\Core;
 
+use DevRivo\Chatbot\Admin\PreviewController;
 use DevRivo\Chatbot\AI\AiController;
 use DevRivo\Chatbot\AI\ChatEngine;
 use DevRivo\Chatbot\Core\Frontend\ChatController;
@@ -71,5 +72,6 @@ final class Rest {
 		( new KnowledgeController( $this->knowledge ) )->register_routes();
 		( new ChatController( new ChatEngine( $this->settings, $this->knowledge, Plugin::instance()->ai_client() ) ) )->register_routes();
 		( new AiController( $this->settings ) )->register_routes();
+		( new PreviewController( $this->settings ) )->register_routes();
 	}
 }
