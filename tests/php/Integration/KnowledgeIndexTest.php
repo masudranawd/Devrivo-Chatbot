@@ -11,7 +11,6 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Tests\Integration;
 
 use DevRivo\Chatbot\Core\Activator;
-use DevRivo\Chatbot\Core\Capabilities;
 use DevRivo\Chatbot\Core\Deactivator;
 use DevRivo\Chatbot\Core\Migrations;
 use DevRivo\Chatbot\Core\Plugin;
@@ -22,9 +21,12 @@ use DevRivo\Chatbot\Knowledge\Index;
 use DevRivo\Chatbot\Knowledge\Indexer;
 use DevRivo\Chatbot\Knowledge\Knowledge;
 use DevRivo\Chatbot\Knowledge\Rebuild;
+use DevRivo\Chatbot\Tests\Support\RestoresCapabilities;
 use WP_UnitTestCase;
 
 final class KnowledgeIndexTest extends WP_UnitTestCase {
+
+	use RestoresCapabilities;
 
 	private Knowledge $knowledge;
 
@@ -37,6 +39,7 @@ final class KnowledgeIndexTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
+		$this->restore_capabilities();
 		wp_unschedule_hook( Indexer::HOOK );
 		wp_unschedule_hook( Rebuild::HOOK );
 		Plugin::instance()->settings()->flush();
@@ -471,7 +474,6 @@ final class KnowledgeIndexTest extends WP_UnitTestCase {
 			$this->assertFalse( get_option( $option ), $option );
 		}
 
-		Capabilities::grant_defaults();
 		Activator::maybe_install();
 		update_option( Index::DRIVER_OPTION, 'fulltext', false );
 	}

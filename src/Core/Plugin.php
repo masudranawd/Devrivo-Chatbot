@@ -11,6 +11,7 @@ namespace DevRivo\Chatbot\Core;
 
 use DevRivo\Chatbot\Admin\AdminPage;
 use DevRivo\Chatbot\Admin\LeadsExport;
+use DevRivo\Chatbot\Admin\SetupNotice;
 use DevRivo\Chatbot\AI\AiClientInterface;
 use DevRivo\Chatbot\AI\WpAiClientAdapter;
 use DevRivo\Chatbot\Core\Frontend\Assets;
@@ -119,9 +120,10 @@ final class Plugin {
 		( new Rest( $this->settings(), $this->presets(), $leads, $this->knowledge() ) )->register();
 		$this->knowledge()->register();
 		( new Privacy( $leads, $this->settings() ) )->register();
-		// Both only act on admin hooks (admin_menu, admin_post_*).
+		// These only act on admin hooks (admin_menu, admin_post_*, admin_notices).
 		( new AdminPage() )->register();
 		( new LeadsExport( $leads ) )->register();
+		( new SetupNotice( $this->settings() ) )->register();
 
 		if ( ! is_admin() ) {
 			( new Assets( new Display() ) )->register();

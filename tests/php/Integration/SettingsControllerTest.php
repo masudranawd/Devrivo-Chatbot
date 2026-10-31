@@ -13,9 +13,12 @@ use DevRivo\Chatbot\Core\Capabilities;
 use DevRivo\Chatbot\Core\Plugin;
 use WP_REST_Request;
 use WP_REST_Server;
+use DevRivo\Chatbot\Tests\Support\RestoresCapabilities;
 use WP_UnitTestCase;
 
 final class SettingsControllerTest extends WP_UnitTestCase {
+
+	use RestoresCapabilities;
 
 	private const ROUTE = '/devrivo-chatbot/v1/settings';
 
@@ -30,6 +33,7 @@ final class SettingsControllerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
+		$this->restore_capabilities();
 		global $wp_rest_server;
 		$wp_rest_server = null;
 

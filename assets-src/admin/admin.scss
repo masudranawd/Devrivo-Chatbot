@@ -457,3 +457,75 @@
 		font-size: 16px;
 	}
 }
+
+.devrivo-setup {
+	max-inline-size: 1200px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+
+	.devrivo-form,
+	> .devrivo-setup__body {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	> .devrivo-setup__body {
+		max-inline-size: 760px;
+	}
+
+	> .devrivo-setup__body:has(.devrivo-split) {
+		max-inline-size: none;
+	}
+}
+
+.devrivo-setup__heading {
+	margin: 0;
+	font-size: 18px;
+
+	&:focus {
+		outline: none;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+		outline-offset: 2px;
+	}
+}
+
+.devrivo-setup__facts {
+	display: grid;
+	grid-template-columns: minmax(140px, 220px) 1fr;
+	gap: 8px 16px;
+	margin: 0;
+
+	dt {
+		font-weight: 600;
+	}
+
+	dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+}
+
+.devrivo-setup__found input,
+.devrivo-setup__found textarea {
+	border-color: #dba617;
+}
+
+.devrivo-setup__days {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+
+.devrivo-setup__reply {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.devrivo-setup-card {
+	border-inline-start: 4px solid var(--wp-admin-theme-color, #2271b1);
+}

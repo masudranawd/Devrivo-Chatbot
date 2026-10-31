@@ -19,6 +19,7 @@ import Integrations from './screens/integrations';
 import Knowledge from './screens/knowledge';
 import Offers from './screens/offers';
 import Privacy from './screens/privacy';
+import Setup from './screens/setup';
 import Tools from './screens/tools';
 
 export const SCREENS = [
@@ -87,6 +88,13 @@ export const SCREENS = [
 		id: 'tools',
 		label: () => __( 'Tools', 'devrivo-chatbot' ),
 		Screen: Tools,
+	},
+	// Opened from the Dashboard card, the Plugins screen notice and Tools.
+	{
+		id: 'setup',
+		label: () => __( 'Setup', 'devrivo-chatbot' ),
+		Screen: Setup,
+		hidden: true,
 	},
 ];
 
@@ -182,19 +190,21 @@ export default function App() {
 					{ __( 'DevRivo Chatbot', 'devrivo-chatbot' ) }
 				</p>
 				<ul>
-					{ SCREENS.map( ( screen ) => (
-						<li key={ screen.id }>
-							<a
-								href={ `#/${ screen.id }` }
-								onClick={ onNavigate }
-								aria-current={
-									screen.id === route ? 'page' : undefined
-								}
-							>
-								{ screen.label() }
-							</a>
-						</li>
-					) ) }
+					{ SCREENS.filter( ( screen ) => ! screen.hidden ).map(
+						( screen ) => (
+							<li key={ screen.id }>
+								<a
+									href={ `#/${ screen.id }` }
+									onClick={ onNavigate }
+									aria-current={
+										screen.id === route ? 'page' : undefined
+									}
+								>
+									{ screen.label() }
+								</a>
+							</li>
+						)
+					) }
 				</ul>
 			</nav>
 			<main className="devrivo-admin__main">

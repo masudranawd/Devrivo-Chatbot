@@ -23,34 +23,24 @@ import {
 	replacedSections,
 	sectionLabels,
 } from '../lib/transfer';
-import { publish } from '../lib/use-settings';
+import { loadSettings, publish } from '../lib/use-settings';
 
 /**
- * Apply-preset dialog: Merge (recommended) or Replace, and for Replace the
- * exact sections that will be overwritten.
+ * Merge (recommended) or Replace choice, and for Replace the exact sections
+ * that will be overwritten. Used by the Tools dialog and the setup wizard.
  *
  * @param {Object}                 props
- * @param {Object}                 props.preset   Preset from GET /presets/{id} (null while loading).
- * @param {string}                 props.title    Preset title.
- * @param {boolean}                props.busy     Applying.
- * @param {(mode: string) => void} props.onApply  Apply with "merge" or "replace".
- * @param {() => void}             props.onCancel Cancelled.
- * @return {Element} Modal.
+ * @param {Object}                 props.preset  Preset from GET /presets/{id} (null while loading).
+ * @param {string}                 props.mode    "merge" or "replace".
+ * @param {(mode: string) => void} props.setMode New mode.
+ * @return {Element} Choice.
  */
-export function ApplyPresetModal( { preset, title, busy, onApply, onCancel } ) {
-	const [ mode, setMode ] = useState( 'merge' );
+export function PresetMode( { preset, mode, setMode } ) {
 	const labels = sectionLabels();
 	const sections = replacedSections( preset );
 
 	return (
-		<Modal
-			title={ sprintf(
-				/* translators: %s: Preset title. */
-				__( 'Apply “%s”', 'devrivo-chatbot' ),
-				title
-			) }
-			onRequestClose={ onCancel }
-		>
+		<>
 			<RadioControl
 				label={ __( 'How should it be applied?', 'devrivo-chatbot' ) }
 				selected={ mode }
@@ -106,6 +96,34 @@ export function ApplyPresetModal( { preset, title, busy, onApply, onCancel } ) {
 					) }
 				</Notice>
 			) }
+		</>
+	);
+}
+
+/**
+ * Apply-preset dialog.
+ *
+ * @param {Object}                 props
+ * @param {Object}                 props.preset   Preset from GET /presets/{id} (null while loading).
+ * @param {string}                 props.title    Preset title.
+ * @param {boolean}                props.busy     Applying.
+ * @param {(mode: string) => void} props.onApply  Apply with "merge" or "replace".
+ * @param {() => void}             props.onCancel Cancelled.
+ * @return {Element} Modal.
+ */
+export function ApplyPresetModal( { preset, title, busy, onApply, onCancel } ) {
+	const [ mode, setMode ] = useState( 'merge' );
+
+	return (
+		<Modal
+			title={ sprintf(
+				/* translators: %s: Preset title. */
+				__( 'Apply “%s”', 'devrivo-chatbot' ),
+				title
+			) }
+			onRequestClose={ onCancel }
+		>
+			<PresetMode preset={ preset } mode={ mode } setMode={ setMode } />
 			<div className="devrivo-modal-actions">
 				<Button
 					variant="tertiary"
@@ -331,6 +349,34 @@ export default function Tools( { notify } ) {
 		}
 	};
 
+	// Back to the first wizard step; every setting stays as it is.
+	const runSetupAgain = async () => {
+		setBusy( true );
+		try {
+			const all = await loadSettings();
+			publish(
+				await request( '/settings', {
+					method: 'POST',
+					data: {
+						general: {
+							setup: {
+								...( all.general?.setup || {} ),
+								completed: false,
+								completed_at: 0,
+								step: '',
+							},
+						},
+					},
+				} )
+			);
+			window.location.hash = '#/setup';
+		} catch ( error ) {
+			notify( 'error', toErrors( error ).message );
+		} finally {
+			setBusy( false );
+		}
+	};
+
 	const runReset = async () => {
 		setConfirmReset( false );
 		setBusy( true );
@@ -467,7 +513,7 @@ export default function Tools( { notify } ) {
 				</p>
 				<p className="description">
 					{ __(
-						'The file includes your notification email addresses, so share it carefully.',
+						'The file includes your notification email addresses and business contact details, so share it carefully.',
 						'devrivo-chatbot'
 					) }
 				</p>
@@ -579,6 +625,28 @@ export default function Tools( { notify } ) {
 						</>
 					) }
 				</div>
+			</section>
+
+			<section aria-labelledby="devrivo-setup-again">
+				<h2 id="devrivo-setup-again">
+					{ __( 'Setup wizard', 'devrivo-chatbot' ) }
+				</h2>
+				<p className="description">
+					{ __(
+						'Walk through the setup steps again. Your current settings are kept and shown in each step.',
+						'devrivo-chatbot'
+					) }
+				</p>
+				<p>
+					<Button
+						variant="secondary"
+						onClick={ runSetupAgain }
+						disabled={ busy }
+						__next40pxDefaultSize
+					>
+						{ __( 'Run setup again', 'devrivo-chatbot' ) }
+					</Button>
+				</p>
 			</section>
 
 			<section aria-labelledby="devrivo-reset">

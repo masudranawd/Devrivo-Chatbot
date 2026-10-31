@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Admin;
 
 use DevRivo\Chatbot\Core\Capabilities;
+use DevRivo\Chatbot\Core\Rest;
 use DevRivo\Chatbot\Engine\ActionTypes;
 
 defined( 'ABSPATH' ) || exit;
@@ -164,6 +165,10 @@ final class AdminPage {
 			'actionTypes'        => self::action_types(),
 			'previewWidgetUrl'   => add_query_arg( 'ver', $widget['version'], DEVRIVO_CHATBOT_URL . 'build/widget.js' ),
 			'leadsExportUrl'     => LeadsExport::url(),
+			// Setup wizard: AI provider plugins, and the public chat for "Test a question".
+			'aiPluginsUrl'       => admin_url( 'plugin-install.php?s=' . rawurlencode( 'AI Provider' ) . '&tab=search&type=term' ),
+			'chatUrl'            => rest_url( Rest::NAMESPACE . '/chat' ),
+			'sessionUrl'         => rest_url( Rest::NAMESPACE . '/session' ),
 		);
 	}
 

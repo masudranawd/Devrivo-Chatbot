@@ -194,7 +194,17 @@ final class PresetApplier {
 		}
 
 		// Ignore sections a newer or older version doesn't know.
-		$result = $this->settings->update( array_intersect_key( $backup['settings'], Schema::sections() ) );
+		$restore = array_intersect_key( $backup['settings'], Schema::sections() );
+
+		// The business profile and setup state are not part of a preset or
+		// import, so undoing one keeps their current values.
+		if ( is_array( $restore['general'] ?? null ) ) {
+			$general                        = (array) $this->settings->get( 'general' );
+			$restore['general']['business'] = $general['business'] ?? array();
+			$restore['general']['setup']    = $general['setup'] ?? array();
+		}
+
+		$result = $this->settings->update( $restore );
 
 		if ( ! is_wp_error( $result ) ) {
 			delete_option( self::BACKUP_OPTION );
