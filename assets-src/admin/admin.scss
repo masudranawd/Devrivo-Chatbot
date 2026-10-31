@@ -211,6 +211,19 @@
 		repeating-linear-gradient(45deg, #f6f7f7 0 12px, #f0f0f1 12px 24px);
 }
 
+.devrivo-preview__stage--mobile {
+	inline-size: 375px;
+	max-inline-size: 100%;
+	block-size: 667px;
+	margin-inline: auto;
+}
+
+.devrivo-preview__devices {
+	display: flex;
+	gap: 4px;
+	margin-block-end: 8px;
+}
+
 .devrivo-hours__day {
 	border-block-start: 1px solid #f0f0f1;
 	padding-block-start: 8px;
@@ -356,5 +369,91 @@
 		margin: 0;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+}
+
+.devrivo-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.devrivo-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 8px;
+
+	> .components-base-control {
+		flex: 1 1 160px;
+	}
+}
+
+.devrivo-subcard {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: #fff;
+}
+
+.devrivo-subcard__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+
+	h3 {
+		margin: 0;
+		font-size: 13px;
+	}
+}
+
+.devrivo-flowbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 8px;
+
+	> .components-base-control {
+		flex: 1 1 200px;
+	}
+}
+
+.devrivo-presets {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+
+	h3 {
+		margin: 0 0 4px;
+		font-size: 14px;
+	}
+}
+
+.devrivo-progress {
+	block-size: 8px;
+	border-radius: 4px;
+	background: #f0f0f1;
+	overflow: hidden;
+
+	span {
+		display: block;
+		block-size: 100%;
+		background: var(--wp-admin-theme-color, #2271b1);
+	}
+}
+
+.devrivo-tools section {
+	margin-block-end: 24px;
+
+	h2 {
+		font-size: 16px;
 	}
 }

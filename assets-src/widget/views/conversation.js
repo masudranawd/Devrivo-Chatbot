@@ -22,6 +22,7 @@ import { formView } from './form';
  * @param {Object}                      options.submitter  Form submitter (lib/submit).
  * @param {Object}                      options.searcher   Searcher (lib/search).
  * @param {Object}                      options.chat       Chat client (lib/chat).
+ * @param {boolean}                     options.keepFocus  Never move focus in from outside the widget (admin preview).
  * @return {Object} View for the flow runner, plus form(), chat(), search() and separator().
  */
 export function conversationView( log, options ) {
@@ -51,12 +52,14 @@ export function conversationView( log, options ) {
 	// Someone typing in the composer keeps typing.
 	const show = ( element, focus = true ) => {
 		const active = log.getRootNode().activeElement;
+		// The admin preview (keepFocus) never pulls focus in from outside.
 		const focusIt =
 			focus &&
-			( ! active ||
-				! active.isConnected ||
-				( ( log.parentElement || log ).contains( active ) &&
-					! active.closest( '.dc-composer' ) ) );
+			( active
+				? ! active.isConnected ||
+					( ( log.parentElement || log ).contains( active ) &&
+						! active.closest( '.dc-composer' ) )
+				: ! options.keepFocus );
 		log.append( element );
 		scroll();
 		const first = element.querySelector(

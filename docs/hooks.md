@@ -76,7 +76,7 @@
 | Hook | Filters | Arguments | Since | Status |
 |---|---|---|---|---|
 | `devrivo_chatbot_lead_data` | Lead before saving (`form_id`, `email`, `name`, `data`, `page_url`, `consent_text`) | `array $data`, `string $form_id` | 1.0.0 | In dev |
-| `devrivo_chatbot_notification_recipients` | Email recipients for a lead (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` | 1.0.0 | In dev |
+| `devrivo_chatbot_notification_recipients` | Email recipients for a lead and for the admin's test email (default: Integrations → Notification emails, else the admin email) | `string[] $emails`, `array $lead` (empty for the test email) | 1.0.0 | In dev |
 | `devrivo_chatbot_webhook_payload` | Payload sent to the webhook | `array $payload`, `array $lead` | 1.3.0 | Planned |
 | `devrivo_chatbot_rate_limit` | Rate limits for public endpoints, each `max` per `window` seconds. Form submits must pass both `session` (per session token, default 5 per 600 s) and `ip` (per client IP, default 30 per 600 s); chat messages both `chat_session` (default 20 per 600 s) and `chat_ip` (default 60 per 600 s); search uses `search` (per client IP, default 60 per 60 s) | `array $limits`, `array $context` (`endpoint` form/search/chat, `form_id`) | 1.0.0 | In dev |
 | `devrivo_chatbot_client_ip` | Client IP used for rate limiting (default `REMOTE_ADDR`; forwarded headers are never trusted by default). Sites behind a trusted proxy can return e.g. `CF-Connecting-IP`; values that are not an IP address are ignored | `string $ip`, `WP_REST_Request $request` | 1.0.0 | In dev |

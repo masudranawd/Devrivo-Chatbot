@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  *   (its current value equals the default); otherwise it is skipped.
  *
  * Before writing, all current settings are saved to a backup option, which
- * undo() restores.
+ * undo() restores. Settings imports use the same backup (save_with_backup()).
  */
 final class PresetApplier {
 
@@ -103,26 +103,8 @@ final class PresetApplier {
 			'preset_version' => $preset['version'],
 		);
 
-		$previous_backup = get_option( self::BACKUP_OPTION );
-		update_option(
-			self::BACKUP_OPTION,
-			array(
-				'preset'   => $preset['id'],
-				'time'     => time(),
-				'settings' => $current,
-			),
-			false
-		);
-
-		$result = $this->settings->update( $changes );
-
+		$result = $this->save_with_backup( $changes, $preset['id'] );
 		if ( is_wp_error( $result ) ) {
-			// Nothing was saved, so keep the backup the admin had before.
-			if ( false === $previous_backup ) {
-				delete_option( self::BACKUP_OPTION );
-			} else {
-				update_option( self::BACKUP_OPTION, $previous_backup, false );
-			}
 			return $result;
 		}
 
@@ -141,6 +123,57 @@ final class PresetApplier {
 			'settings' => $result,
 			'applied'  => $applied,
 			'skipped'  => $skipped,
+		);
+	}
+
+	/**
+	 * Saves all current settings to the backup option, then applies the
+	 * changes in one Settings::update(). When the update fails nothing is
+	 * saved and the previous backup is kept.
+	 *
+	 * @param array<string, mixed> $changes Section name => values.
+	 * @param string               $preset  Preset ID, or '' for a settings import.
+	 * @return array<string, mixed>|WP_Error All settings after the update.
+	 */
+	public function save_with_backup( array $changes, string $preset = '' ): array|WP_Error {
+		$previous_backup = get_option( self::BACKUP_OPTION );
+		update_option(
+			self::BACKUP_OPTION,
+			array(
+				'preset'   => $preset,
+				'time'     => time(),
+				'settings' => $this->settings->all(),
+			),
+			false
+		);
+
+		$result = $this->settings->update( $changes );
+
+		if ( is_wp_error( $result ) ) {
+			if ( false === $previous_backup ) {
+				delete_option( self::BACKUP_OPTION );
+			} else {
+				update_option( self::BACKUP_OPTION, $previous_backup, false );
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Whether an undo is available, for the admin's "Undo last change" button.
+	 *
+	 * @return array{exists: bool, preset: string, created: string|null} Preset is '' after an import; created is UTC ISO 8601.
+	 */
+	public static function backup_status(): array {
+		$backup = get_option( self::BACKUP_OPTION );
+		$exists = is_array( $backup ) && is_array( $backup['settings'] ?? null );
+		$time   = $exists ? (int) ( $backup['time'] ?? 0 ) : 0;
+
+		return array(
+			'exists'  => $exists,
+			'preset'  => $exists ? (string) ( $backup['preset'] ?? '' ) : '',
+			'created' => $time > 0 ? gmdate( 'Y-m-d\TH:i:s\Z', $time ) : null,
 		);
 	}
 

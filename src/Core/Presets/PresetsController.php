@@ -27,7 +27,8 @@ defined( 'ABSPATH' ) || exit;
  * - GET  /presets            List presets.
  * - GET  /presets/{id}       One preset with its settings.
  * - POST /presets/{id}/apply Apply a preset (mode: replace|merge).
- * - POST /presets/undo       Restore the settings saved before the last apply.
+ * - POST /presets/undo       Restore the settings saved before the last apply (or import).
+ * - GET  /presets/backup     Whether there is something to undo: { exists, preset, created }.
  */
 final class PresetsController extends WP_REST_Controller {
 
@@ -57,6 +58,19 @@ final class PresetsController extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
+			)
+		);
+
+		// Before /presets/{id}, which would match "backup" too.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/backup',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'backup' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+				),
 			)
 		);
 
@@ -218,6 +232,15 @@ final class PresetsController extends WP_REST_Controller {
 		$result = $this->applier->undo();
 
 		return is_wp_error( $result ) ? $result : $this->respond( array( 'settings' => $this->settings_shape( $result ) ) );
+	}
+
+	/**
+	 * Whether there is a backup to undo.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public function backup( WP_REST_Request $request ): WP_REST_Response {
+		return $this->respond( PresetApplier::backup_status() );
 	}
 
 	/**

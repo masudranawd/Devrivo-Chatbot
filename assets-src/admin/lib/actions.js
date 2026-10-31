@@ -23,11 +23,12 @@ export function move( list, index, delta ) {
 /**
  * A machine ID from a label, unique in the list.
  *
- * @param {string}   label Label.
- * @param {string[]} taken IDs in use.
+ * @param {string}   label    Label.
+ * @param {string[]} taken    IDs in use.
+ * @param {string}   fallback Base when the label has no usable characters.
  * @return {string} ID (lowercase letters, digits, - and _; max 40).
  */
-export function uniqueId( label, taken ) {
+export function uniqueId( label, taken, fallback = 'action' ) {
 	const base =
 		String( label )
 			.toLowerCase()
@@ -35,7 +36,7 @@ export function uniqueId( label, taken ) {
 			.replace( /[̀-ͯ]/g, '' )
 			.replace( /[^a-z0-9]+/g, '-' )
 			.replace( /^-+|-+$/g, '' )
-			.slice( 0, 34 ) || 'action';
+			.slice( 0, 34 ) || fallback;
 	let id = base;
 	for ( let n = 2; taken.includes( id ); n++ ) {
 		id = `${ base }-${ n }`;

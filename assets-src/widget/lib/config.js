@@ -53,6 +53,7 @@ const I18N_KEYS = [
 	'ai_tag',
 	'chat_limited',
 	'chat_error',
+	'powered_by',
 ];
 
 const FIELD_TYPES = [ 'text', 'email', 'tel', 'textarea', 'select', 'date' ];
@@ -174,6 +175,8 @@ export function normalizeConfig( raw, boot ) {
 		sessionUrl: safeUrl( raw.session_url, HTTP_PROTOCOLS ),
 		submitUrl: safeUrl( raw.submit_url, HTTP_PROTOCOLS ),
 		offers,
+		// "Powered by DevRivo" link in the panel footer (opt-in).
+		creditLink: raw.credit_link === true,
 		i18n,
 	};
 }

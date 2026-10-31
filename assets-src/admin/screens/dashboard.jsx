@@ -52,7 +52,7 @@ export function checklist( all, aiStatus ) {
 				'No notification email is set, so enquiries go to the site admin email.',
 				'devrivo-chatbot'
 			),
-			href: '',
+			href: '#/integrations',
 		} );
 	}
 	if ( ! data.privacyPolicyUrl ) {
@@ -62,7 +62,7 @@ export function checklist( all, aiStatus ) {
 				'Your site has no privacy policy page. Forms link to it next to the consent box.',
 				'devrivo-chatbot'
 			),
-			href: data.privacySettingsUrl,
+			href: '#/privacy',
 		} );
 	}
 	if ( aiStatus && ! aiStatus.enabled ) {

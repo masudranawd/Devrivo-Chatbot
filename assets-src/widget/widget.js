@@ -34,6 +34,9 @@ export const ACTION_EVENT = 'devrivo-chatbot:action';
 
 const FOCUSABLE = 'button:not([disabled]),input:not([disabled]),a[href]';
 
+// Target of the opt-in "Powered by DevRivo" link.
+export const CREDIT_URL = 'https://github.com/masudranawd/Devrivo-Chatbot';
+
 /**
  * Fetches the config and renders the widget into the loader's host.
  *
@@ -73,8 +76,8 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat, preview, previewNote }.
- * @return {Object} Controller: { state(), view(), destroy() }.
+ * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat, preview, previewNote, mobile }.
+ * @return {Object} Controller: { state(), view(), flow( id ), form( id ), destroy() }.
  */
 export function render( host, config, options = {} ) {
 	const shadow = host.shadowRoot;
@@ -151,6 +154,8 @@ export function render( host, config, options = {} ) {
 			onCta: ( id ) => runAction( id ),
 			onBack: () => showView( 'home', true ),
 			typingTime: options.typingTime || typingTime,
+			// The admin preview never pulls focus out of the admin form.
+			keepFocus: !! options.preview,
 			submitter:
 				options.submitter ||
 				createSubmitter( {
@@ -181,7 +186,7 @@ export function render( host, config, options = {} ) {
 			'aria-modal': 'false',
 			'aria-label': config.brandName || i18n.assistant,
 		},
-		[ ...Object.values( views ), tabs ]
+		[ ...Object.values( views ), tabs, config.creditLink && credit() ]
 	);
 
 	// Only a popover the visitor opened gets the overlay, never the auto-opened one.
@@ -199,6 +204,10 @@ export function render( host, config, options = {} ) {
 	let noteTimer = 0;
 	if ( options.preview ) {
 		root.dataset.preview = '';
+		// Phone-sized preview: the panel fills the stage as it does on phones.
+		if ( options.mobile ) {
+			root.dataset.mobile = '';
+		}
 	}
 
 	root.append(
@@ -410,6 +419,20 @@ export function render( host, config, options = {} ) {
 	}
 
 	/**
+	 * Opt-in "Powered by DevRivo" footer link (text only, new tab).
+	 *
+	 * @return {HTMLElement} Footer.
+	 */
+	function credit() {
+		return h( 'p', { class: 'dc-credit' }, [
+			h( 'a', { href: CREDIT_URL, target: '_blank', rel: 'noopener' }, [
+				i18n.powered_by,
+				h( 'span', { class: 'dc-sr', text: ` ${ i18n.new_tab }` } ),
+			] ),
+		] );
+	}
+
+	/**
 	 * Opens the chat view for a flow or a form.
 	 *
 	 * @param {boolean} fresh Started from the menu (a new conversation).
@@ -470,6 +493,15 @@ export function render( host, config, options = {} ) {
 	return {
 		state: () => state,
 		view: () => current,
+		// Admin preview: "Try this flow" and the forms builder.
+		flow( id ) {
+			openConversation( true );
+			runner.start( id, true );
+		},
+		form( id ) {
+			openConversation( true );
+			conversation.form( id );
+		},
 		destroy() {
 			window.clearTimeout( timer );
 			window.clearTimeout( noteTimer );
@@ -520,7 +552,7 @@ const PREVIEW_BOOT = {
  *
  * @param {HTMLElement} host    Host element (a shadow root is attached if missing).
  * @param {unknown}     raw     Public config, as returned by /preview-config.
- * @param {Object}      options { note: "Preview only" text }.
+ * @param {Object}      options { note: "Preview only" text, mobile: phone-sized stage }.
  * @return {Object} Widget controller (call destroy() before rendering again).
  */
 export function preview( host, raw, options = {} ) {
@@ -533,6 +565,7 @@ export function preview( host, raw, options = {} ) {
 	return render( host, config, {
 		preview: true,
 		previewNote: note,
+		mobile: options.mobile === true,
 		submitter: {
 			prepare: async () => {},
 			submit: async () => ( {
