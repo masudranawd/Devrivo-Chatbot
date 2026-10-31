@@ -33,11 +33,15 @@ If AI is unavailable for any reason, the assistant automatically switches to Gui
 * Booking-link handoff to any booking page
 * Leads inbox with email notifications
 * Opening-hours awareness
-* Appearance settings with live preview, plus light and dark mode
+* Appearance settings with live preview, light and dark mode, a bundled font (Figtree) and a text size option
 * Display rules: choose pages, post types and devices
 * Privacy tools: consent checkbox, data retention, and support for WordPress personal data export and erase
 * Lightweight: the widget loads only when needed
 * Translation ready
+
+**Credits**
+
+The widget uses the Figtree font by Erik Kennedy and the Figtree Project Authors (https://github.com/erikdkennedy/figtree), licensed under the SIL Open Font License 1.1. It is bundled with the plugin (assets/fonts/figtree, with its licence) and loads from your own site. No font is loaded from Google Fonts or any other service.
 
 **Source code**
 

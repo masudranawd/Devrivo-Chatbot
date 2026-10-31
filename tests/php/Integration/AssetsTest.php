@@ -92,7 +92,7 @@ final class AssetsTest extends WP_UnitTestCase {
 		$boot = json_decode( $json, true );
 
 		$this->assertIsArray( $boot );
-		$this->assertSame( array( 'configUrl', 'widgetUrl', 'position', 'primaryColor', 'launcherLabel', 'devices' ), array_keys( $boot ) );
+		$this->assertSame( array( 'configUrl', 'widgetUrl', 'fontUrl', 'position', 'primaryColor', 'launcherLabel', 'devices' ), array_keys( $boot ) );
 		$this->assertStringContainsString( 'devrivo-chatbot/v1/config', urldecode( $boot['configUrl'] ) );
 		$this->assertStringContainsString( 'v=' . Settings::config_version(), $boot['configUrl'] );
 		$this->assertStringContainsString( 'locale=' . determine_locale(), $boot['configUrl'] );

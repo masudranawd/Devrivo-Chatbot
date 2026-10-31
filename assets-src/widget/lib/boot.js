@@ -44,6 +44,8 @@ export function parseBoot( raw ) {
 	return {
 		configUrl,
 		widgetUrl,
+		// Bundled Figtree ('' when missing or not http(s)).
+		fontUrl: safeUrl( raw.fontUrl, HTTP_PROTOCOLS ),
 		position: raw.position === 'left' ? 'left' : 'right',
 		primaryColor: hexColor( raw.primaryColor ),
 		launcherLabel:

@@ -16,6 +16,7 @@
 		"uninstall.php",
 		"readme.txt",
 		"src",
+		"assets",
 		"assets-src",
 		"build"
 	],

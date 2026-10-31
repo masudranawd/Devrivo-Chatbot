@@ -156,7 +156,13 @@ export function normalizeConfig( raw, boot ) {
 			: 'auto',
 		radius: clamp( appearance.radius, 0, 32, 22 ),
 		brandName: text( appearance.brand_name ),
-		font: appearance.font === 'inherit' ? 'inherit' : 'system',
+		// Unknown values use the system fonts, so nothing is downloaded.
+		font: [ 'figtree', 'inherit' ].includes( appearance.font )
+			? appearance.font
+			: 'system',
+		textSize: [ 'small', 'large' ].includes( appearance.text_size )
+			? appearance.text_size
+			: 'default',
 		avatarUrl: safeUrl( appearance.avatar_url, HTTP_PROTOCOLS ),
 		greeting: text( behaviour.greeting ),
 		welcome: text( behaviour.welcome ),

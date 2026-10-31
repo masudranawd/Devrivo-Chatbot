@@ -1,5 +1,5 @@
 /**
- * Appearance: colours, position, launcher, brand, avatar and font, with a
+ * Appearance: colours, position, launcher, brand, avatar, font and text size, with a
  * live preview of the unsaved changes.
  */
 import apiFetch from '@wordpress/api-fetch';
@@ -237,17 +237,46 @@ export default function Appearance( { notify, setDirty } ) {
 				<SelectControl
 					label={ __( 'Font', 'devrivo-chatbot' ) }
 					value={ look.font }
+					help={ __(
+						'Figtree comes with the plugin and loads from your own site.',
+						'devrivo-chatbot'
+					) }
 					options={ [
 						{
-							label: __( 'System font', 'devrivo-chatbot' ),
+							label: __( 'Figtree', 'devrivo-chatbot' ),
+							value: 'figtree',
+						},
+						{
+							label: __( 'System', 'devrivo-chatbot' ),
 							value: 'system',
 						},
 						{
-							label: __( 'Same as my theme', 'devrivo-chatbot' ),
+							label: __( 'Theme font', 'devrivo-chatbot' ),
 							value: 'inherit',
 						},
 					] }
 					onChange={ setLook( 'font' ) }
+					__next40pxDefaultSize
+				/>
+
+				<SelectControl
+					label={ __( 'Text size', 'devrivo-chatbot' ) }
+					value={ look.text_size }
+					options={ [
+						{
+							label: __( 'Small', 'devrivo-chatbot' ),
+							value: 'small',
+						},
+						{
+							label: __( 'Default', 'devrivo-chatbot' ),
+							value: 'default',
+						},
+						{
+							label: __( 'Large', 'devrivo-chatbot' ),
+							value: 'large',
+						},
+					] }
+					onChange={ setLook( 'text_size' ) }
 					__next40pxDefaultSize
 				/>
 

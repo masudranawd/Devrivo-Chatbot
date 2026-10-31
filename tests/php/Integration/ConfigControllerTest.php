@@ -88,7 +88,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 
 		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'credit_link', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
-		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'avatar_url' ), array_keys( $data['appearance'] ) );
+		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'text_size', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
 		$this->assertTrue( $data['ai_available'] );
 		$this->assertSame( 'Talk to us', $data['display']['launcher_label'] );

@@ -15,15 +15,16 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'id'          => 'healthcare',
-	'version'     => 4,
+	'version'     => 5,
 	'title'       => __( 'Healthcare', 'devrivo-chatbot' ),
 	'description' => __( 'For clinics and practices: treatments, consultations and appointment changes.', 'devrivo-chatbot' ),
 	'settings'    => array(
-		'behaviour' => array(
+		'appearance' => array( 'font' => 'figtree' ),
+		'behaviour'  => array(
 			'welcome'         => __( 'Hello! I can help you learn about our treatments or manage an appointment. In an emergency, please contact your local emergency services.', 'devrivo-chatbot' ),
 			'fallback_action' => 'callback',
 		),
-		'actions'   => array(
+		'actions'    => array(
 			array(
 				'id'     => 'treatment',
 				'label'  => __( 'Enquire about a treatment', 'devrivo-chatbot' ),
@@ -91,7 +92,7 @@ return array(
 				'show_in_menu' => false,
 			),
 		),
-		'flows'     => array(
+		'flows'      => array(
 			'enquire' => array(
 				'title' => __( 'Enquire about a treatment', 'devrivo-chatbot' ),
 				'start' => 'ask',
@@ -188,7 +189,7 @@ return array(
 				),
 			),
 		),
-		'forms'     => array(
+		'forms'      => array(
 			'callback'   => array(
 				'title'           => __( 'Request a callback', 'devrivo-chatbot' ),
 				'submit_label'    => __( 'Request my callback', 'devrivo-chatbot' ),
@@ -294,7 +295,7 @@ return array(
 				),
 			),
 		),
-		'knowledge' => array(
+		'knowledge'  => array(
 			'faqs' => array(
 				array(
 					'id'       => 'emergency',
@@ -318,7 +319,7 @@ return array(
 				),
 			),
 		),
-		'ai'        => array(
+		'ai'         => array(
 			'custom_instructions' => __( 'You are a friendly assistant for a healthcare practice. Keep answers short, warm and in plain English. Give general information only, taken from the site content you are given. Never diagnose, and never give medical or clinical advice, even if asked directly. If someone describes an emergency, tell them to contact their local emergency services immediately. For any question about symptoms, treatment choices or their own health, suggest booking a consultation.', 'devrivo-chatbot' ),
 		),
 	),
