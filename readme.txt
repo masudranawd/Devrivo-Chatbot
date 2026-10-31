@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.12.0
+Stable tag: 0.12.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -127,6 +127,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.12.1 =
+* Fix: admin menu missing after deleting and reinstalling the plugin.
+
 = 0.12.0 =
 * Typography: bundled Figtree font, consistent type scale independent of the theme, text size option.
 
@@ -165,6 +168,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.12.1 =
+Fixes the DevRivo Chatbot admin menu missing after the plugin was deleted and installed again.
 
 = 0.12.0 =
 Development version: the widget text now looks the same on every theme, with the bundled Figtree font (loaded from your own site) and a text size option under Appearance. Sites with saved settings keep their current font until you choose Figtree there.
