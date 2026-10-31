@@ -17,6 +17,7 @@ const DEFAULTS = {
 	siteTimezone: '',
 	actionTypes: [],
 	previewWidgetUrl: '',
+	previewFontUrl: '',
 	leadsExportUrl: '',
 };
 

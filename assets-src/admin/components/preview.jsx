@@ -88,7 +88,11 @@ export function Preview( { changes, play = null, devices = false } ) {
 				widget.current = window.devrivoChatbotWidget.preview(
 					stage.current,
 					config,
-					{ note: __( 'Preview only', 'devrivo-chatbot' ), mobile }
+					{
+						note: __( 'Preview only', 'devrivo-chatbot' ),
+						mobile,
+						fontUrl: boot().previewFontUrl,
+					}
 				);
 				run( widget.current, playing.current );
 				setError( '' );

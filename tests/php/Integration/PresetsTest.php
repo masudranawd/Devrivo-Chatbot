@@ -413,6 +413,7 @@ final class PresetsTest extends WP_UnitTestCase {
 			'appearance' => array(
 				'brand_name' => 'Acme',
 				'avatar_id'  => 5,
+				'font'       => 'system',
 			),
 		);
 

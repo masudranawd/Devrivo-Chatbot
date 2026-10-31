@@ -101,6 +101,8 @@ final class Assets {
 				rest_url( ConfigController::ROUTE )
 			),
 			'widgetUrl'     => add_query_arg( 'ver', $widget['version'] ?? DEVRIVO_CHATBOT_VERSION, DEVRIVO_CHATBOT_URL . 'build/widget.js' ),
+			// Bundled Figtree; only downloaded when the widget uses it.
+			'fontUrl'       => self::font_url(),
 			'position'      => $options['position'],
 			'primaryColor'  => $options['primary_color'],
 			'launcherLabel' => Display::launcher_label( (string) $options['launcher_label'] ),
@@ -126,5 +128,12 @@ final class Assets {
 			'dependencies' => is_array( $asset['dependencies'] ?? null ) ? $asset['dependencies'] : array(),
 			'version'      => is_string( $asset['version'] ?? null ) ? $asset['version'] : DEVRIVO_CHATBOT_VERSION,
 		);
+	}
+
+	/**
+	 * URL of the bundled Figtree font (variable woff2, weights 300–900).
+	 */
+	public static function font_url(): string {
+		return add_query_arg( 'ver', DEVRIVO_CHATBOT_VERSION, DEVRIVO_CHATBOT_URL . 'assets/fonts/figtree/figtree-variable.woff2' );
 	}
 }

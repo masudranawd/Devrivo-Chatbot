@@ -7,6 +7,8 @@ const LIMITS = {
 	'build/widget-loader.js': 15 * 1024,
 	'build/widget.js': 60 * 1024,
 	'build/admin.js': 300 * 1024,
+	// Bundled font (variable Figtree, all weights), shipped as is.
+	'assets/fonts/figtree/figtree-variable.woff2': 40 * 1024,
 };
 
 let failed = false;

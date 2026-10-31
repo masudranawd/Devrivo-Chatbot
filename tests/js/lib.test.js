@@ -23,6 +23,8 @@ import {
 const BOOT = {
 	configUrl: 'https://example.com/wp-json/devrivo-chatbot/v1/config?v=3',
 	widgetUrl: 'https://example.com/wp-content/plugins/x/build/widget.js?ver=1',
+	fontUrl:
+		'https://example.com/wp-content/plugins/x/assets/fonts/figtree/figtree-variable.woff2?ver=1',
 	position: 'left',
 	primaryColor: '#123456',
 	launcherLabel: '  Talk to us  ',
@@ -43,6 +45,7 @@ describe( 'parseBoot', () => {
 		expect( parseBoot( BOOT ) ).toEqual( {
 			configUrl: BOOT.configUrl,
 			widgetUrl: BOOT.widgetUrl,
+			fontUrl: BOOT.fontUrl,
 			position: 'left',
 			primaryColor: '#123456',
 			launcherLabel: 'Talk to us',
@@ -57,12 +60,14 @@ describe( 'parseBoot', () => {
 			primaryColor: 'red;}body{display:none',
 			launcherLabel: 42,
 			devices: 'all',
+			fontUrl: 'javascript:alert(1)',
 		} );
 
 		expect( boot.position ).toBe( 'right' );
 		expect( boot.primaryColor ).toBe( '#1e3b36' );
 		expect( boot.launcherLabel ).toBe( '' );
 		expect( boot.devices ).toEqual( [ 'desktop', 'mobile' ] );
+		expect( boot.fontUrl ).toBe( '' );
 	} );
 } );
 

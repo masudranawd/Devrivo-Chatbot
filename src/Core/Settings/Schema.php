@@ -396,10 +396,17 @@ final class Schema {
 					'minimum' => 0,
 					'default' => 0,
 				),
+				// Figtree is bundled with the plugin; "inherit" uses the theme's font.
 				'font'         => array(
 					'type'    => 'string',
-					'enum'    => array( 'system', 'inherit' ),
-					'default' => 'system',
+					'enum'    => array( 'figtree', 'system', 'inherit' ),
+					'default' => 'figtree',
+				),
+				// Scales every text size in the widget (about 0.93 / 1 / 1.13).
+				'text_size'    => array(
+					'type'    => 'string',
+					'enum'    => array( 'small', 'default', 'large' ),
+					'default' => 'default',
 				),
 			)
 		);

@@ -17,7 +17,9 @@ import { createChat } from './lib/chat';
 import { createSearcher } from './lib/search';
 import { createSession } from './lib/session';
 import { createSubmitter } from './lib/submit';
+import { ensureFont } from './lib/fonts';
 import { isOpenNow } from './lib/hours';
+import { HTTP_PROTOCOLS, safeUrl } from './lib/url';
 import { rememberDismissed, wasDismissed } from './lib/storage';
 import { widgetCss } from './styles';
 import { chatView } from './views/chat';
@@ -68,6 +70,9 @@ export async function mount( host, boot, options = {} ) {
 		return null;
 	}
 
+	// The loader's launcher uses the system fonts until now.
+	ensureFont( config.font, boot.fontUrl );
+
 	return render( host, config, options );
 }
 
@@ -113,6 +118,7 @@ export function render( host, config, options = {} ) {
 		'data-state': state,
 		'data-scheme': config.colorScheme,
 		'data-font': config.font,
+		'data-size': config.textSize,
 	} );
 	applyTheme( root, config );
 
@@ -552,7 +558,7 @@ const PREVIEW_BOOT = {
  *
  * @param {HTMLElement} host    Host element (a shadow root is attached if missing).
  * @param {unknown}     raw     Public config, as returned by /preview-config.
- * @param {Object}      options { note: "Preview only" text, mobile: phone-sized stage }.
+ * @param {Object}      options { note: "Preview only" text, mobile: phone-sized stage, fontUrl: bundled Figtree }.
  * @return {Object} Widget controller (call destroy() before rendering again).
  */
 export function preview( host, raw, options = {} ) {
@@ -561,6 +567,11 @@ export function preview( host, raw, options = {} ) {
 	}
 	const config = { ...normalizeConfig( raw, PREVIEW_BOOT ), autoOpen: false };
 	const note = typeof options.note === 'string' ? options.note : '';
+	ensureFont(
+		config.font,
+		safeUrl( options.fontUrl, HTTP_PROTOCOLS ),
+		host.ownerDocument
+	);
 
 	return render( host, config, {
 		preview: true,

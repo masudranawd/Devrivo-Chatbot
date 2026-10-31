@@ -45,12 +45,12 @@ final class PresetRepository {
 	/**
 	 * Site-specific keys a preset may never set, by section. Presets describe an
 	 * industry, not a site: turning AI on, choosing a model or token budget,
-	 * branding, and which content is indexed stay the admin's decision and
+	 * branding (including the font), and which content is indexed stay the admin's decision and
 	 * survive applying any preset.
 	 */
 	private const FORBIDDEN_KEYS = array(
 		'ai'         => array( 'enabled', 'provider', 'model', 'monthly_token_limit' ),
-		'appearance' => array( 'brand_name', 'avatar_id' ),
+		'appearance' => array( 'brand_name', 'avatar_id', 'font' ),
 		'knowledge'  => array( 'post_types', 'exclude_ids' ),
 	);
 

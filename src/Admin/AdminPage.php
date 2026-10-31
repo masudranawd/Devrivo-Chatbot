@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace DevRivo\Chatbot\Admin;
 
 use DevRivo\Chatbot\Core\Capabilities;
+use DevRivo\Chatbot\Core\Frontend\Assets;
 use DevRivo\Chatbot\Core\Rest;
 use DevRivo\Chatbot\Engine\ActionTypes;
 
@@ -163,6 +164,7 @@ final class AdminPage {
 			'timezones'          => timezone_identifiers_list(),
 			'siteTimezone'       => wp_timezone_string(),
 			'actionTypes'        => self::action_types(),
+			'previewFontUrl'     => Assets::font_url(),
 			'previewWidgetUrl'   => add_query_arg( 'ver', $widget['version'], DEVRIVO_CHATBOT_URL . 'build/widget.js' ),
 			'leadsExportUrl'     => LeadsExport::url(),
 			// Setup wizard: AI provider plugins, and the public chat for "Test a question".

@@ -109,6 +109,7 @@ final class WidgetConfig {
 				'radius'       => $appearance['radius'],
 				'brand_name'   => $appearance['brand_name'],
 				'font'         => $appearance['font'],
+				'text_size'    => $appearance['text_size'],
 				'avatar_url'   => $appearance['avatar_id'] > 0 ? (string) wp_get_attachment_image_url( $appearance['avatar_id'], 'thumbnail' ) : '',
 			),
 			'behaviour'       => array(
