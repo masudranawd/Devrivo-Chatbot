@@ -52,7 +52,7 @@ import {
 	useIndexStatus,
 } from '../../assets-src/admin/screens/knowledge';
 import Offers, { addOffer } from '../../assets-src/admin/screens/offers';
-import { ApplyPresetModal } from '../../assets-src/admin/screens/tools';
+import Tools, { ApplyPresetModal } from '../../assets-src/admin/screens/tools';
 import { CREDIT_URL, preview } from '../../assets-src/widget/widget';
 
 const XSS = '<img src=x onerror="window.__xss=1">';
@@ -632,6 +632,36 @@ describe( 'preset apply dialog', () => {
 			screen.getByRole( 'button', { name: 'Replace sections' } )
 		);
 		expect( onApply ).toHaveBeenLastCalledWith( 'replace' );
+	} );
+} );
+
+describe( 'tools screen notes', () => {
+	it( 'warns about emails in exports and explains undo', async () => {
+		apiFetch.mockImplementation( async ( { path } ) => {
+			if ( path.endsWith( '/presets/backup' ) ) {
+				return {
+					exists: true,
+					preset: '',
+					created: '2026-10-31T10:00:00Z',
+				};
+			}
+			return [];
+		} );
+		render( <Tools notify={ () => {} } /> );
+
+		expect(
+			screen.getByText( /includes your notification email addresses/ )
+		).toBeTruthy();
+		const undo = await screen.findByRole( 'button', {
+			name: 'Undo last change',
+		} );
+		const help = document.getElementById(
+			undo.getAttribute( 'aria-describedby' )
+		);
+		expect( help.textContent ).toContain(
+			'before the most recent preset or import'
+		);
+		expect( help.textContent ).toContain( 'the last import' );
 	} );
 } );
 

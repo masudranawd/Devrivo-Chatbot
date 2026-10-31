@@ -353,6 +353,7 @@ final class PresetsTest extends WP_UnitTestCase {
 		$invalid = array(
 			array_merge( $valid, array( 'id' => 'Bad ID' ) ),
 			array_merge( $valid, array( 'id' => 'undo' ) ),
+			array_merge( $valid, array( 'id' => 'backup' ) ),
 			array_merge( $valid, array( 'title' => '' ) ),
 			array_merge( $valid, array( 'version' => 0 ) ),
 			array_merge( $valid, array( 'settings' => array( 'privacy' => array( 'retention_days' => 5 ) ) ) ),
@@ -371,6 +372,31 @@ final class PresetsTest extends WP_UnitTestCase {
 		remove_filter( 'devrivo_chatbot_presets', $add );
 
 		$this->assertSame( array_merge( self::BUILT_IN, array( 'valid' ) ), $ids );
+	}
+
+	public function test_route_names_are_reserved_preset_ids(): void {
+		$this->setExpectedIncorrectUsage( PresetRepository::class . '::all' );
+
+		$add = static function ( array $presets ): array {
+			foreach ( array( 'undo', 'backup' ) as $id ) {
+				$presets[] = array(
+					'id'       => $id,
+					'version'  => 1,
+					'title'    => ucfirst( $id ),
+					'settings' => array(),
+				);
+			}
+			return $presets;
+		};
+		add_filter( 'devrivo_chatbot_presets', $add );
+
+		$repository = new PresetRepository();
+		$ids        = array_keys( $repository->all() );
+		remove_filter( 'devrivo_chatbot_presets', $add );
+
+		$this->assertSame( self::BUILT_IN, $ids );
+		$this->assertNull( $repository->get( 'backup' ) );
+		$this->assertNull( $repository->get( 'undo' ) );
 	}
 
 	public function test_presets_with_site_specific_keys_are_skipped(): void {

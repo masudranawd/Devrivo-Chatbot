@@ -434,17 +434,24 @@ export default function Tools( { notify } ) {
 					</div>
 				) }
 				{ backup && backup.exists && (
-					<p>
+					<div>
 						<Button
 							variant="secondary"
 							onClick={ () => setConfirmUndo( true ) }
 							disabled={ busy }
+							aria-describedby="devrivo-undo-help"
 							__next40pxDefaultSize
 						>
 							{ __( 'Undo last change', 'devrivo-chatbot' ) }
-						</Button>{ ' ' }
-						<span className="description">{ backupText() }</span>
-					</p>
+						</Button>
+						<p className="description" id="devrivo-undo-help">
+							{ __(
+								'Restores your settings to how they were before the most recent preset or import. Only that one change can be undone.',
+								'devrivo-chatbot'
+							) }{ ' ' }
+							{ backupText() }
+						</p>
+					</div>
 				) }
 			</section>
 
@@ -455,6 +462,12 @@ export default function Tools( { notify } ) {
 				<p className="description">
 					{ __(
 						'Download all settings as a JSON file, for a backup or to copy them to another site. Leads are not included.',
+						'devrivo-chatbot'
+					) }
+				</p>
+				<p className="description">
+					{ __(
+						'The file includes your notification email addresses, so share it carefully.',
 						'devrivo-chatbot'
 					) }
 				</p>

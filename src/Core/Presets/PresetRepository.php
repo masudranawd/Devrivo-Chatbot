@@ -38,9 +38,9 @@ final class PresetRepository {
 	private const ID_PATTERN = '/^[a-z0-9_-]{1,40}$/';
 
 	/**
-	 * IDs that clash with REST routes.
+	 * IDs that clash with REST routes (/presets/undo, /presets/backup).
 	 */
-	private const RESERVED_IDS = array( 'undo' );
+	private const RESERVED_IDS = array( 'undo', 'backup' );
 
 	/**
 	 * Site-specific keys a preset may never set, by section. Presets describe an
