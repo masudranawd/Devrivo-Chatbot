@@ -293,6 +293,92 @@ final class SetupTest extends WP_UnitTestCase {
 		$this->assertCount( 3, $contacts['phones'] );
 	}
 
+	public function test_mailto_and_tel_links_are_read_before_tags_are_stripped(): void {
+		$links = SiteScan::links( '<a href="mailto:Info@Example.com?subject=Hi">Write</a> <a href="tel:+44%2020%207946%200000">Call</a> <a href="mailto:a@example.com,b@example.com">Both</a> mailto:bad@-example.com tel:12 <a href=\'TEL:0201-555-0100\'>x</a>' );
+
+		$this->assertSame( array( 'info@example.com', 'a@example.com', 'b@example.com' ), $links['emails'] );
+		$this->assertSame( array( '+44 20 7946 0000', '0201-555-0100' ), $links['phones'] );
+
+		$front = self::factory()->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_title'   => 'Home',
+				'post_content' => '<p><a href="mailto:office@example.com">Email us</a> or <a href="tel:+442079460000">call us</a>. Phone: +44 20 7946 0000.</p>',
+			)
+		);
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', $front );
+
+		$contact               = self::factory()->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_title'   => 'Contact',
+				'post_content' => '',
+			)
+		);
+		$data                  = self::elementor( 'Talk to us' );
+		$data[0]['elements'][] = array(
+			'id'         => 'c3',
+			'elType'     => 'widget',
+			'widgetType' => 'button',
+			'settings'   => array(
+				'text' => 'WhatsApp us',
+				'link' => array( 'url' => 'tel:+447700900999' ),
+			),
+			'elements'   => array(),
+		);
+		$data[0]['elements'][] = array(
+			'id'         => 'd4',
+			'elType'     => 'widget',
+			'widgetType' => 'button',
+			'settings'   => array(
+				'text' => 'Email the team',
+				'link' => array( 'url' => 'mailto:Team@Example.org' ),
+			),
+			'elements'   => array(),
+		);
+		update_post_meta( $contact, '_elementor_edit_mode', 'builder' );
+		update_post_meta( $contact, '_elementor_data', wp_slash( (string) wp_json_encode( $data ) ) );
+
+		$contacts = $this->scanner()->contacts();
+
+		$this->assertSame( array( 'office@example.com', 'team@example.org' ), $contacts['emails'] );
+		$this->assertSame( array( '+442079460000', '+447700900999' ), $contacts['phones'], 'The link and the text with the same digits count once.' );
+	}
+
+	public function test_links_in_hidden_pages_are_ignored_and_capped(): void {
+		self::factory()->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_title'   => 'Contact draft',
+				'post_status'  => 'draft',
+				'post_content' => '<a href="mailto:draft@example.com">x</a><a href="tel:02070000002">y</a>',
+			)
+		);
+		self::factory()->post->create(
+			array(
+				'post_type'     => 'page',
+				'post_title'    => 'Contact secret',
+				'post_password' => 'secret',
+				'post_content'  => '<a href="mailto:secret@example.com">x</a>',
+			)
+		);
+		$this->assertSame( array(), $this->scanner()->contacts()['emails'] );
+
+		$front = self::factory()->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<a href="mailto:a@example.com">a</a><a href="mailto:b@example.com">b</a><a href="tel:02011111111">1</a><a href="tel:02022222222">2</a> c@example.com d@example.com 0203 333 3333, 0204 444 4444',
+			)
+		);
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', $front );
+
+		$contacts = $this->scanner()->contacts();
+		$this->assertSame( array( 'a@example.com', 'b@example.com', 'c@example.com' ), $contacts['emails'] );
+		$this->assertSame( array( '02011111111', '02022222222', '0203 333 3333' ), $contacts['phones'] );
+	}
+
 	public function test_phone_extraction_rules(): void {
 		$this->assertSame( array( '+1 555 123 4567' ), SiteScan::phones( 'Call +1.555.123.4567 today' ) );
 		$this->assertSame( array(), SiteScan::phones( 'Order 12345, call 123 456' ), 'Fewer than 7 digits.' );

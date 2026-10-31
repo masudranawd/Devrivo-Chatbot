@@ -14,10 +14,15 @@ import {
 	TextareaControl,
 	ToggleControl,
 } from '@wordpress/components';
-import { useEffect, useRef, useState } from '@wordpress/element';
+import { useCallback, useEffect, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { createChat } from '../../widget/lib/chat';
-import { ErrorSummary, FieldError, Loading } from '../components/common';
+import {
+	ErrorSummary,
+	FieldError,
+	Loading,
+	useDirty,
+} from '../components/common';
 import { Preview } from '../components/preview';
 import { request, toErrors } from '../lib/api';
 import { boot } from '../lib/boot';
@@ -39,6 +44,7 @@ import { IndexStatus, useIndexStatus } from './knowledge';
 import { PresetMode } from './tools';
 
 const NO_ERRORS = { message: '', fields: {} };
+const NOOP = () => {};
 
 /**
  * Translated step titles.
@@ -342,13 +348,14 @@ function PresetStep( { scan, presets, all, nav } ) {
  * Step 3: business profile, quick actions it can complete, opening hours and
  * the notification email.
  *
- * @param {Object} props
- * @param {Object} props.scan Scan result or null.
- * @param {Object} props.all  All settings.
- * @param {Object} props.nav  StepNav props.
+ * @param {Object}                   props
+ * @param {Object}                   props.scan     Scan result or null.
+ * @param {Object}                   props.all      All settings.
+ * @param {Object}                   props.nav      StepNav props.
+ * @param {(dirty: boolean) => void} props.setDirty Unsaved state.
  * @return {Element} Step.
  */
-export function BusinessStep( { scan, all, nav } ) {
+export function BusinessStep( { scan, all, nav, setDirty = NOOP } ) {
 	const start = initialBusiness( all.general?.business, scan );
 	const [ values, setValues ] = useState( start.values );
 	const [ suggested ] = useState( start.suggested );
@@ -364,6 +371,17 @@ export function BusinessStep( { scan, all, nav } ) {
 	);
 	const [ busy, setBusy ] = useState( false );
 	const [ errors, setErrors ] = useState( NO_ERRORS );
+	const snapshot = JSON.stringify( [
+		values,
+		overrides,
+		setHours,
+		days,
+		open,
+		close,
+		email,
+	] );
+	const [ initial ] = useState( snapshot );
+	useDirty( setDirty, snapshot !== initial );
 
 	const labels = {
 		name: __( 'Business name', 'devrivo-chatbot' ),
@@ -673,12 +691,13 @@ function dayName( day ) {
  * Step 4: AI. Three states: no provider plugin, provider not connected, or
  * ready (provider, model, monthly limit, on). Guided mode is always offered.
  *
- * @param {Object} props
- * @param {Object} props.all All settings.
- * @param {Object} props.nav StepNav props.
+ * @param {Object}                   props
+ * @param {Object}                   props.all      All settings.
+ * @param {Object}                   props.nav      StepNav props.
+ * @param {(dirty: boolean) => void} props.setDirty Unsaved state.
  * @return {Element} Step.
  */
-export function AiStep( { all, nav } ) {
+export function AiStep( { all, nav, setDirty = NOOP } ) {
 	const saved = all.ai || {};
 	const [ provider, setProvider ] = useState( saved.provider || '' );
 	const [ model, setModel ] = useState( saved.model || '' );
@@ -688,6 +707,9 @@ export function AiStep( { all, nav } ) {
 			: DEFAULT_TOKEN_LIMIT
 	);
 	const [ enabled, setEnabled ] = useState( true );
+	const snapshot = JSON.stringify( [ provider, model, limit, enabled ] );
+	const [ initial ] = useState( snapshot );
+	useDirty( setDirty, snapshot !== initial );
 	const [ status, setStatus ] = useState( null );
 	const [ loadError, setLoadError ] = useState( '' );
 	const [ busy, setBusy ] = useState( false );
@@ -929,12 +951,14 @@ export function AiStep( { all, nav } ) {
 /**
  * Step 5: main colour, launcher text and position, with the live preview.
  *
- * @param {Object} props
- * @param {Object} props.nav StepNav props.
+ * @param {Object}                   props
+ * @param {Object}                   props.nav      StepNav props.
+ * @param {(dirty: boolean) => void} props.setDirty Unsaved state.
  * @return {Element} Step.
  */
-function AppearanceStep( { nav } ) {
+function AppearanceStep( { nav, setDirty = NOOP } ) {
 	const settings = useSettings( 'display' );
+	useDirty( setDirty, settings.dirty );
 	if ( ! settings.ready ) {
 		return <Loading settings={ settings } />;
 	}
@@ -1318,12 +1342,23 @@ export function GoLiveStep( { all, presets, nav } ) {
 /**
  * Setup wizard screen.
  *
- * @param {Object} props
- * @param {Object} props.testClient Chat client for the test step (tests).
+ * @param {Object}                   props
+ * @param {Object}                   props.testClient Chat client for the test step (tests).
+ * @param {(dirty: boolean) => void} props.setDirty   Unsaved state.
  * @return {Element} Screen.
  */
-export default function Setup( { testClient } ) {
+export default function Setup( { testClient, setDirty = NOOP } ) {
 	const settings = useSettings( 'general' );
+	// Unsaved edits in the current step: the shell guards in-app links and
+	// leaving the page; Back and Skip ask here.
+	const [ stepDirty, setStepDirty ] = useState( false );
+	const report = useCallback(
+		( value ) => {
+			setStepDirty( !! value );
+			setDirty( value );
+		},
+		[ setDirty ]
+	);
 	const [ index, setIndex ] = useState( null );
 	const [ scan, setScan ] = useState( null );
 	const [ scanError, setScanError ] = useState( '' );
@@ -1363,7 +1398,20 @@ export default function Setup( { testClient } ) {
 		return <Loading settings={ settings } />;
 	}
 
-	const go = ( next ) => {
+	const go = ( next, saved = false ) => {
+		if (
+			! saved &&
+			stepDirty &&
+			// eslint-disable-next-line no-alert -- Same native confirm as the shell's navigation guard.
+			! window.confirm(
+				__(
+					'You have unsaved changes. Leave this screen without saving?',
+					'devrivo-chatbot'
+				)
+			)
+		) {
+			return;
+		}
 		moved.current = true;
 		setIndex( next );
 		request( '/setup/step', {
@@ -1377,11 +1425,12 @@ export default function Setup( { testClient } ) {
 	const nav = {
 		onBack: index > 0 ? () => go( index - 1 ) : null,
 		onSkip: index < last ? () => go( index + 1 ) : null,
-		onNext: index < last ? () => go( index + 1 ) : null,
+		// Steps call this after saving (or when there is nothing to save).
+		onNext: index < last ? () => go( index + 1, true ) : null,
 	};
 	const step = STEPS[ index ];
 	const all = settings.all;
-	const props = { scan, presets, all, nav };
+	const props = { scan, presets, all, nav, setDirty: report };
 
 	return (
 		<div className="devrivo-setup">

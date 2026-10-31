@@ -25,6 +25,7 @@ import {
 	weeklySchedule,
 } from '../../assets-src/admin/lib/setup';
 import { resetSettingsCache } from '../../assets-src/admin/lib/use-settings';
+import App from '../../assets-src/admin/app';
 import Setup, {
 	AiStep,
 	BusinessStep,
@@ -270,6 +271,63 @@ describe( 'wizard navigation', () => {
 		expect( steps ).toEqual( [ 'preset', 'scan' ] );
 	} );
 
+	it( 'guards unsaved step edits: Back, Skip, in-app links and leaving the page', async () => {
+		mockApi(
+			settings( {
+				general: {
+					preset: '',
+					business: {},
+					setup: { ...SETUP, step: 'business' },
+				},
+			} )
+		);
+		const confirm = vi.spyOn( window, 'confirm' ).mockReturnValue( false );
+		window.location.hash = '#/setup';
+		render( <App /> );
+
+		const name = await screen.findByLabelText( 'Business name' );
+		const leave = new window.Event( 'beforeunload', { cancelable: true } );
+		window.dispatchEvent( leave );
+		expect( leave.defaultPrevented ).toBe( false );
+
+		fireEvent.change( name, { target: { value: 'Changed' } } );
+		await waitFor( () => {
+			const event = new window.Event( 'beforeunload', {
+				cancelable: true,
+			} );
+			window.dispatchEvent( event );
+			expect( event.defaultPrevented ).toBe( true );
+		} );
+
+		fireEvent.click( screen.getByRole( 'button', { name: 'Back' } ) );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Skip' } ) );
+		expect( confirm ).toHaveBeenCalledTimes( 2 );
+		expect(
+			screen.getByRole( 'heading', {
+				name: 'Step 3 of 8: Your business details',
+			} )
+		).toBeTruthy();
+
+		const link = screen.getByRole( 'link', { name: 'Dashboard' } );
+		const click = new window.MouseEvent( 'click', {
+			bubbles: true,
+			cancelable: true,
+		} );
+		link.dispatchEvent( click );
+		expect( confirm ).toHaveBeenCalledTimes( 3 );
+		expect( click.defaultPrevented ).toBe( true );
+
+		confirm.mockReturnValue( true );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Back' } ) );
+		expect(
+			await screen.findByRole( 'heading', {
+				name: 'Step 2 of 8: Choose a starting point',
+			} )
+		).toBeTruthy();
+		confirm.mockRestore();
+		window.location.hash = '';
+	} );
+
 	it( 'resumes where the admin left off', async () => {
 		mockApi(
 			settings( {
@@ -361,6 +419,24 @@ describe( 'business step', () => {
 		] );
 		expect( posted.behaviour.hours.schedule.sat ).toEqual( [] );
 		expect( posted.integrations ).toBeUndefined();
+	} );
+
+	it( 'reports unsaved edits to the shell', () => {
+		const setDirty = vi.fn();
+		render(
+			<BusinessStep
+				scan={ SCAN }
+				all={ settings() }
+				nav={ nav() }
+				setDirty={ setDirty }
+			/>
+		);
+		expect( setDirty ).toHaveBeenLastCalledWith( false );
+
+		fireEvent.change( screen.getByLabelText( 'Business name' ), {
+			target: { value: 'Edited' },
+		} );
+		expect( setDirty ).toHaveBeenLastCalledWith( true );
 	} );
 
 	it( 'shows server field errors and stays on the step', async () => {

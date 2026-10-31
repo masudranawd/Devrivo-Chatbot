@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
  * Looks at the site to suggest settings: name and tagline, relevant active
  * plugins, published content per post type, privacy policy, a preset with
  * the reasons for it, and contact details found on the front page and the
- * contact page.
+ * contact page (mailto: and tel: links first, then the visible text).
  *
  * Only published, public, non-password-protected content is read. Nothing is
  * saved: everything here is a suggestion for the admin to confirm.
@@ -281,9 +281,11 @@ final class SiteScan {
 		$phones  = array();
 		$sources = array();
 		foreach ( $pages as $page ) {
+			// Links first (their targets are exact), then the visible text.
+			$links     = self::links( self::raw( $page ) );
 			$text      = $this->posts->extract( $page );
-			$emails    = array_merge( $emails, self::emails( $text ) );
-			$phones    = array_merge( $phones, self::phones( $text ) );
+			$emails    = array_merge( $emails, $links['emails'], self::emails( $text ) );
+			$phones    = array_merge( $phones, $links['phones'], self::phones( $text ) );
 			$sources[] = array(
 				'title' => wp_specialchars_decode( wp_strip_all_tags( get_the_title( $page ) ), ENT_QUOTES ),
 				'url'   => (string) get_permalink( $page ),
@@ -294,6 +296,52 @@ final class SiteScan {
 			'emails'  => array_slice( array_values( array_unique( $emails ) ), 0, self::MAX_CONTACTS ),
 			'phones'  => array_slice( self::unique_phones( $phones ), 0, self::MAX_CONTACTS ),
 			'sources' => $sources,
+		);
+	}
+
+	/**
+	 * Raw content before tags are stripped: post_content plus the Elementor
+	 * data (link settings and widget HTML), when the page is built with it.
+	 *
+	 * @param WP_Post $post Post.
+	 */
+	private static function raw( WP_Post $post ): string {
+		$raw = $post->post_content;
+		if ( 'builder' === get_post_meta( $post->ID, '_elementor_edit_mode', true ) ) {
+			$data = get_post_meta( $post->ID, '_elementor_data', true );
+			$raw .= "\n" . ( is_string( $data ) ? $data : (string) wp_json_encode( $data ) );
+		}
+
+		return $raw;
+	}
+
+	/**
+	 * Email addresses and phone numbers from mailto: and tel: links (in HTML
+	 * attributes or Elementor link settings). Validated like text matches.
+	 *
+	 * @param string $raw Raw content.
+	 * @return array{emails: string[], phones: string[]}
+	 */
+	public static function links( string $raw ): array {
+		preg_match_all( '/\b(mailto|tel):([^"\'\s<>?\\\\]+)/i', $raw, $matches, PREG_SET_ORDER );
+
+		$emails = array();
+		$phones = array();
+		foreach ( $matches as $match ) {
+			$value = trim( html_entity_decode( rawurldecode( $match[2] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+			if ( 'mailto' === strtolower( $match[1] ) ) {
+				// mailto: may list several addresses.
+				foreach ( explode( ',', $value ) as $address ) {
+					$emails = array_merge( $emails, self::emails( $address ) );
+				}
+			} else {
+				$phones = array_merge( $phones, self::phones( $value ) );
+			}
+		}
+
+		return array(
+			'emails' => array_values( array_unique( $emails ) ),
+			'phones' => self::unique_phones( $phones ),
 		);
 	}
 

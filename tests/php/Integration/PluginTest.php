@@ -14,9 +14,18 @@ use DevRivo\Chatbot\Core\Plugin;
 use DevRivo\Chatbot\Core\Requirements;
 use DevRivo\Chatbot\Core\Settings\Settings;
 use DevRivo\Chatbot\Core\Uninstaller;
+use DevRivo\Chatbot\Tests\Support\RestoresCapabilities;
 use WP_UnitTestCase;
 
 final class PluginTest extends WP_UnitTestCase {
+
+	use RestoresCapabilities;
+
+	public function tear_down(): void {
+		$this->restore_capabilities();
+
+		parent::tear_down();
+	}
 
 	public function test_constants_are_defined(): void {
 		$this->assertTrue( defined( 'DEVRIVO_CHATBOT_VERSION' ) );
