@@ -3,6 +3,7 @@
  * setup checklist (instead of admin notices).
  */
 import {
+	Button,
 	Card,
 	CardBody,
 	CardHeader,
@@ -137,6 +138,32 @@ export default function Dashboard( { notify } ) {
 
 	return (
 		<div className="devrivo-grid">
+			{ ! settings.all.general?.setup?.completed && (
+				<Card className="devrivo-grid__wide devrivo-setup-card">
+					<CardHeader>
+						<h2>
+							{ __( 'Set up your assistant', 'devrivo-chatbot' ) }
+						</h2>
+					</CardHeader>
+					<CardBody>
+						<p>
+							{ __(
+								'A few short steps: we look at your site, suggest settings and let you test a question before you turn the assistant on.',
+								'devrivo-chatbot'
+							) }
+						</p>
+						<Button
+							variant="primary"
+							href="#/setup"
+							__next40pxDefaultSize
+						>
+							{ settings.all.general?.setup?.step
+								? __( 'Continue setup', 'devrivo-chatbot' )
+								: __( 'Start setup', 'devrivo-chatbot' ) }
+						</Button>
+					</CardBody>
+				</Card>
+			) }
 			<Card>
 				<CardHeader>
 					<h2>{ __( 'Chat widget', 'devrivo-chatbot' ) }</h2>

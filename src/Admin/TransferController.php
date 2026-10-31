@@ -30,6 +30,8 @@ defined( 'ABSPATH' ) || exit;
  * - POST /settings/import  { data, sections[], skip_site_specific }: the chosen
  *   sections of an exported file are saved in one all-or-nothing
  *   Settings::update(), after the same backup a preset makes (so Undo works).
+ *   The business profile and setup state (general.business, general.setup)
+ *   are never imported.
  */
 final class TransferController extends WP_REST_Controller {
 
@@ -180,6 +182,10 @@ final class TransferController extends WP_REST_Controller {
 		}
 
 		$changes = array_intersect_key( $settings, array_flip( $sections ) );
+		// The business profile and setup state always stay this site's own.
+		if ( is_array( $changes['general'] ?? null ) ) {
+			unset( $changes['general']['business'], $changes['general']['setup'] );
+		}
 		if ( $request['skip_site_specific'] ) {
 			$changes = self::without_site_specific( $changes, $this->settings->all() );
 		}

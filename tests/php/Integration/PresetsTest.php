@@ -230,8 +230,10 @@ final class PresetsTest extends WP_UnitTestCase {
 				'preset'         => 'business',
 				'preset_version' => 3,
 			),
-			$after['general']
+			array_intersect_key( $after['general'], array_flip( array( 'preset', 'preset_version' ) ) )
 		);
+		$this->assertSame( $before['general']['business'], $after['general']['business'], 'The business profile is not part of a preset.' );
+		$this->assertSame( $before['general']['setup'], $after['general']['setup'] );
 	}
 
 	public function test_merge_skips_changed_sections_and_applies_untouched_ones(): void {

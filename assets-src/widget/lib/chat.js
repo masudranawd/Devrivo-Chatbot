@@ -16,6 +16,7 @@ export const MAX_HISTORY = 8;
  * @param {string}              options.chatUrl    Chat endpoint.
  * @param {string}              options.sessionUrl Session endpoint.
  * @param {Object}              options.session    Shared session (lib/session); created when missing.
+ * @param {() => string}        options.pageUrl    Page the visitor is on (default: the current URL).
  * @param {typeof window.fetch} options.fetch      fetch (tests).
  * @return {{send: (message: string, history: Object[]) => Promise<Object>}} Client.
  */
@@ -23,6 +24,7 @@ export function createChat( {
 	chatUrl,
 	sessionUrl,
 	session,
+	pageUrl = () => window.location.href,
 	fetch = ( ...args ) => window.fetch( ...args ),
 } ) {
 	const tokens = session || createSession( { sessionUrl, fetch } );
@@ -41,7 +43,7 @@ export function createChat( {
 					postJson( fetch, chatUrl, {
 						message,
 						history: history.slice( -MAX_HISTORY ),
-						page_url: window.location.href,
+						page_url: pageUrl(),
 						token,
 					} ),
 				MIN_AGE_MS

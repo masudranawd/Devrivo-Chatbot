@@ -269,7 +269,14 @@ final class Schema {
 	}
 
 	/**
-	 * General: which preset was applied last (set by PresetApplier).
+	 * Setup wizard steps, in order (general.setup.step).
+	 */
+	public const SETUP_STEPS = array( 'scan', 'preset', 'business', 'ai', 'appearance', 'knowledge', 'test', 'golive' );
+
+	/**
+	 * General: which preset was applied last (set by PresetApplier), the
+	 * business profile (setup wizard, AI prompt) and the setup wizard state.
+	 * Presets and imports never set the business profile or setup state.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -285,6 +292,76 @@ final class Schema {
 					'type'    => 'integer',
 					'minimum' => 0,
 					'default' => 0,
+				),
+				'business'       => self::object(
+					array(
+						'name'        => array(
+							'type'      => 'string',
+							'maxLength' => 120,
+							'default'   => '',
+						),
+						// Same patterns as the call and WhatsApp quick actions.
+						'phone'       => array(
+							'type'      => 'string',
+							'maxLength' => 30,
+							'pattern'   => '^(\+?[0-9 ()-]{3,30})?$',
+							'default'   => '',
+						),
+						'whatsapp'    => array(
+							'type'      => 'string',
+							'maxLength' => 20,
+							'pattern'   => '^(\+?[0-9 ]{6,20})?$',
+							'default'   => '',
+						),
+						'email'       => array(
+							'anyOf'   => array(
+								array(
+									'type' => 'string',
+									'enum' => array( '' ),
+								),
+								array(
+									'type'   => 'string',
+									'format' => 'email',
+								),
+							),
+							'default' => '',
+						),
+						'booking_url' => array(
+							'type'      => 'string',
+							'maxLength' => 2000,
+							'pattern'   => '^(https?://[^\s]+)?$',
+							'default'   => '',
+						),
+						'address'     => array(
+							'type'       => 'string',
+							'maxLength'  => 300,
+							'default'    => '',
+							'x-sanitize' => 'textarea',
+						),
+					)
+				),
+				'setup'          => self::object(
+					array(
+						'completed'        => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+						'completed_at'     => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+							'default' => 0,
+						),
+						// Step to resume at ('' = the first).
+						'step'             => array(
+							'type'    => 'string',
+							'enum'    => array_merge( array( '' ), self::SETUP_STEPS ),
+							'default' => '',
+						),
+						'notice_dismissed' => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+					)
 				),
 			)
 		);
