@@ -1,6 +1,6 @@
 {
 	"name": "devrivo-chatbot",
-	"version": "0.11.0",
+	"version": "0.12.0",
 	"private": true,
 	"description": "A free, customisable AI assistant for any WordPress site.",
 	"license": "GPL-2.0-or-later",

@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.11.0
+Stable tag: 0.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -127,6 +127,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.12.0 =
+* Typography: bundled Figtree font, consistent type scale independent of the theme, text size option.
+
 = 0.11.0 =
 * Setup wizard: site scan, preset suggestion, business profile, AI setup, appearance, knowledge, test and go live.
 
@@ -162,6 +165,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.12.0 =
+Development version: the widget text now looks the same on every theme, with the bundled Figtree font (loaded from your own site) and a text size option under Appearance. Sites with saved settings keep their current font until you choose Figtree there.
 
 = 0.11.0 =
 Development version: adds the setup wizard (start it from the notice on the Plugins screen or the dashboard) and a business profile the assistant can share with visitors.
