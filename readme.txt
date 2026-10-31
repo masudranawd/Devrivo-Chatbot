@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.10.0
+Stable tag: 0.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,7 +55,7 @@ This plugin can use an external AI service to answer visitor questions. This onl
 * up to 8 recent messages from the same conversation (kept only in the visitor's browser memory);
 * short excerpts of the site's own published pages, posts and FAQs that match the question;
 * the current page title and URL (without query string);
-* the site's assistant instructions (rules, the business name and the administrator's custom instructions).
+* the site's assistant instructions (rules, the business name and any contact details the administrator entered in the business profile, and the administrator's custom instructions).
 
 **What is not sent or stored:** contact details entered in forms are stored on your own site and are never sent to the AI provider. The assistant is told never to ask for personal details in the chat. This plugin does not store chat messages or AI replies; it only counts the tokens used each month.
 
@@ -71,7 +71,7 @@ Site owners are responsible for reviewing their chosen provider's terms and for 
 
 1. In your WordPress admin, go to Plugins → Add New and search for "DevRivo Chatbot".
 2. Click Install, then Activate.
-3. Follow the setup wizard under DevRivo Chatbot in the admin menu. It scans your site and suggests settings.
+3. Click "Set up your assistant" in the notice on the Plugins screen, or "Start setup" on the DevRivo Chatbot dashboard. The setup wizard scans your site, suggests a preset and the contact details it found (nothing is saved until you confirm), then walks you through AI, appearance, the knowledge index and a test question before you turn the assistant on.
 4. Optional: to use AI mode, install an AI provider plugin (AI Provider for Anthropic, Google or OpenAI), add your key under Settings → Connectors, then in the plugin's AI settings choose the provider, a model and a monthly token limit, and turn AI on.
 
 == Frequently Asked Questions ==
@@ -123,6 +123,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.11.0 =
+* Setup wizard: site scan, preset suggestion, business profile, AI setup, appearance, knowledge, test and go live.
+
 = 0.10.0 =
 * Admin app: flows editor, form builder, offers, knowledge and FAQs, integrations, privacy, tools (presets, import/export, reset).
 
@@ -155,6 +158,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.11.0 =
+Development version: adds the setup wizard (start it from the notice on the Plugins screen or the dashboard) and a business profile the assistant can share with visitors.
 
 = 0.10.0 =
 Development version: completes the admin app with guided conversations, forms, offers, knowledge and FAQs, notification emails, privacy options and tools (presets, settings import/export and reset).
