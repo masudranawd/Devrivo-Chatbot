@@ -37,6 +37,10 @@ import {
 	resetSettingsCache,
 	useSettings,
 } from '../../assets-src/admin/lib/use-settings';
+import Display, {
+	tokenId,
+	tokenLabel,
+} from '../../assets-src/admin/screens/display';
 import Inbox, {
 	LeadDetail,
 	safeLink,
@@ -397,6 +401,56 @@ describe( 'inbox', () => {
 		);
 		expect( container.querySelector( 'img' ) ).toBeNull();
 		expect( window.__xss ).toBeUndefined();
+	} );
+} );
+
+describe( 'display rules picker', () => {
+	it( 'decodes REST titles to plain text', () => {
+		expect(
+			tokenLabel( { id: 5, title: 'Tom &amp; Jerry&#8217;s page' } )
+		).toBe( 'Tom & Jerry’s page (#5)' );
+		expect( tokenLabel( { id: 6, title: '' } ) ).toBe( '(no title) (#6)' );
+		expect( tokenId( 'A (#1) (#42)' ) ).toBe( 42 );
+		expect( tokenId( 'No id' ) ).toBe( 0 );
+	} );
+
+	it( 'shows decoded titles as text, never HTML', async () => {
+		apiFetch.mockImplementation( async ( { path } ) => {
+			if ( path.startsWith( '/wp/v2/search' ) ) {
+				return [
+					{
+						id: 5,
+						title: 'Caf&eacute; &amp; &lt;img src=x onerror=&quot;window.__xss=3&quot;&gt;',
+					},
+				];
+			}
+			return {
+				...SETTINGS,
+				display: {
+					...SETTINGS.display,
+					rules: {
+						mode: 'include',
+						post_ids: [ 5 ],
+						post_types: [],
+						devices: [ 'desktop', 'mobile' ],
+					},
+				},
+			};
+		} );
+
+		const { container } = render(
+			<Display notify={ () => {} } setDirty={ () => {} } />
+		);
+		await screen.findByText(
+			'Café & <img src=x onerror="window.__xss=3"> (#5)'
+		);
+
+		expect( container.querySelector( 'img' ) ).toBeNull();
+		expect( window.__xss ).toBeUndefined();
+		const include = apiFetch.mock.calls.find( ( [ args ] ) =>
+			args.path.startsWith( '/wp/v2/search' )
+		)[ 0 ];
+		expect( include.path ).toContain( 'include=5' );
 	} );
 } );
 

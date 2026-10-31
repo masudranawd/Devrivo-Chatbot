@@ -9,6 +9,7 @@ import {
 	SelectControl,
 } from '@wordpress/components';
 import { useEffect, useRef, useState } from '@wordpress/element';
+import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
 import { addQueryArgs } from '@wordpress/url';
 import {
@@ -22,14 +23,15 @@ import { boot } from '../lib/boot';
 import { useSettings } from '../lib/use-settings';
 
 /**
- * Token label for a post.
+ * Token label for a post. REST titles contain HTML entities (&#8217;);
+ * they are decoded to plain text, which React renders as text.
  *
  * @param {Object} item Search result { id, title }.
  * @return {string} Label "Title (#12)".
  */
 export function tokenLabel( item ) {
 	const title =
-		String( item.title || '' ).trim() ||
+		decodeEntities( String( item.title || '' ) ).trim() ||
 		__( '(no title)', 'devrivo-chatbot' );
 	return `${ title } (#${ item.id })`;
 }

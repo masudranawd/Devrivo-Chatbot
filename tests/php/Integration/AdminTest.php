@@ -140,6 +140,50 @@ final class AdminTest extends WP_UnitTestCase {
 		$this->assertSame( array( 'url', 'new_tab' ), array_column( $link['fields'], 'key' ) );
 	}
 
+	public function test_admin_post_types_hide_internal_types(): void {
+		register_post_type(
+			'dc_template',
+			array(
+				'public'              => true,
+				'exclude_from_search' => true,
+				'label'               => 'Templates',
+			)
+		);
+		register_post_type(
+			'dc_service',
+			array(
+				'public' => true,
+				'label'  => 'Services <b>bold</b>',
+			)
+		);
+
+		$slugs = array_column( AdminPage::post_types(), 'slug' );
+		$this->assertContains( 'post', $slugs );
+		$this->assertContains( 'page', $slugs );
+		$this->assertContains( 'dc_service', $slugs );
+		$this->assertNotContains( 'attachment', $slugs );
+		$this->assertNotContains( 'dc_template', $slugs, 'Hidden from search, like elementor_library.' );
+		$this->assertContains( 'Services bold', array_column( AdminPage::post_types(), 'label' ) );
+
+		$filter = static function ( array $types ): array {
+			unset( $types['post'] );
+			$types['dc_template'] = 'Templates';
+			$types['nope']        = 'Missing';
+			return $types;
+		};
+		add_filter( 'devrivo_chatbot_admin_post_types', $filter );
+		$filtered = array_column( AdminPage::post_types(), 'slug' );
+		remove_filter( 'devrivo_chatbot_admin_post_types', $filter );
+
+		$this->assertNotContains( 'post', $filtered );
+		$this->assertContains( 'dc_template', $filtered );
+		$this->assertNotContains( 'nope', $filtered, 'Types that do not exist are dropped.' );
+		$this->assertSame( AdminPage::post_types(), ( new AdminPage( $this->build_dir ) )->boot()['postTypes'] );
+
+		unregister_post_type( 'dc_template' );
+		unregister_post_type( 'dc_service' );
+	}
+
 	public function test_render_prints_root_and_noscript(): void {
 		ob_start();
 		( new AdminPage( $this->build_dir ) )->render();

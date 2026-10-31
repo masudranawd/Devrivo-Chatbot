@@ -149,16 +149,6 @@ final class AdminPage {
 	public function boot(): array {
 		$widget = $this->asset( 'widget' );
 
-		$post_types = array();
-		foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $type ) {
-			if ( 'attachment' !== $type->name && is_post_type_viewable( $type ) ) {
-				$post_types[] = array(
-					'slug'  => $type->name,
-					'label' => wp_strip_all_tags( (string) $type->labels->name ),
-				);
-			}
-		}
-
 		return array(
 			'version'            => DEVRIVO_CHATBOT_VERSION,
 			'siteName'           => wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES ),
@@ -168,7 +158,7 @@ final class AdminPage {
 			'privacyEraseUrl'    => admin_url( 'erase-personal-data.php' ),
 			'privacySettingsUrl' => admin_url( 'options-privacy.php' ),
 			'privacyPolicyUrl'   => (string) get_privacy_policy_url(),
-			'postTypes'          => $post_types,
+			'postTypes'          => self::post_types(),
 			'timezones'          => timezone_identifiers_list(),
 			'siteTimezone'       => wp_timezone_string(),
 			'actionTypes'        => self::action_types(),
@@ -207,6 +197,48 @@ final class AdminPage {
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Post types offered in the admin (Display rules, later Knowledge):
+	 * publicly viewable, not attachments, and not hidden from search
+	 * (builder templates such as elementor_library).
+	 *
+	 * @return list<array{slug: string, label: string}>
+	 */
+	public static function post_types(): array {
+		$types = array();
+		foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $type ) {
+			if ( 'attachment' !== $type->name && ! $type->exclude_from_search && is_post_type_viewable( $type ) ) {
+				$types[ $type->name ] = wp_strip_all_tags( (string) $type->labels->name );
+			}
+		}
+
+		/**
+		 * Filters the post types offered in the admin app (Display rules and
+		 * Knowledge), as slug => label.
+		 *
+		 * The default excludes attachments and post types hidden from search.
+		 * Types that don't exist are dropped after filtering.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<string, string> $types Post type labels keyed by slug.
+		 */
+		$types = (array) apply_filters( 'devrivo_chatbot_admin_post_types', $types );
+
+		$list = array();
+		foreach ( $types as $slug => $label ) {
+			$slug = (string) $slug;
+			if ( post_type_exists( $slug ) ) {
+				$list[] = array(
+					'slug'  => $slug,
+					'label' => wp_strip_all_tags( (string) $label ),
+				);
+			}
+		}
+
+		return $list;
 	}
 
 	/**
