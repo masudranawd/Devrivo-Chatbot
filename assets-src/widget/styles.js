@@ -62,7 +62,7 @@ export const widgetCss = `
 .dc-hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-block-end:28px;min-height:36px}
 .dc-brand{font-size:var(--dc-fs-title);font-weight:var(--dc-fw-title);line-height:var(--dc-lh-title);letter-spacing:var(--dc-ls-title)}
 .dc-greet{font-size:var(--dc-fs-greeting);font-weight:var(--dc-fw-greeting);line-height:var(--dc-lh-greeting);letter-spacing:var(--dc-ls-greeting);margin:0;opacity:.85}
-.dc-welcome{font-size:var(--dc-fs-greeting);font-weight:var(--dc-fw-greeting);line-height:var(--dc-lh-greeting);letter-spacing:var(--dc-ls-greeting);margin:2px 0 0}
+.dc-welcome{font-size:var(--dc-fs-button);font-weight:var(--dc-fw-button);line-height:var(--dc-lh-greeting);letter-spacing:var(--dc-ls-wide);margin:2px 0 0}
 .dc-home-body{padding:0 18px 18px;margin-block-start:-50px;position:relative;display:flex;flex-direction:column;gap:14px}
 .dc-ask{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border:0;border-radius:var(--dc-card-radius);background:var(--dc-card);color:var(--dc-ink);text-align:start;box-shadow:0 8px 24px rgba(20,40,35,.1)}
 .dc-ask strong{display:block;font-size:var(--dc-fs-body);font-weight:var(--dc-fw-title);line-height:var(--dc-lh-body);letter-spacing:var(--dc-ls-body)}

@@ -30,6 +30,7 @@ export const baseCss = `
 	--dc-fs-button:max(12px,calc(14px * var(--dc-scale)));--dc-fw-button:500;--dc-lh-button:1.35;--dc-ls-button:0;
 	--dc-fs-label:max(12px,calc(13px * var(--dc-scale)));--dc-fw-label:400;--dc-lh-label:1.45;--dc-ls-label:0;
 	--dc-fs-meta:max(12px,calc(12px * var(--dc-scale)));--dc-fw-meta:500;--dc-lh-meta:1.4;--dc-ls-meta:0;
+	--dc-ls-wide:1px;
 	font-family:var(--dc-font-system);
 	font-size:var(--dc-fs-body);font-weight:var(--dc-fw-body);line-height:var(--dc-lh-body);letter-spacing:var(--dc-ls-body);
 	color:var(--dc-ink);font-style:normal;text-transform:none;text-align:start;
