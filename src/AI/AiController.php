@@ -21,7 +21,10 @@ use WP_REST_Server;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * GET devrivo-chatbot/v1/ai/status (devrivo_chatbot_manage, no-store).
+ * GET devrivo-chatbot/v1/ai/status[?provider=…] (devrivo_chatbot_manage, no-store).
+ *
+ * The optional provider parameter loads another provider's models (for the
+ * admin screen before it is saved).
  *
  * For the admin app: whether core AI is available, which providers are
  * installed and connected, the selected provider's models, whether the saved
@@ -51,6 +54,12 @@ final class AiController extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'args'                => array(
+						'provider' => array(
+							'type'    => 'string',
+							'pattern' => '^[a-z0-9_-]{1,64}$',
+						),
+					),
 				),
 			)
 		);
@@ -74,7 +83,7 @@ final class AiController extends WP_REST_Controller {
 	 */
 	public function get_item( $request ) {
 		$ai       = (array) $this->settings->get( 'ai' );
-		$provider = (string) ( $ai['provider'] ?? '' );
+		$provider = is_string( $request['provider'] ) ? $request['provider'] : (string) ( $ai['provider'] ?? '' );
 		$model    = (string) ( $ai['model'] ?? '' );
 		$models   = '' === $provider ? array() : Models::list( $provider );
 

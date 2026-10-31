@@ -72,6 +72,13 @@ final class Settings {
 	private ?array $cache = null;
 
 	/**
+	 * Whether this is a read-only snapshot (see snapshot()).
+	 *
+	 * @var bool
+	 */
+	private bool $frozen = false;
+
+	/**
 	 * All sections, with defaults filled in.
 	 *
 	 * @return array<string, mixed>
@@ -101,6 +108,53 @@ final class Settings {
 	 * @return array<string, mixed>|WP_Error All settings after the update, or an error (nothing saved).
 	 */
 	public function update( array $changes ): array|WP_Error {
+		$candidate = $this->candidate( $changes );
+		if ( is_wp_error( $candidate ) ) {
+			return $candidate;
+		}
+
+		if ( array() !== $candidate['changed'] ) {
+			if ( $this->frozen ) {
+				return new WP_Error( 'devrivo_chatbot_frozen', 'Snapshot settings cannot be saved.', array( 'status' => 500 ) );
+			}
+			$this->save( $candidate['values'], $candidate['changed'] );
+		}
+
+		return $this->all();
+	}
+
+	/**
+	 * Validates a partial update exactly like update(), without saving.
+	 *
+	 * @param array<string, mixed> $changes Section name => values.
+	 * @return array<string, mixed>|WP_Error All settings as they would be after the update, or an error.
+	 */
+	public function preview( array $changes ): array|WP_Error {
+		$candidate = $this->candidate( $changes );
+
+		return is_wp_error( $candidate ) ? $candidate : $candidate['values'];
+	}
+
+	/**
+	 * A read-only repository holding the given values (e.g. a preview).
+	 *
+	 * @param array<string, mixed> $values All sections.
+	 */
+	public static function snapshot( array $values ): self {
+		$snapshot         = new self();
+		$snapshot->cache  = $values;
+		$snapshot->frozen = true;
+
+		return $snapshot;
+	}
+
+	/**
+	 * Merges, validates and cleans a partial update.
+	 *
+	 * @param array<string, mixed> $changes Section name => values.
+	 * @return array{values: array<string, mixed>, changed: string[]}|WP_Error
+	 */
+	private function candidate( array $changes ): array|WP_Error {
 		$current  = $this->all();
 		$sections = Schema::sections();
 		$next     = array();
@@ -137,19 +191,19 @@ final class Settings {
 			$next[ $name ] = self::clean( rest_sanitize_value_from_schema( $candidate, $schema, $name ), $schema );
 		}
 
+		$values = array_merge( $current, $next );
 		if ( array() !== $next ) {
-			$candidate = array_merge( $current, $next );
-
 			// Only problems this update introduces block it, never ones already stored.
-			$valid = ConfigValidator::validate( $candidate, $current );
+			$valid = ConfigValidator::validate( $values, $current );
 			if ( is_wp_error( $valid ) ) {
 				return $valid;
 			}
-
-			$this->save( $candidate, array_keys( $next ) );
 		}
 
-		return $this->all();
+		return array(
+			'values'  => $values,
+			'changed' => array_keys( $next ),
+		);
 	}
 
 	/**
@@ -204,6 +258,9 @@ final class Settings {
 	 * Clears the in-request cache (e.g. after another process changed options).
 	 */
 	public function flush(): void {
+		if ( $this->frozen ) {
+			return;
+		}
 		$this->cache = null;
 	}
 

@@ -168,6 +168,38 @@ final class Leads {
 	}
 
 	/**
+	 * Leads after an ID, oldest first (exports in batches).
+	 *
+	 * @param array{status?: string, form_id?: string} $filters Filters.
+	 * @param int                                      $after   Only IDs above this.
+	 * @param int                                      $limit   Batch size.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function batch( array $filters, int $after, int $limit ): array {
+		global $wpdb;
+
+		$where  = array( 'id > %d' );
+		$params = array( self::table(), $after );
+		if ( ! empty( $filters['status'] ) ) {
+			$where[]  = 'status = %s';
+			$params[] = $filters['status'];
+		}
+		if ( ! empty( $filters['form_id'] ) ) {
+			$where[]  = 'form_id = %s';
+			$params[] = $filters['form_id'];
+		}
+		$where    = implode( ' AND ', $where );
+		$params[] = $limit;
+
+		// $where only holds fixed SQL with placeholders; values go through prepare().
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE {$where} ORDER BY id ASC LIMIT %d", ...$params ), ARRAY_A );
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+
+		return array_map( array( self::class, 'hydrate' ), (array) $rows );
+	}
+
+	/**
 	 * Changes a lead's status.
 	 *
 	 * @param int    $id     Lead ID.
