@@ -4,8 +4,8 @@
  *
  * InnoDB FULLTEXT only sees committed rows, and every test runs inside a
  * transaction. So the fixtures are created and indexed in
- * wpSetUpBeforeClass(), which the test suite commits, and removed again in
- * wpTearDownAfterClass(). Tests only read them (changes made inside a test
+ * wpSetUpBeforeClass() on a freshly truncated table, which the test suite
+ * commits, and removed again in wpTearDownAfterClass(). Tests only read them (changes made inside a test
  * are rolled back as usual).
  *
  * @package DevRivo\Chatbot
@@ -41,7 +41,11 @@ final class FulltextSearchTest extends WP_UnitTestCase {
 	 */
 	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', Index::table() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// TRUNCATE, not DELETE: it rebuilds the FULLTEXT index too. Earlier
+		// test classes insert index rows and roll them back, which can leave
+		// InnoDB's FTS document IDs in a state where some newly committed rows
+		// are never matched (seen as random misses depending on timing).
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', Index::table() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		Plugin::instance()->settings()->flush();
 
 		$pages = array(
