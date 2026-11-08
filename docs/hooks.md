@@ -38,7 +38,7 @@
 |---|---|---|---|---|
 | `devrivo_chatbot_should_display` | Whether the widget loads on the current request. Runs only when the widget is enabled and the request is a normal page view; devices are checked later in the browser | `bool $display`, `array $context` (`post_id`, `post_type`) | 1.0.0 | In dev |
 | `devrivo_chatbot_widget_config` | Public config JSON sent to the widget (cached publicly: never add private data) | `array $config`, `array $context` (`locale`) | 1.0.0 | In dev |
-| `devrivo_chatbot_quick_actions` | Quick actions shown in popover and Home view | `array $actions`, `array $context` (`locale`) | 1.0.0 | In dev |
+| `devrivo_chatbot_quick_actions` | Quick actions sent to the widget (each with `pinned` and `show_in_menu`); the menu shows pinned actions first, then the first matching page-specific rule's actions or the normal menu | `array $actions`, `array $context` (`locale`) | 1.0.0 | In dev |
 | `devrivo_chatbot_greeting` | Greeting text (empty = time-based greeting in the browser) | `string $greeting`, `array $context` (`locale`) | 1.0.0 | In dev |
 
 ### Extensibility

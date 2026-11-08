@@ -26,7 +26,8 @@ If AI is unavailable for any reason, the assistant automatically switches to Gui
 **Features**
 
 * Floating launcher with quick actions that can open automatically
-* Customisable quick actions: links, forms, guided flows, phone, WhatsApp, email and more
+* Customisable quick actions: links, forms, guided flows, phone, WhatsApp, email, questions for the assistant and more
+* Page-specific quick actions: pinned actions on every page, plus actions and questions that change with the page (works with page caching)
 * Industry presets to get started fast, all fully editable
 * Answers grounded in your own site content, with links to source pages
 * Inline forms for enquiries, quotes, callbacks and booking requests

@@ -176,8 +176,9 @@ final class ActionTypes {
 				array(),
 				true
 			),
-			// Not supported yet: AI (Step 7) and custom hooks.
-			'ai_prompt'   => self::type( array( 'prompt' => self::text( 300 ) ), array( 'prompt' ) ),
+			// Opens the chat and sends the question as the visitor's message.
+			'ai_prompt'   => self::type( array( 'prompt' => self::text( 300 ) ), array( 'prompt' ), true ),
+			// Not supported yet.
 			'custom_hook' => self::type( array( 'hook' => self::text( 40, Schema::OPTIONAL_ID_PATTERN ) ), array( 'hook' ) ),
 		);
 	}

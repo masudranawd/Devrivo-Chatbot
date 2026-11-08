@@ -18,6 +18,7 @@ const DEFAULTS = {
 	actionTypes: [],
 	previewWidgetUrl: '',
 	previewFontUrl: '',
+	homePath: '/',
 	leadsExportUrl: '',
 };
 

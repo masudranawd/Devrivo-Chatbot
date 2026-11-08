@@ -86,7 +86,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$data = $this->request()->get_data();
 		$json = (string) wp_json_encode( $data );
 
-		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'credit_link', 'i18n' ), array_keys( $data ) );
+		$this->assertSame( array( 'version', 'ai_available', 'disclaimer', 'chat_url', 'search_enabled', 'search_url', 'fallback_action', 'display', 'appearance', 'behaviour', 'actions', 'page_actions', 'flows', 'forms', 'consent', 'session_url', 'submit_url', 'offers', 'credit_link', 'i18n' ), array_keys( $data ) );
 		$this->assertSame( array( 'position', 'primary_color', 'launcher_label' ), array_keys( $data['display'] ) );
 		$this->assertSame( array( 'color_scheme', 'radius', 'brand_name', 'font', 'text_size', 'avatar_url' ), array_keys( $data['appearance'] ) );
 		$this->assertSame( array( 'greeting', 'welcome', 'auto_open', 'auto_open_delay', 'hours', 'utm' ), array_keys( $data['behaviour'] ) );
@@ -178,7 +178,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 		$this->assertSame( array( 'phone', 'message' ), $keys( 'whatsapp' ) );
 		$this->assertSame( array( 'email', 'subject' ), $keys( 'email' ) );
 		$this->assertSame( array( 'flow' ), $keys( 'flow' ) );
-		$this->assertSame( array( 'id', 'label', 'type', 'urgent', 'show_in_menu', 'config' ), array_keys( $actions['link'] ) );
+		$this->assertSame( array( 'id', 'label', 'type', 'urgent', 'show_in_menu', 'pinned', 'config' ), array_keys( $actions['link'] ) );
 		$this->assertSame( 'https://example.com/a', $actions['link']['config']->url );
 		$this->assertTrue( $actions['link']['config']->new_tab );
 		$this->assertTrue( $actions['link']['show_in_menu'] );
@@ -191,7 +191,7 @@ final class ConfigControllerTest extends WP_UnitTestCase {
 					$this->action( 'link', array( 'url' => 'https://example.com/' ), 'ready' ),
 					$this->action( 'link', array( 'url' => '' ), 'incomplete' ),
 					$this->action( 'form', array( 'form' => '' ), 'form' ),
-					$this->action( 'ai_prompt', array( 'prompt' => 'Hi' ), 'ai' ),
+					$this->action( 'custom_hook', array( 'hook' => 'hi' ), 'hook' ),
 					$this->action( 'page_search', array(), 'search' ),
 					$this->action( 'call', array( 'phone' => '+1 555 0100' ), 'helper' ) + array( 'show_in_menu' => false ),
 				),

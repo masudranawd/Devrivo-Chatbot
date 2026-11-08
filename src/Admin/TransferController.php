@@ -232,7 +232,7 @@ final class TransferController extends WP_REST_Controller {
 
 	/**
 	 * Keeps this site's own values for settings that only make sense on the
-	 * site they came from: page and post IDs, the avatar image and the AI
+	 * site they came from: page and post IDs (page rules keep their paths), the avatar image and the AI
 	 * connection (on/off, provider, model, monthly limit).
 	 *
 	 * @param array<string, mixed> $changes Sections to import.
@@ -243,6 +243,21 @@ final class TransferController extends WP_REST_Controller {
 		if ( is_array( $changes['display'] ?? null ) && is_array( $changes['display']['rules'] ?? null ) ) {
 			// Objects merge one level deep only, so the nested list is set explicitly.
 			$changes['display']['rules']['post_ids'] = $current['display']['rules']['post_ids'] ?? array();
+		}
+
+		// Page rules keep their paths; rules that only had page IDs are dropped.
+		if ( is_array( $changes['page_actions'] ?? null ) ) {
+			$rules = array();
+			foreach ( $changes['page_actions'] as $rule ) {
+				if ( ! is_array( $rule ) ) {
+					continue;
+				}
+				$rule['post_ids'] = array();
+				if ( array() !== (array) ( $rule['paths'] ?? array() ) ) {
+					$rules[] = $rule;
+				}
+			}
+			$changes['page_actions'] = $rules;
 		}
 
 		if ( is_array( $changes['knowledge'] ?? null ) ) {

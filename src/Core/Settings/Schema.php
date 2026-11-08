@@ -61,6 +61,7 @@ final class Schema {
 			'appearance'   => self::appearance(),
 			'behaviour'    => self::behaviour(),
 			'actions'      => self::actions(),
+			'page_actions' => self::page_actions(),
 			'offers'       => self::offers(),
 			'flows'        => self::flows(),
 			'forms'        => self::forms(),
@@ -537,6 +538,79 @@ final class Schema {
 					'show_in_menu' => array(
 						'type'    => 'boolean',
 						'default' => true,
+					),
+					// Always shown first in the menu, on every page.
+					'pinned'       => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+				)
+			),
+		);
+	}
+
+	/**
+	 * Page-specific quick actions: ordered rules (the first match wins), each
+	 * matching pages by ID or by path relative to the site home (paths start
+	 * with "/"; subpages too when include_children is on). The widget matches
+	 * in the browser, so cached pages work. ConfigValidator checks that rule
+	 * IDs are unique, each rule has pages or paths, and the actions exist.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function page_actions(): array {
+		return array(
+			'type'     => 'array',
+			'maxItems' => 30,
+			'default'  => array(),
+			'items'    => self::object(
+				array(
+					'id'               => array(
+						'type'     => 'string',
+						'pattern'  => self::ID_PATTERN,
+						'required' => true,
+					),
+					// Admin label, never public.
+					'name'             => array(
+						'type'      => 'string',
+						'minLength' => 1,
+						'maxLength' => 80,
+						'required'  => true,
+					),
+					'post_ids'         => array(
+						'type'     => 'array',
+						'maxItems' => 50,
+						'default'  => array(),
+						'items'    => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+						),
+					),
+					'paths'            => array(
+						'type'     => 'array',
+						'maxItems' => 10,
+						'default'  => array(),
+						'items'    => array(
+							'type'      => 'string',
+							'maxLength' => 200,
+							'pattern'   => '^/\\S{0,199}$',
+						),
+					),
+					'include_children' => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+					// Action IDs, in menu order.
+					'actions'          => array(
+						'type'        => 'array',
+						'minItems'    => 1,
+						'maxItems'    => 5,
+						'uniqueItems' => true,
+						'required'    => true,
+						'items'       => array(
+							'type'    => 'string',
+							'pattern' => self::ID_PATTERN,
+						),
 					),
 				)
 			),

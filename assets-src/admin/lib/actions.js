@@ -63,6 +63,10 @@ export function addAction( list, type, label ) {
 			config[ field.key ] = '';
 		}
 	}
+	// A question asks its own label unless the admin changes it.
+	if ( type.id === 'ai_prompt' ) {
+		config.prompt = String( label ).slice( 0, 300 );
+	}
 	return [
 		...list,
 		{
@@ -74,6 +78,7 @@ export function addAction( list, type, label ) {
 			type: type.id,
 			urgent: false,
 			show_in_menu: true,
+			pinned: false,
 			config,
 		},
 	];

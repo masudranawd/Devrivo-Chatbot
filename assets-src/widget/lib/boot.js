@@ -53,6 +53,13 @@ export function parseBoot( raw ) {
 				? raw.launcherLabel.trim().slice( 0, 60 )
 				: '',
 		devices,
+		// Page-specific quick actions.
+		postId:
+			Number.isInteger( raw.postId ) && raw.postId > 0 ? raw.postId : 0,
+		homePath:
+			typeof raw.homePath === 'string' && raw.homePath.startsWith( '/' )
+				? raw.homePath
+				: '/',
 	};
 }
 
