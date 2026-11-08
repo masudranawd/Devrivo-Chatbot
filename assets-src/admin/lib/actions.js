@@ -2,6 +2,9 @@
  * Quick actions editor logic (pure functions on the actions list).
  */
 
+// Schema: actions maxItems.
+export const MAX_ACTIONS = 100;
+
 /**
  * Moves an item up (-1) or down (+1).
  *

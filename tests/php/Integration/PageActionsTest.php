@@ -172,6 +172,19 @@ final class PageActionsTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'page_actions[0][actions][0]', $deleted->get_error_data()['params'] );
 	}
 
+	public function test_up_to_100_quick_actions_can_be_saved(): void {
+		$actions = array_map( fn( int $i ): array => $this->question( "q{$i}", "Question {$i}?" ), range( 1, 100 ) );
+
+		$saved = $this->settings()->update( array( 'actions' => $actions ) );
+		$this->assertIsArray( $saved );
+		$this->assertCount( 100, $saved['actions'] );
+
+		$actions[] = $this->question( 'q101', 'One too many?' );
+		$this->assertWPError( $this->settings()->update( array( 'actions' => $actions ) ) );
+		$this->settings()->flush();
+		$this->assertCount( 100, $this->settings()->get( 'actions' ), 'Nothing saved.' );
+	}
+
 	public function test_question_type_is_supported_and_needs_its_text(): void {
 		$types = ActionTypes::all();
 

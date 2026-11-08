@@ -24,6 +24,8 @@ import {
 	ruleWarnings,
 } from '../../assets-src/admin/lib/page-rules';
 import { resetSettingsCache } from '../../assets-src/admin/lib/use-settings';
+import { MAX_ACTIONS } from '../../assets-src/admin/lib/actions';
+import Actions from '../../assets-src/admin/screens/actions';
 import PageActions from '../../assets-src/admin/screens/page-actions';
 import { normalizeConfig } from '../../assets-src/widget/lib/config';
 import {
@@ -627,5 +629,72 @@ describe( 'field errors on the page rules screen', () => {
 		expect( within( rule ).queryByText( 'Action problem.' ) ).toBeNull();
 		// Still listed in the summary at the top.
 		expect( screen.getAllByText( 'Action problem.' ).length ).toBe( 1 );
+	} );
+} );
+
+describe( 'quick actions limit', () => {
+	const many = ( count ) =>
+		Array.from( { length: count }, ( _, i ) => action( `a${ i }` ) );
+
+	it( 'allows 100 quick actions; questions stop at the limit', () => {
+		expect( MAX_ACTIONS ).toBe( 100 );
+		const rules = addRule( [], 'Rule' );
+		expect(
+			addQuestion( many( 99 ), rules, 0, 'Last one?' )
+		).not.toBeNull();
+		expect( addQuestion( many( 100 ), rules, 0, 'One more?' ) ).toBeNull();
+	} );
+
+	it( 'the Quick actions screen stops adding at 100', async () => {
+		apiFetch.mockImplementation( async ( { path } ) =>
+			path.endsWith( '/settings' )
+				? { actions: many( 100 ) }
+				: new Promise( () => {} )
+		);
+		window.devrivoChatbotAdmin.actionTypes = [
+			{ id: 'link', supported: true, required: [ 'url' ], fields: [] },
+		];
+		renderUi( <Actions notify={ () => {} } setDirty={ () => {} } /> );
+
+		expect(
+			(
+				await screen.findAllByText(
+					'You can have up to 100 quick actions.'
+				)
+			).length
+		).toBe( 1 );
+		const add = within(
+			screen.getByRole( 'group', { name: 'Add a quick action' } )
+		).getByRole( 'button', { name: 'Add' } );
+		expect( add.getAttribute( 'aria-disabled' ) ).toBe( 'true' );
+	} );
+
+	it( 'the rule editor explains when no question can be added', async () => {
+		apiFetch.mockImplementation( async ( { path } ) =>
+			path.endsWith( '/settings' )
+				? {
+						actions: many( 100 ),
+						page_actions: [
+							{
+								id: 'r',
+								name: 'Rule',
+								paths: [ '/a/' ],
+								actions: [ 'a0' ],
+							},
+						],
+					}
+				: new Promise( () => {} )
+		);
+		renderUi( <PageActions notify={ () => {} } setDirty={ () => {} } /> );
+
+		const rule = await screen.findByRole( 'group', { name: 'Rule' } );
+		expect(
+			within( rule ).getByText( /You already have 100 quick actions/ )
+		).toBeTruthy();
+		expect(
+			within( rule )
+				.getByRole( 'button', { name: 'Add question' } )
+				.getAttribute( 'aria-disabled' )
+		).toBe( 'true' );
 	} );
 } );

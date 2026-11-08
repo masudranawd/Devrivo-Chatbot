@@ -23,6 +23,7 @@ import {
 } from '../components/common';
 import {
 	addAction,
+	MAX_ACTIONS,
 	missing,
 	move,
 	removeAction,
@@ -499,18 +500,24 @@ export default function Actions( { notify, setDirty } ) {
 					variant="secondary"
 					onClick={ add }
 					disabled={
-						! newType || ! newLabel.trim() || list.length >= 20
+						! newType ||
+						! newLabel.trim() ||
+						list.length >= MAX_ACTIONS
 					}
 					accessibleWhenDisabled
 					__next40pxDefaultSize
 				>
 					{ __( 'Add', 'devrivo-chatbot' ) }
 				</Button>
-				{ list.length >= 20 && (
+				{ list.length >= MAX_ACTIONS && (
 					<p className="description">
-						{ __(
-							'You can have up to 20 quick actions.',
-							'devrivo-chatbot'
+						{ sprintf(
+							/* translators: %d: Maximum number of quick actions. */
+							__(
+								'You can have up to %d quick actions.',
+								'devrivo-chatbot'
+							),
+							MAX_ACTIONS
 						) }
 					</p>
 				) }
