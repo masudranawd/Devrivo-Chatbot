@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.13.0
+Stable tag: 0.13.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.13.1 =
+* Allow up to 100 quick actions for page-specific questions.
+
 = 0.13.0 =
 * Page-specific quick actions: pinned actions on every page plus questions that change with the page.
 
@@ -172,6 +175,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.13.1 =
+You can now have up to 100 quick actions, so page-specific questions have room.
 
 = 0.13.0 =
 Development version: adds pinned quick actions, page-specific rules (DevRivo Chatbot → Page-specific actions) and question buttons that ask the assistant.
