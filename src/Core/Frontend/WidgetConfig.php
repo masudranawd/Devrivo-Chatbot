@@ -125,6 +125,8 @@ final class WidgetConfig {
 				'utm'             => $behaviour['utm'],
 			),
 			'actions'         => $actions,
+			// Matched in the browser, so cached pages work.
+			'page_actions'    => self::page_actions( (array) $all['page_actions'], $action_ids ),
 			'flows'           => self::flows( $all['flows'], $action_ids ),
 			'forms'           => self::forms( $all['forms'] ),
 			'consent'         => Consent::public( $this->settings ),
@@ -185,9 +187,10 @@ final class WidgetConfig {
 		 * Filters the quick actions sent to the widget (menu, popover, flows)
 		 * and offered to the AI's suggest_action tool.
 		 *
-		 * Each action has id, label, type, urgent, show_in_menu and config
-		 * (only the keys of its type). Actions with show_in_menu false are only
-		 * used inside flows.
+		 * Each action has id, label, type, urgent, show_in_menu, pinned and
+		 * config (only the keys of its type). Actions with show_in_menu false
+		 * are only used inside flows and page-specific rules; pinned actions
+		 * are shown first on every page.
 		 *
 		 * @since 1.0.0
 		 *
@@ -230,9 +233,40 @@ final class WidgetConfig {
 			'type'         => $action['type'],
 			'urgent'       => (bool) $action['urgent'],
 			'show_in_menu' => (bool) $action['show_in_menu'],
+			'pinned'       => (bool) $action['pinned'],
 			// Only the keys in the type's schema.
 			'config'       => (array) Schema::with_defaults( $action['config'], $types[ $action['type'] ]['schema'] ),
 		);
+	}
+
+	/**
+	 * Public page rules (no IDs or admin names), with only the actions the
+	 * widget can run, in their order. Rules left without actions are dropped.
+	 *
+	 * @param array<int, mixed> $rules      Stored page rules.
+	 * @param array<int, mixed> $action_ids IDs of the actions sent to the widget.
+	 * @return list<array{post_ids: int[], paths: string[], include_children: bool, actions: string[]}>
+	 */
+	private static function page_actions( array $rules, array $action_ids ): array {
+		$public = array();
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+			$actions = array_values( array_filter( (array) ( $rule['actions'] ?? array() ), static fn( $id ): bool => in_array( $id, $action_ids, true ) ) );
+			if ( array() === $actions ) {
+				continue;
+			}
+			$public[] = array(
+				'post_ids'         => array_values( array_map( 'intval', (array) ( $rule['post_ids'] ?? array() ) ) ),
+				'paths'            => array_values( array_map( 'strval', (array) ( $rule['paths'] ?? array() ) ) ),
+				'include_children' => (bool) ( $rule['include_children'] ?? true ),
+				'actions'          => $actions,
+			);
+		}
+
+		return $public;
 	}
 
 	/**

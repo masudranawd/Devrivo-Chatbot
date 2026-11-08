@@ -46,7 +46,7 @@ export function labels() {
 			flow: __( 'Guided conversation', 'devrivo-chatbot' ),
 			form: __( 'Form', 'devrivo-chatbot' ),
 			page_search: __( 'Search the site', 'devrivo-chatbot' ),
-			ai_prompt: __( 'AI question', 'devrivo-chatbot' ),
+			ai_prompt: __( 'Question (asks the assistant)', 'devrivo-chatbot' ),
 			custom_hook: __( 'Custom (developers)', 'devrivo-chatbot' ),
 		},
 		fields: {
@@ -59,7 +59,7 @@ export function labels() {
 			flow: __( 'Conversation', 'devrivo-chatbot' ),
 			form: __( 'Form', 'devrivo-chatbot' ),
 			post_types: __( 'Only search these post types', 'devrivo-chatbot' ),
-			prompt: __( 'Question', 'devrivo-chatbot' ),
+			prompt: __( 'Question sent to the assistant', 'devrivo-chatbot' ),
 			hook: __( 'Hook name', 'devrivo-chatbot' ),
 		},
 	};
@@ -374,13 +374,41 @@ export default function Actions( { notify, setDirty } ) {
 											/>
 											<ToggleControl
 												label={ __(
-													'Show in the menu',
+													'Always show (pinned)',
 													'devrivo-chatbot'
 												) }
 												help={ __(
-													'Turn off for actions used only inside conversations.',
+													'Shown first in the menu on every page, also where a page-specific rule applies.',
 													'devrivo-chatbot'
 												) }
+												checked={ !! action.pinned }
+												onChange={ ( value ) =>
+													setList(
+														updateAction(
+															list,
+															index,
+															'pinned',
+															value
+														)
+													)
+												}
+											/>
+											<ToggleControl
+												label={ __(
+													'Show in the menu',
+													'devrivo-chatbot'
+												) }
+												help={
+													action.type === 'ai_prompt'
+														? __(
+																'Page questions usually have this off: add them to a rule under Page-specific actions instead.',
+																'devrivo-chatbot'
+															)
+														: __(
+																'Turn off for actions used only inside conversations or on certain pages.',
+																'devrivo-chatbot'
+															)
+												}
 												checked={
 													action.show_in_menu !==
 													false
@@ -496,7 +524,7 @@ export default function Actions( { notify, setDirty } ) {
 					message={ sprintf(
 						/* translators: %s: Action label. */
 						__(
-							'“%s” will be removed when you save. If a conversation still uses it, saving will tell you which one to change first.',
+							'“%s” will be removed when you save. If a conversation or a page rule still uses it, saving will tell you which one to change first.',
 							'devrivo-chatbot'
 						),
 						list[ confirm ].label

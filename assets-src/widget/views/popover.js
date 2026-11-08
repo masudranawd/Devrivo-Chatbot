@@ -1,6 +1,7 @@
 /**
  * Quick-action popover above the launcher.
  */
+import { composeMenu } from '../lib/page-actions';
 import { h, icon, ICONS } from '../lib/dom';
 import { actionControl } from './control';
 
@@ -24,9 +25,8 @@ export function popoverView( config, handlers ) {
 		icon( ICONS.close, 18 )
 	);
 
-	const chips = config.actions
-		.filter( ( action ) => action.showInMenu )
-		.map( ( action ) =>
+	const chips = ( config.menu || composeMenu( config.actions, null ) ).map(
+		( action ) =>
 			actionControl( handlers.target( action ), {
 				class: `dc-chip${ action.urgent ? ' dc-urgent' : '' }`,
 				role: 'menuitem',
@@ -34,7 +34,7 @@ export function popoverView( config, handlers ) {
 				text: action.label,
 				onClick: () => handlers.onAction( action.id ),
 			} )
-		);
+	);
 
 	const menu = h(
 		'div',

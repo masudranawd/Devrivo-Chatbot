@@ -121,6 +121,7 @@ export function normalizeConfig( raw, boot ) {
 			type: a.type,
 			urgent: a.urgent === true,
 			showInMenu: a.show_in_menu !== false,
+			pinned: a.pinned === true,
 			config: isObject( a.config ) ? a.config : {},
 		} ) );
 
@@ -172,6 +173,7 @@ export function normalizeConfig( raw, boot ) {
 		utm: behaviour.utm !== false,
 		actions,
 		flows: normalizeFlows( rawFlows, actionIds ),
+		pageActions: normalizePageActions( raw.page_actions, actionIds ),
 		forms,
 		consent: {
 			text: text( consent.text ),
@@ -185,6 +187,38 @@ export function normalizeConfig( raw, boot ) {
 		creditLink: raw.credit_link === true,
 		i18n,
 	};
+}
+
+/**
+ * Page rules with known actions only (max 5); rules with nothing to match or
+ * no actions are dropped.
+ *
+ * @param {unknown}     raw       page_actions from the config.
+ * @param {Set<string>} actionIds Actions the widget can run.
+ * @return {Array<{postIds: number[], paths: string[], includeChildren: boolean, actions: string[]}>} Rules.
+ */
+function normalizePageActions( raw, actionIds ) {
+	return list( raw )
+		.filter( isObject )
+		.map( ( rule ) => ( {
+			postIds: list( rule.post_ids ).filter(
+				( id ) => Number.isInteger( id ) && id > 0
+			),
+			paths: list( rule.paths ).filter(
+				( path ) => typeof path === 'string' && path.startsWith( '/' )
+			),
+			includeChildren: rule.include_children !== false,
+			actions: [
+				...new Set(
+					list( rule.actions ).filter( ( id ) => actionIds.has( id ) )
+				),
+			].slice( 0, 5 ),
+		} ) )
+		.filter(
+			( rule ) =>
+				rule.actions.length &&
+				( rule.postIds.length || rule.paths.length )
+		);
 }
 
 /**

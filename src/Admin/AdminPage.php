@@ -165,6 +165,7 @@ final class AdminPage {
 			'siteTimezone'       => wp_timezone_string(),
 			'actionTypes'        => self::action_types(),
 			'previewFontUrl'     => Assets::font_url(),
+			'homePath'           => Assets::home_path(),
 			'previewWidgetUrl'   => add_query_arg( 'ver', $widget['version'], DEVRIVO_CHATBOT_URL . 'build/widget.js' ),
 			'leadsExportUrl'     => LeadsExport::url(),
 			// Setup wizard: AI provider plugins, and the public chat for "Test a question".

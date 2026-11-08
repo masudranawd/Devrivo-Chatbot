@@ -2,6 +2,7 @@
  * Home view: greeting, welcome, "Ask a question" (when search or AI is on) and the
  * quick actions list, plus an optional open/closed status line.
  */
+import { composeMenu } from '../lib/page-actions';
 import { h, icon, ICONS } from '../lib/dom';
 import { timeGreeting } from '../lib/config';
 import { avatar } from '../launcher';
@@ -18,7 +19,8 @@ import { actionControl } from './control';
  */
 export function homeView( config, handlers, status = null, now = new Date() ) {
 	const { i18n } = config;
-	const menu = config.actions.filter( ( action ) => action.showInMenu );
+	// Composed by the widget (pinned and page-specific actions).
+	const menu = config.menu || composeMenu( config.actions, null );
 
 	const hero = h( 'div', { class: 'dc-hero' }, [
 		h( 'div', { class: 'dc-hero-top' }, [

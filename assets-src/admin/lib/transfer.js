@@ -22,6 +22,7 @@ export function sectionLabels() {
 		appearance: __( 'Appearance', 'devrivo-chatbot' ),
 		behaviour: __( 'Behaviour and opening hours', 'devrivo-chatbot' ),
 		actions: __( 'Quick actions', 'devrivo-chatbot' ),
+		page_actions: __( 'Page-specific actions', 'devrivo-chatbot' ),
 		flows: __( 'Guided conversations', 'devrivo-chatbot' ),
 		forms: __( 'Forms', 'devrivo-chatbot' ),
 		offers: __( 'Offers', 'devrivo-chatbot' ),

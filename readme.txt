@@ -4,7 +4,7 @@ Tags: chatbot, ai, lead generation, customer support, live chat
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.12.1
+Stable tag: 0.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,8 @@ If AI is unavailable for any reason, the assistant automatically switches to Gui
 **Features**
 
 * Floating launcher with quick actions that can open automatically
-* Customisable quick actions: links, forms, guided flows, phone, WhatsApp, email and more
+* Customisable quick actions: links, forms, guided flows, phone, WhatsApp, email, questions for the assistant and more
+* Page-specific quick actions: pinned actions on every page, plus actions and questions that change with the page (works with page caching)
 * Industry presets to get started fast, all fully editable
 * Answers grounded in your own site content, with links to source pages
 * Inline forms for enquiries, quotes, callbacks and booking requests
@@ -127,6 +128,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 
 == Changelog ==
 
+= 0.13.0 =
+* Page-specific quick actions: pinned actions on every page plus questions that change with the page.
+
 = 0.12.1 =
 * Fix: admin menu missing after deleting and reinstalling the plugin.
 
@@ -168,6 +172,9 @@ Yes. The plugin provides documented actions and filters for custom modules, acti
 * Initial development version.
 
 == Upgrade Notice ==
+
+= 0.13.0 =
+Development version: adds pinned quick actions, page-specific rules (DevRivo Chatbot → Page-specific actions) and question buttons that ask the assistant.
 
 = 0.12.1 =
 Fixes the DevRivo Chatbot admin menu missing after the plugin was deleted and installed again.

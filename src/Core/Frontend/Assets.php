@@ -107,6 +107,9 @@ final class Assets {
 			'primaryColor'  => $options['primary_color'],
 			'launcherLabel' => Display::launcher_label( (string) $options['launcher_label'] ),
 			'devices'       => array_values( $options['rules']['devices'] ),
+			// Page-specific quick actions are matched in the browser.
+			'postId'        => is_singular() ? (int) get_queried_object_id() : 0,
+			'homePath'      => self::home_path(),
 		);
 	}
 
@@ -128,6 +131,15 @@ final class Assets {
 			'dependencies' => is_array( $asset['dependencies'] ?? null ) ? $asset['dependencies'] : array(),
 			'version'      => is_string( $asset['version'] ?? null ) ? $asset['version'] : DEVRIVO_CHATBOT_VERSION,
 		);
+	}
+
+	/**
+	 * Path of the site home ("/" or e.g. "/shop/" in a subdirectory).
+	 */
+	public static function home_path(): string {
+		$path = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+
+		return '/' . ltrim( trailingslashit( '' !== $path ? $path : '/' ), '/' );
 	}
 
 	/**

@@ -18,6 +18,7 @@ import Inbox from './screens/inbox';
 import Integrations from './screens/integrations';
 import Knowledge from './screens/knowledge';
 import Offers from './screens/offers';
+import PageActions from './screens/page-actions';
 import Privacy from './screens/privacy';
 import Setup from './screens/setup';
 import Tools from './screens/tools';
@@ -47,6 +48,11 @@ export const SCREENS = [
 		id: 'actions',
 		label: () => __( 'Quick actions', 'devrivo-chatbot' ),
 		Screen: Actions,
+	},
+	{
+		id: 'page-actions',
+		label: () => __( 'Page-specific actions', 'devrivo-chatbot' ),
+		Screen: PageActions,
 	},
 	{
 		id: 'flows',

@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Checks rules that span settings sections, after each section passed its
- * own schema: action configs per type, unique action IDs, flow, form and
- * action references, form fields, FAQ IDs, the search fallback action,
+ * own schema: action configs per type, unique action IDs, flow, form, page
+ * rule and action references, form fields, FAQ IDs, the search fallback action,
  * opening hours, and the AI provider, model and limit when AI is enabled.
  *
  * Settings::update() only rejects errors the update introduces, so problems
@@ -72,6 +72,7 @@ final class ConfigValidator {
 
 		return array_merge(
 			self::action_errors( $actions, $flows, $forms ),
+			self::page_action_errors( is_array( $settings['page_actions'] ?? null ) ? $settings['page_actions'] : array(), array_column( $actions, 'id' ) ),
 			self::flow_errors( $flows, array_column( $actions, 'id' ) ),
 			self::form_errors( $forms ),
 			self::faq_errors( is_array( $faqs ) ? $faqs : array() ),
@@ -133,6 +134,45 @@ final class ConfigValidator {
 				$errors[ "knowledge[faqs][{$index}][id]" ] = sprintf( __( 'Two FAQs use the ID "%s". Each ID must be unique.', 'devrivo-chatbot' ), $id );
 			}
 			$seen[ $id ] = true;
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * Page rules: unique IDs, pages or paths to match, and existing actions.
+	 *
+	 * @param array<int, mixed> $rules      Page rules.
+	 * @param array<int, mixed> $action_ids Existing action IDs.
+	 * @return array<string, string>
+	 */
+	private static function page_action_errors( array $rules, array $action_ids ): array {
+		$errors = array();
+		$seen   = array();
+
+		foreach ( $rules as $index => $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+			$path = "page_actions[{$index}]";
+			$id   = (string) ( $rule['id'] ?? '' );
+
+			if ( isset( $seen[ $id ] ) ) {
+				/* translators: %s: Rule ID. */
+				$errors[ "{$path}[id]" ] = sprintf( __( 'Two page rules use the ID "%s". Each ID must be unique.', 'devrivo-chatbot' ), $id );
+			}
+			$seen[ $id ] = true;
+
+			if ( array() === (array) ( $rule['post_ids'] ?? array() ) && array() === (array) ( $rule['paths'] ?? array() ) ) {
+				$errors[ "{$path}[paths]" ] = __( 'Choose at least one page or enter a path for this rule.', 'devrivo-chatbot' );
+			}
+
+			foreach ( (array) ( $rule['actions'] ?? array() ) as $key => $action ) {
+				if ( ! in_array( $action, $action_ids, true ) ) {
+					/* translators: %s: Action ID. */
+					$errors[ "{$path}[actions][{$key}]" ] = sprintf( __( 'The quick action "%s" does not exist.', 'devrivo-chatbot' ), (string) $action );
+				}
+			}
 		}
 
 		return $errors;

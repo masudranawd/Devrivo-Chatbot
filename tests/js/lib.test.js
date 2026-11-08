@@ -50,6 +50,8 @@ describe( 'parseBoot', () => {
 			primaryColor: '#123456',
 			launcherLabel: 'Talk to us',
 			devices: [ 'mobile' ],
+			postId: 0,
+			homePath: '/',
 		} );
 	} );
 
@@ -214,6 +216,7 @@ describe( 'normalizeConfig', () => {
 				type: 'link',
 				urgent: true,
 				showInMenu: true,
+				pinned: false,
 				config: { url: '/x' },
 			},
 		] );

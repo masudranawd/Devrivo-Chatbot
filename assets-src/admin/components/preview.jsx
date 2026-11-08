@@ -2,11 +2,12 @@
  * Live preview: the real widget (build/widget.js) rendered from unsaved
  * settings via /preview-config, inside a contained stage.
  */
-import { Button, Notice } from '@wordpress/components';
+import { Button, Notice, TextControl } from '@wordpress/components';
 import { useEffect, useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { request, toErrors } from '../lib/api';
 import { boot } from '../lib/boot';
+import { PostPicker } from './post-picker';
 
 let widgetLoading = null;
 
@@ -59,14 +60,23 @@ function run( widget, play ) {
  * @param {Object}  props.changes Unsaved sections ({ display: {…}, appearance: {…} }).
  * @param {Object}  props.play    Optional { type: "flow"|"form", id, n }: run it (again when n changes).
  * @param {boolean} props.devices Show the Desktop / Mobile toggle.
+ * @param {boolean} props.pages   Show "Preview as page" (a page and a path).
  * @return {Element} Panel.
  */
-export function Preview( { changes, play = null, devices = false } ) {
+export function Preview( {
+	changes,
+	play = null,
+	devices = false,
+	pages = false,
+} ) {
 	const stage = useRef( null );
 	const widget = useRef( null );
 	const playing = useRef( play );
 	const [ error, setError ] = useState( '' );
 	const [ mobile, setMobile ] = useState( false );
+	// Page to preview: a post ID and/or a path relative to the home.
+	const [ page, setPage ] = useState( { postId: 0, path: '/' } );
+	const pageKey = `${ page.postId }|${ page.path }`;
 	const key = JSON.stringify( changes || {} );
 	playing.current = play;
 
@@ -92,6 +102,7 @@ export function Preview( { changes, play = null, devices = false } ) {
 						note: __( 'Preview only', 'devrivo-chatbot' ),
 						mobile,
 						fontUrl: boot().previewFontUrl,
+						page,
 					}
 				);
 				run( widget.current, playing.current );
@@ -114,7 +125,8 @@ export function Preview( { changes, play = null, devices = false } ) {
 			cancelled = true;
 			window.clearTimeout( timer );
 		};
-	}, [ key, mobile ] );
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ key, mobile, pageKey ] );
 
 	// "Try this flow" without other changes: run it in the current preview.
 	useEffect( () => {
@@ -145,6 +157,34 @@ export function Preview( { changes, play = null, devices = false } ) {
 					'devrivo-chatbot'
 				) }
 			</p>
+			{ pages && (
+				<div className="devrivo-preview__page">
+					<PostPicker
+						label={ __( 'Preview as page', 'devrivo-chatbot' ) }
+						ids={ page.postId ? [ page.postId ] : [] }
+						onChange={ ( ids ) =>
+							setPage( {
+								...page,
+								postId: ids.length ? ids[ ids.length - 1 ] : 0,
+							} )
+						}
+					/>
+					<TextControl
+						label={ __( 'Or a path', 'devrivo-chatbot' ) }
+						help={ sprintf(
+							/* translators: %s: Site home path, e.g. "/". */
+							__(
+								'Relative to your site home (%s), e.g. /services/implants/',
+								'devrivo-chatbot'
+							),
+							boot().homePath || '/'
+						) }
+						value={ page.path }
+						onChange={ ( path ) => setPage( { ...page, path } ) }
+						__next40pxDefaultSize
+					/>
+				</div>
+			) }
 			{ devices && (
 				<div
 					className="devrivo-preview__devices"

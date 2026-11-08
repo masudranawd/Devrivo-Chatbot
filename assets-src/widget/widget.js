@@ -13,6 +13,12 @@ import { actionTarget, openTarget } from './lib/actions';
 import { normalizeConfig } from './lib/config';
 import { h, icon, ICONS } from './lib/dom';
 import { createRunner } from './lib/flow';
+import {
+	composeMenu,
+	matchRule,
+	normalizePath,
+	relativePath,
+} from './lib/page-actions';
 import { createChat } from './lib/chat';
 import { createSearcher } from './lib/search';
 import { createSession } from './lib/session';
@@ -73,7 +79,13 @@ export async function mount( host, boot, options = {} ) {
 	// The loader's launcher uses the system fonts until now.
 	ensureFont( config.font, boot.fontUrl );
 
-	return render( host, config, options );
+	return render( host, config, {
+		...options,
+		page: {
+			postId: boot.postId || 0,
+			path: relativePath( window.location.pathname, boot.homePath ),
+		},
+	} );
 }
 
 /**
@@ -81,7 +93,7 @@ export async function mount( host, boot, options = {} ) {
  *
  * @param {HTMLElement} host    Host element with an open shadow root.
  * @param {Object}      config  Normalised config.
- * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat, preview, previewNote, mobile }.
+ * @param {Object}      options { open, typingTime( text ), submitter, searcher, chat, preview, previewNote, mobile, page: { postId, path } }.
  * @return {Object} Controller: { state(), view(), flow( id ), form( id ), destroy() }.
  */
 export function render( host, config, options = {} ) {
@@ -98,7 +110,12 @@ export function render( host, config, options = {} ) {
 	const target = ( action ) =>
 		action && ! options.preview ? actionTarget( action, config.utm ) : null;
 	const byId = new Map( config.actions.map( ( a ) => [ a.id, a ] ) );
-	const menu = config.actions.filter( ( a ) => a.showInMenu );
+	// Pinned actions, then the first matching page rule's (or the normal menu).
+	const menu = composeMenu(
+		config.actions,
+		matchRule( config.pageActions, options.page )
+	);
+	config = { ...config, menu };
 
 	const handlers = {
 		onClose: () => setState( 'closed' ),
@@ -402,6 +419,14 @@ export function render( host, config, options = {} ) {
 			return;
 		}
 
+		// A question: sent like a typed message (AI or Guided answer).
+		if ( action.type === 'ai_prompt' ) {
+			searchTypes = [];
+			openConversation( ! fromFlow );
+			conversation.chat( String( action.config.prompt || action.label ) );
+			return;
+		}
+
 		if ( action.type === 'flow' || action.type === 'form' ) {
 			openConversation( ! fromFlow );
 			if ( action.type === 'flow' ) {
@@ -558,7 +583,7 @@ const PREVIEW_BOOT = {
  *
  * @param {HTMLElement} host    Host element (a shadow root is attached if missing).
  * @param {unknown}     raw     Public config, as returned by /preview-config.
- * @param {Object}      options { note: "Preview only" text, mobile: phone-sized stage, fontUrl: bundled Figtree }.
+ * @param {Object}      options { note: "Preview only" text, mobile: phone-sized stage, fontUrl: bundled Figtree, page: { postId, path } to preview a page }.
  * @return {Object} Widget controller (call destroy() before rendering again).
  */
 export function preview( host, raw, options = {} ) {
@@ -577,6 +602,14 @@ export function preview( host, raw, options = {} ) {
 		preview: true,
 		previewNote: note,
 		mobile: options.mobile === true,
+		page: {
+			postId:
+				Number.isInteger( options.page?.postId ) &&
+				options.page.postId > 0
+					? options.page.postId
+					: 0,
+			path: normalizePath( options.page?.path || '/' ),
+		},
 		submitter: {
 			prepare: async () => {},
 			submit: async () => ( {

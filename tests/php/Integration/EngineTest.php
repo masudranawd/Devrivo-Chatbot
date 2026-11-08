@@ -133,18 +133,20 @@ final class EngineTest extends WP_UnitTestCase {
 	public function test_types_report_support_and_readiness(): void {
 		$types = ActionTypes::all();
 
-		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow', 'form', 'page_search' ) as $type ) {
+		foreach ( array( 'link', 'call', 'whatsapp', 'email', 'flow', 'form', 'page_search', 'ai_prompt' ) as $type ) {
 			$this->assertTrue( $types[ $type ]['supported'], $type );
 			$this->assertSame( 'client', $types[ $type ]['runtime'] );
 		}
-		foreach ( array( 'ai_prompt', 'custom_hook' ) as $type ) {
+		foreach ( array( 'custom_hook' ) as $type ) {
 			$this->assertFalse( $types[ $type ]['supported'], $type );
 		}
 
 		$this->assertTrue( ActionTypes::is_ready( $this->action( 'call', array( 'phone' => '123 456' ) ), $types ) );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'call', array( 'phone' => '' ) ), $types ), 'Incomplete.' );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'call', array() ), $types ), 'Incomplete.' );
-		$this->assertFalse( ActionTypes::is_ready( $this->action( 'ai_prompt', array( 'prompt' => 'x' ) ), $types ), 'Unsupported.' );
+		$this->assertTrue( ActionTypes::is_ready( $this->action( 'ai_prompt', array( 'prompt' => 'x' ) ), $types ) );
+		$this->assertFalse( ActionTypes::is_ready( $this->action( 'ai_prompt', array( 'prompt' => '  ' ) ), $types ), 'A question without text is incomplete.' );
+		$this->assertFalse( ActionTypes::is_ready( $this->action( 'custom_hook', array( 'hook' => 'x' ) ), $types ), 'Unsupported.' );
 		$this->assertFalse( ActionTypes::is_ready( $this->action( 'nope', array() ), $types ), 'Unknown.' );
 	}
 
