@@ -25,7 +25,7 @@ import {
 } from '../components/common';
 import { PostPicker } from '../components/post-picker';
 import { Preview } from '../components/preview';
-import { move } from '../lib/actions';
+import { MAX_ACTIONS, move } from '../lib/actions';
 import { boot } from '../lib/boot';
 import {
 	addQuestion,
@@ -76,6 +76,8 @@ export function RuleCard( {
 		( action ) => ! chosen.includes( action.id )
 	);
 	const full = chosen.length >= MAX_RULE_ACTIONS;
+	// No room for another quick action (a new question is one).
+	const noRoom = actions.length >= MAX_ACTIONS;
 	const name = rule.name || rule.id;
 	const error = ( key ) => errors[ `page_actions.${ index }.${ key }` ] || '';
 	const actionName = ( id ) => byId.get( id )?.label || id;
@@ -358,13 +360,13 @@ export function RuleCard( {
 								) }
 								value={ question }
 								maxLength={ 300 }
-								disabled={ full }
+								disabled={ full || noRoom }
 								onChange={ setQuestion }
 								__next40pxDefaultSize
 							/>
 							<Button
 								variant="secondary"
-								disabled={ full || ! question.trim() }
+								disabled={ full || noRoom || ! question.trim() }
 								accessibleWhenDisabled
 								onClick={ () => {
 									onAsk( question );
@@ -380,6 +382,18 @@ export function RuleCard( {
 								{ __(
 									'A rule can show up to 5 actions.',
 									'devrivo-chatbot'
+								) }
+							</p>
+						) }
+						{ ! full && noRoom && (
+							<p className="description">
+								{ sprintf(
+									/* translators: %d: Maximum number of quick actions. */
+									__(
+										'You already have %d quick actions, the most allowed. Delete some under Quick actions to add questions.',
+										'devrivo-chatbot'
+									),
+									MAX_ACTIONS
 								) }
 							</p>
 						) }

@@ -3,7 +3,7 @@
  * list and the actions list).
  */
 import { normalizePath } from '../../widget/lib/page-actions';
-import { uniqueId } from './actions';
+import { MAX_ACTIONS, uniqueId } from './actions';
 
 export const MAX_RULES = 30;
 export const MAX_RULE_ACTIONS = 5;
@@ -92,12 +92,13 @@ export function addRuleAction( rules, index, id ) {
  * @param {Array}  rules    Rules.
  * @param {number} index    Rule.
  * @param {string} question Question.
- * @return {{actions: Array, rules: Array, id: string}|null} New lists, or null when the question is empty or the rule is full.
+ * @return {{actions: Array, rules: Array, id: string}|null} New lists, or null when the question is empty, the rule is full or there are already MAX_ACTIONS actions.
  */
 export function addQuestion( actions, rules, index, question ) {
 	const text = String( question || '' ).trim();
 	if (
 		! text ||
+		actions.length >= MAX_ACTIONS ||
 		( rules[ index ].actions || [] ).length >= MAX_RULE_ACTIONS
 	) {
 		return null;

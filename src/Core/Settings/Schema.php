@@ -505,7 +505,8 @@ final class Schema {
 	private static function actions(): array {
 		return array(
 			'type'     => 'array',
-			'maxItems' => 20,
+			// Room for page-specific questions (Page-specific actions).
+			'maxItems' => 100,
 			'default'  => array(),
 			'items'    => self::object(
 				array(
