@@ -19,7 +19,9 @@ import {
 	addQuestion,
 	addRule,
 	addRuleAction,
+	isCatchAll,
 	parsePaths,
+	ruleWarnings,
 } from '../../assets-src/admin/lib/page-rules';
 import { resetSettingsCache } from '../../assets-src/admin/lib/use-settings';
 import PageActions from '../../assets-src/admin/screens/page-actions';
@@ -452,5 +454,178 @@ describe( 'admin rule editing', () => {
 			name: /Create one under Quick actions/,
 		} );
 		expect( link.getAttribute( 'href' ) ).toBe( '#/actions' );
+	} );
+} );
+
+describe( 'rule order warnings', () => {
+	const rule = ( patch ) => ( {
+		post_ids: [],
+		paths: [],
+		include_children: true,
+		actions: [ 'a' ],
+		...patch,
+	} );
+
+	it( 'flags "/" with subpages as matching every page', () => {
+		expect( isCatchAll( rule( { paths: [ '/' ] } ) ) ).toBe( true );
+		expect( isCatchAll( rule( { paths: [ '' ] } ) ) ).toBe( true );
+		expect(
+			isCatchAll( rule( { paths: [ '/' ], include_children: false } ) )
+		).toBe( false );
+		expect( isCatchAll( rule( { paths: [ '/a/' ] } ) ) ).toBe( false );
+	} );
+
+	it( 'finds rules that earlier rules always cover', () => {
+		const warnings = ruleWarnings( [
+			rule( { paths: [ '/services/' ] } ),
+			rule( { paths: [ '/Services/Implants' ] } ),
+			rule( { paths: [ '/services/', '/about/' ] } ),
+			rule( { post_ids: [ 5 ] } ),
+			rule( { post_ids: [ 5 ], paths: [ '/team/' ] } ),
+			rule( { paths: [ '/team/' ], include_children: false } ),
+			rule( { paths: [ '/team/sam/' ] } ),
+			rule( { paths: [ '/about/', '/team/' ] } ),
+			rule( { post_ids: [ 5 ] } ),
+			rule( { post_ids: [ 5, 6 ] } ),
+		] );
+
+		expect( warnings.map( ( w ) => w.shadowedBy ) ).toEqual( [
+			[],
+			[ 1 ],
+			[],
+			[],
+			[],
+			[ 5 ],
+			[ 5 ],
+			[ 3, 5 ],
+			[ 4 ],
+			[],
+		] );
+		expect( warnings.every( ( w ) => ! w.catchAll ) ).toBe( true );
+	} );
+
+	it( 'everything below a catch-all is covered', () => {
+		const warnings = ruleWarnings( [
+			rule( { post_ids: [ 9 ] } ),
+			rule( { paths: [ '/' ] } ),
+			rule( { post_ids: [ 3 ], paths: [ '/x/' ] } ),
+			rule( { paths: [] } ),
+		] );
+
+		expect( warnings[ 1 ] ).toEqual( { catchAll: true, shadowedBy: [] } );
+		expect( warnings[ 2 ].shadowedBy ).toEqual( [ 2 ] );
+		expect( warnings[ 3 ].shadowedBy ).toEqual( [] );
+	} );
+
+	it( 'shows both warnings in the editor', async () => {
+		apiFetch.mockImplementation( async ( { path } ) =>
+			path.endsWith( '/settings' )
+				? {
+						actions: [ action( 'book' ) ],
+						page_actions: [
+							{
+								id: 'all',
+								name: 'Everywhere',
+								paths: [ '/' ],
+								include_children: true,
+								actions: [ 'book' ],
+							},
+							{
+								id: 'implants',
+								name: 'Implants',
+								paths: [ '/services/implants/' ],
+								actions: [ 'book' ],
+							},
+						],
+					}
+				: new Promise( () => {} )
+		);
+		renderUi( <PageActions notify={ () => {} } setDirty={ () => {} } /> );
+
+		const first = await screen.findByRole( 'group', {
+			name: 'Everywhere',
+		} );
+		expect(
+			within( first ).getAllByText( /so the rules below it never apply/ )
+				.length
+		).toBeGreaterThan( 0 );
+		const second = screen.getByRole( 'group', { name: 'Implants' } );
+		expect(
+			within( second ).getAllByText(
+				/This rule can never match: rule 1 above/
+			).length
+		).toBeGreaterThan( 0 );
+
+		// Moving the catch-all to the bottom clears both.
+		fireEvent.click(
+			screen.getByRole( 'button', { name: 'Move “Everywhere” down' } )
+		);
+		const moved = screen.getByRole( 'group', { name: 'Implants' } );
+		expect( within( moved ).queryByText( /can never match/ ) ).toBeNull();
+		expect(
+			within(
+				screen.getByRole( 'group', { name: 'Everywhere' } )
+			).queryByText( /rules below it never apply/ )
+		).toBeNull();
+	} );
+} );
+
+describe( 'field errors on the page rules screen', () => {
+	it( 'shows each server error under the field of its own section', async () => {
+		apiFetch.mockImplementation( async ( { path, data } ) => {
+			if ( path.endsWith( '/settings' ) && data ) {
+				throw {
+					code: 'rest_invalid_param',
+					message: 'Invalid.',
+					data: {
+						status: 400,
+						params: {
+							'page_actions[0][name]': 'Rule name problem.',
+							'actions[0][name]': 'Action problem.',
+							'page_actions[0][actions][0]':
+								'The quick action "book" does not exist.',
+						},
+					},
+				};
+			}
+			if ( path.endsWith( '/settings' ) ) {
+				return {
+					actions: [ action( 'book' ) ],
+					page_actions: [
+						{
+							id: 'r',
+							name: 'Rule',
+							paths: [ '/a/' ],
+							actions: [ 'book' ],
+						},
+					],
+				};
+			}
+			return new Promise( () => {} );
+		} );
+		renderUi( <PageActions notify={ () => {} } setDirty={ () => {} } /> );
+
+		const rule = await screen.findByRole( 'group', { name: 'Rule' } );
+		fireEvent.change(
+			within( rule ).getByLabelText( 'Name (only you see it)' ),
+			{ target: { value: 'Rule' + ' ' } }
+		);
+		fireEvent.click(
+			screen.getByRole( 'button', { name: 'Save changes' } )
+		);
+
+		await waitFor( () =>
+			expect(
+				within( rule ).getByText( 'Rule name problem.' )
+			).toBeTruthy()
+		);
+		expect(
+			within( rule ).getByText(
+				'The quick action "book" does not exist.'
+			)
+		).toBeTruthy();
+		expect( within( rule ).queryByText( 'Action problem.' ) ).toBeNull();
+		// Still listed in the summary at the top.
+		expect( screen.getAllByText( 'Action problem.' ).length ).toBe( 1 );
 	} );
 } );

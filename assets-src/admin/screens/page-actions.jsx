@@ -7,6 +7,7 @@ import {
 	Button,
 	Card,
 	CardBody,
+	Notice,
 	SelectControl,
 	TextControl,
 	TextareaControl,
@@ -32,6 +33,7 @@ import {
 	MAX_RULE_ACTIONS,
 	MAX_RULES,
 	parsePaths,
+	ruleWarnings,
 	updateRule,
 } from '../lib/page-rules';
 import { useSettings } from '../lib/use-settings';
@@ -46,6 +48,7 @@ import { labels as actionLabels } from './actions';
  * @param {number}                     props.count    Number of rules.
  * @param {Array}                      props.actions  Quick actions (draft).
  * @param {Object}                     props.errors   Field errors.
+ * @param {Object}                     props.warning  From ruleWarnings(): { catchAll, shadowedBy }.
  * @param {(patch: Object) => void}    props.onChange Changes keys of the rule.
  * @param {(delta: number) => void}    props.onMove   Moves the rule.
  * @param {() => void}                 props.onDelete Asks to delete.
@@ -58,6 +61,7 @@ export function RuleCard( {
 	count,
 	actions,
 	errors,
+	warning = { catchAll: false, shadowedBy: [] },
 	onChange,
 	onMove,
 	onDelete,
@@ -73,7 +77,7 @@ export function RuleCard( {
 	);
 	const full = chosen.length >= MAX_RULE_ACTIONS;
 	const name = rule.name || rule.id;
-	const error = ( key ) => errors[ `${ index }.${ key }` ] || '';
+	const error = ( key ) => errors[ `page_actions.${ index }.${ key }` ] || '';
 	const actionName = ( id ) => byId.get( id )?.label || id;
 
 	return (
@@ -128,6 +132,32 @@ export function RuleCard( {
 							</Button>
 						</span>
 					</div>
+
+					{ warning.catchAll && (
+						<Notice status="warning" isDismissible={ false }>
+							{ index < count - 1
+								? __(
+										'This rule matches every page (the path “/” with subpages), so the rules below it never apply. Move it to the bottom, or turn off “Also match subpages” to match only the home page.',
+										'devrivo-chatbot'
+									)
+								: __(
+										'This rule matches every page (the path “/” with subpages). Turn off “Also match subpages” to match only the home page.',
+										'devrivo-chatbot'
+									) }
+						</Notice>
+					) }
+					{ warning.shadowedBy.length > 0 && (
+						<Notice status="warning" isDismissible={ false }>
+							{ sprintf(
+								/* translators: %s: Rule numbers, e.g. "1, 3". */
+								__(
+									'This rule can never match: rule %s above already covers all of its pages and paths. Move it higher, or change its pages and paths.',
+									'devrivo-chatbot'
+								),
+								warning.shadowedBy.join( ', ' )
+							) }
+						</Notice>
+					) }
 
 					<TextControl
 						label={ __(
@@ -369,7 +399,10 @@ export function RuleCard( {
  * @return {Element} Screen.
  */
 export default function PageActions( { notify, setDirty } ) {
-	const settings = useSettings( [ 'page_actions', 'actions' ] );
+	// Both sections are lists, so field errors keep their section prefix.
+	const settings = useSettings( [ 'page_actions', 'actions' ], {
+		prefixed: true,
+	} );
 	const [ newName, setNewName ] = useState( '' );
 	const [ confirm, setConfirm ] = useState( null );
 	useDirty( setDirty, settings.dirty );
@@ -379,6 +412,7 @@ export default function PageActions( { notify, setDirty } ) {
 	}
 
 	const rules = settings.values.page_actions || [];
+	const warnings = ruleWarnings( rules );
 	const actions = settings.values.actions || [];
 	const setRules = ( next ) => settings.setSection( 'page_actions', next );
 
@@ -414,6 +448,7 @@ export default function PageActions( { notify, setDirty } ) {
 								count={ rules.length }
 								actions={ actions }
 								errors={ settings.errors.fields }
+								warning={ warnings[ index ] }
 								onChange={ ( patch ) =>
 									setRules(
 										updateRule( rules, index, patch )

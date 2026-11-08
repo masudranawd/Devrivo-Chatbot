@@ -57,10 +57,15 @@ const same = ( a, b ) => JSON.stringify( a ) === JSON.stringify( b );
 /**
  * Settings hook.
  *
- * @param {string|string[]} sections Section name(s).
+ * @param {string|string[]} sections         Section name(s).
+ * @param {Object}          options          Options.
+ * @param {boolean}         options.prefixed Keep the section in field error
+ *                                           keys ("page_actions.0.name"), for
+ *                                           screens that save several list
+ *                                           sections whose keys would clash.
  * @return {Object} { ready, loadError, values, saved, all, dirty, saving, errors, setField, setSection, save, discard }.
  */
-export function useSettings( sections ) {
+export function useSettings( sections, { prefixed = false } = {} ) {
 	const names = Array.isArray( sections ) ? sections : [ sections ];
 	const key = names.join( ',' );
 
@@ -128,7 +133,7 @@ export function useSettings( sections ) {
 			setErrors( { message: '', fields: {} } );
 			return true;
 		} catch ( error ) {
-			setErrors( toErrors( error, names ) );
+			setErrors( toErrors( error, prefixed ? [] : names ) );
 			return false;
 		} finally {
 			setSaving( false );
